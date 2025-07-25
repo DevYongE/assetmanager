@@ -45,7 +45,12 @@ export const useApi = () => {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> => {
-    const response = await fetch(`${apiBase}${endpoint}`, {
+    // 2024-12-19: API 호출 디버그 로그 추가
+    const fullUrl = `${apiBase}${endpoint}`
+    console.log('🔍 [API DEBUG] Making request to:', fullUrl)
+    console.log('🔍 [API DEBUG] API Base:', apiBase)
+    
+    const response = await fetch(fullUrl, {
       headers: createHeaders(),
       ...options
     })

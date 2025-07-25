@@ -5,6 +5,18 @@ export default defineNuxtConfig({
   devServer: {
     port: 3000
   },
+  // 2024-12-19: 브라우저 캐시 문제 해결을 위한 설정 추가
+  nitro: {
+    storage: {
+      redis: {
+        driver: 'memory'
+      }
+    }
+  },
+  // 2024-12-19: 캐시 무효화를 위한 설정
+  experimental: {
+    payloadExtraction: false
+  },
   css: ['~/assets/css/main.css'],
   modules: [
     '@nuxtjs/tailwindcss',
@@ -39,8 +51,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NODE_ENV === 'production' 
-        ? 'http://your-ncp-server-ip:4000'  // NCP 서버 IP 주소로 변경 필요
-        : 'http://localhost:4000'  // 개발 환경에서도 4000 포트로 변경
+        ? 'http://211.188.55.145:4000'  // 현재 서버 IP로 설정
+        : 'http://211.188.55.145:4000'  // 개발 환경에서도 현재 서버 IP 사용
     }
   }
 })
