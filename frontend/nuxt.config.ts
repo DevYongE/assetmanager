@@ -47,12 +47,10 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  // 2024-12-19: NCP 서버 배포를 위해 프로덕션 API URL 설정
+  // 2025-07-25: NCP 서버 배포를 위해 프로덕션 API URL 설정 - 하드코딩으로 변경
   runtimeConfig: {
     public: {
-      apiBase: process.env.NODE_ENV === 'production' 
-        ? 'http://211.188.55.145:4000'  // 현재 서버 IP로 설정
-        : 'http://211.188.55.145:4000'  // 개발 환경에서도 현재 서버 IP 사용
+      apiBase: 'http://211.188.55.145:4000'  // 서버 IP로 하드코딩
     }
   }
 })
