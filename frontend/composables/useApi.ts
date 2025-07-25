@@ -45,7 +45,7 @@ export const useApi = () => {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> => {
-    // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (포트 9443)
+    // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (Nginx 프록시)
     const serverUrl = 'https://211.188.55.145:9443'
     const fullUrl = `${serverUrl}${endpoint}`
     console.log('🔍 [API DEBUG] Making request to:', fullUrl)
