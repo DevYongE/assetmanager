@@ -58,8 +58,8 @@ export const useAuthStore = defineStore('auth', {
         console.log('🚀 [AUTH STORE] Starting login process...')
         console.log('📧 [AUTH STORE] Credentials:', { email: credentials.email, passwordLength: credentials.password.length })
         
-        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정
-        const response = await $fetch<{token: string, user: User}>('https://211.188.55.145/api/auth/login', {
+        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (포트 9443)
+        const response = await $fetch<{token: string, user: User}>('https://211.188.55.145:9443/api/auth/login', {
           method: 'POST',
           body: credentials,
           // Add timeout
@@ -100,8 +100,8 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정
-        const response = await $fetch<{token: string, user: User}>('https://211.188.55.145/api/auth/register', {
+        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (포트 9443)
+        const response = await $fetch<{token: string, user: User}>('https://211.188.55.145:9443/api/auth/register', {
           method: 'POST',
           body: data
         })
@@ -146,8 +146,8 @@ export const useAuthStore = defineStore('auth', {
       
       this.loading = true
       try {
-        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정
-        const response = await $fetch<{user: User}>('https://211.188.55.145/api/auth/profile', {
+        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (포트 9443)
+        const response = await $fetch<{user: User}>('https://211.188.55.145:9443/api/auth/profile', {
           headers: {
             'Authorization': `Bearer ${this.token}`
           }
