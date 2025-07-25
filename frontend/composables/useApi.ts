@@ -45,8 +45,8 @@ export const useApi = () => {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> => {
-    // 2025-07-25: 모바일 접속 문제 해결을 위해 하드코딩된 API URL 사용
-    const serverUrl = 'http://211.188.55.145:4000'
+    // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정
+    const serverUrl = 'https://211.188.55.145'
     const fullUrl = `${serverUrl}${endpoint}`
     console.log('🔍 [API DEBUG] Making request to:', fullUrl)
     console.log('🔍 [API DEBUG] Server URL:', serverUrl)
