@@ -10,19 +10,12 @@ const app = express();
 // 2024-12-19: NCP 서버 배포를 위해 포트를 4000으로 변경
 const PORT = process.env.PORT || 4000;
 
-// 2024-12-19: CORS 설정 수정 - 모든 도메인 허용 및 특정 도메인 추가
+// 2025-07-25: CORS 설정 수정 - 모바일 접속을 위해 모든 도메인 허용
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3002',
-    'http://211.188.55.145:3000',
-    'http://211.188.55.145:3002',
-    'http://your-ncp-server-ip:3000',  // NCP 서버 IP로 변경 필요
-    'http://your-ncp-server-ip:3002'   // NCP 서버 IP로 변경 필요
-  ],
+  origin: true, // 모든 도메인 허용
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
 };
 
 // Middleware
