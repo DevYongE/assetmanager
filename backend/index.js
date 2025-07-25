@@ -7,7 +7,8 @@ const path = require('path');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// 2024-12-19: NCP 서버 배포를 위해 포트를 4000으로 변경
+const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors());
