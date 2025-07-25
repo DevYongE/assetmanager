@@ -7,10 +7,10 @@ const router = express.Router();
 // Get current user's statistics
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    // Get employee count
+    // Get employee count and company name
     const { data: employees, error: empError } = await supabase
       .from('employees')
-      .select('id')
+      .select('id, company_name')
       .eq('admin_id', req.user.id);
 
     if (empError) {
@@ -19,6 +19,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     }
 
     const employeeIds = employees?.map(emp => emp.id) || [];
+    const companyName = employees?.[0]?.company_name || 'Unknown Company';
 
     // Get device count
     const { data: devices, error: devError } = await supabase
@@ -35,7 +36,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
       stats: {
         total_employees: employees?.length || 0,
         total_devices: devices?.length || 0,
-        company_name: req.user.company_name
+        company_name: companyName
       }
     });
   } catch (error) {

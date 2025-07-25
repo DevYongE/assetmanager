@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.52.1",
     "@unhead/vue": "^2.0.12",
     "@vueuse/nuxt": "^13.5.0",
+    "@zxing/library": "^0.21.3",
     "eslint": "^9.31.0",
     "nuxt": "^4.0.1",
     "pinia": "^3.0.3",

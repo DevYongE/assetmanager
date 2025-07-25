@@ -15,7 +15,7 @@ const authenticateToken = async (req, res, next) => {
     // Verify user exists in database
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, company_name')
+      .select('id, email')
       .eq('id', decoded.userId)
       .single();
 
@@ -45,7 +45,7 @@ const optionalAuth = async (req, res, next) => {
     
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, company_name')
+      .select('id, email')
       .eq('id', decoded.userId)
       .single();
 

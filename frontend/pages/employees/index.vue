@@ -193,6 +193,7 @@
                 placeholder="기업명을 입력하세요"
               />
             </div>
+
           </div>
           
           <div class="flex justify-end space-x-3 mt-6">
@@ -319,7 +320,8 @@ const editEmployee = (employee: Employee) => {
   Object.assign(employeeForm, {
     name: employee.name,
     department: employee.department,
-    position: employee.position
+    position: employee.position,
+    company_name: employee.company_name
   })
   showEditModal.value = true
 }

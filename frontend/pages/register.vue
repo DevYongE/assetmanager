@@ -124,7 +124,7 @@
 import type { RegisterData } from '~/types'
 
 definePageMeta({
-  layout: false
+  layout: 'simple'
 })
 
 const authStore = useAuthStore()

@@ -29,7 +29,6 @@ QR 코드를 이용한 자산 관리 시스템의 백엔드 API 서버입니다.
 - id (uuid, primary key)
 - email (varchar, unique)
 - password_hash (varchar)
-- company_name (varchar)
 - created_at (timestamp)
 ```
 
@@ -40,6 +39,7 @@ QR 코드를 이용한 자산 관리 시스템의 백엔드 API 서버입니다.
 - department (varchar)
 - position (varchar)
 - name (varchar)
+- company_name (varchar)
 - created_at (timestamp)
 ```
 
@@ -79,13 +79,42 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 JWT_SECRET=your_jwt_secret_here_change_this_to_something_secure
 ```
 
-### 2. 의존성 설치
+### 2. 데이터베이스 마이그레이션
+
+데이터베이스 스키마를 업데이트하려면 `migration.sql` 파일의 SQL을 실행하세요:
+
+```sql
+-- Supabase SQL Editor에서 실행하거나
+-- psql을 통해 직접 실행하세요
+
+-- Step 1: Add company_name column to employees table
+ALTER TABLE employees ADD COLUMN company_name VARCHAR;
+
+-- Step 2: Copy company_name from users to employees
+UPDATE employees 
+SET company_name = (
+  SELECT company_name 
+  FROM users 
+  WHERE users.id = employees.admin_id
+);
+
+-- Step 3: Make company_name NOT NULL in employees table
+ALTER TABLE employees ALTER COLUMN company_name SET NOT NULL;
+
+-- Step 4: Remove company_name from users table
+ALTER TABLE users DROP COLUMN company_name;
+
+-- Step 5: Add index for better performance
+CREATE INDEX idx_employees_company_name ON employees(company_name);
+```
+
+### 3. 의존성 설치
 
 ```bash
 npm install
 ```
 
-### 3. 서버 실행
+### 4. 서버 실행
 
 #### 개발 모드 (nodemon 사용)
 ```bash

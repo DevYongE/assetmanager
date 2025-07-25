@@ -74,6 +74,10 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: 'simple'
+})
+
 // Use auth store for login
 const authStore = useAuthStore()
 const loading = ref(false)

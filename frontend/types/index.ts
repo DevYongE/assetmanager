@@ -2,7 +2,6 @@
 export interface User {
   id: string
   email: string
-  company_name: string
   created_at?: string
 }
 
@@ -30,6 +29,7 @@ export interface Employee {
   department: string
   position: string
   name: string
+  company_name: string
   created_at: string
 }
 

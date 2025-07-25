@@ -33,8 +33,8 @@ router.post('/register', async (req, res) => {
     // Create user
     const { data: user, error } = await supabase
       .from('users')
-      .insert([{ email, password_hash, company_name }])
-      .select('id, email, company_name')
+      .insert([{ email, password_hash }])
+      .select('id, email')
       .single();
 
     if (error) {
@@ -54,7 +54,7 @@ router.post('/register', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        company_name: user.company_name
+        company_name: company_name
       },
       token
     });
@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
     // Find user
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, password_hash, company_name')
+      .select('id, email, password_hash')
       .eq('email', email)
       .single();
 
@@ -122,8 +122,7 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       user: {
         id: user.id,
-        email: user.email,
-        company_name: user.company_name
+        email: user.email
       },
       token
     });
