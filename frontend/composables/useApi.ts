@@ -45,10 +45,11 @@ export const useApi = () => {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> => {
-    // 2024-12-19: API 호출 디버그 로그 추가
-    const fullUrl = `${apiBase}${endpoint}`
+    // 2025-07-25: 모바일 접속 문제 해결을 위해 하드코딩된 API URL 사용
+    const serverUrl = 'http://211.188.55.145:4000'
+    const fullUrl = `${serverUrl}${endpoint}`
     console.log('🔍 [API DEBUG] Making request to:', fullUrl)
-    console.log('🔍 [API DEBUG] API Base:', apiBase)
+    console.log('🔍 [API DEBUG] Server URL:', serverUrl)
     
     const response = await fetch(fullUrl, {
       headers: createHeaders(),
