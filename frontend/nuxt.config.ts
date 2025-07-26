@@ -47,10 +47,10 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  // 2025-01-27: 임시로 HTTP API URL로 변경 (권한 문제 해결)
+  // 2025-01-27: 환경변수로 API URL 설정 (배포 시 유연성 확보)
   runtimeConfig: {
     public: {
-      apiBase: 'http://211.188.55.145:4000'  // 임시로 HTTP 사용
+      apiBase: process.env.API_BASE_URL || 'http://localhost:4000'
     }
   }
 })
