@@ -47,10 +47,10 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  // 2025-01-27: HTTPS API URL로 변경
+  // 2025-01-27: 임시로 HTTP API URL로 변경 (권한 문제 해결)
   runtimeConfig: {
     public: {
-      apiBase: 'https://invenone.it.kr'  // HTTPS 도메인으로 변경
+      apiBase: 'http://211.188.55.145:4000'  // 임시로 HTTP 사용
     }
   }
 })
