@@ -2,13 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const https = require('https');
+const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-// 2024-12-19: NCP 서버 배포를 위해 포트를 4000으로 변경
-const PORT = process.env.PORT || 4000;
+// 2025-01-27: HTTPS 서버로 변경하여 443 포트 직접 처리
+const PORT = process.env.PORT || 443;
 
 // 2025-07-25: CORS 설정 수정 - 모바일 접속을 위해 모든 도메인 허용
 const corsOptions = {
@@ -53,10 +55,18 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 [BACKEND] Server is running on port', PORT);
-  console.log('🌐 [BACKEND] Health check: http://0.0.0.0:' + PORT + '/health');
-  console.log('🔐 [BACKEND] Auth endpoint: http://0.0.0.0:' + PORT + '/api/auth/login');
+// 2025-01-27: HTTPS 서버 설정
+const options = {
+  key: fs.readFileSync('/home/dmanager/assetmanager/localhost.key'),
+  cert: fs.readFileSync('/home/dmanager/assetmanager/localhost.crt')
+};
+
+// HTTPS 서버 생성 및 실행
+https.createServer(options, app).listen(PORT, '0.0.0.0', () => {
+  console.log('🚀 [BACKEND] HTTPS Server is running on port', PORT);
+  console.log('🌐 [BACKEND] Health check: https://0.0.0.0:' + PORT + '/health');
+  console.log('🔐 [BACKEND] Auth endpoint: https://0.0.0.0:' + PORT + '/api/auth/login');
+  console.log('🔒 [BACKEND] SSL Certificate loaded successfully');
 });
 
 module.exports = app; 

@@ -47,10 +47,10 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  // 2025-07-25: NCP 서버 배포를 위해 프로덕션 API URL 설정 - 하드코딩으로 변경
+  // 2025-01-27: HTTPS API URL로 변경
   runtimeConfig: {
     public: {
-      apiBase: 'http://211.188.55.145:4000'  // 서버 IP로 하드코딩
+      apiBase: 'https://invenone.it.kr'  // HTTPS 도메인으로 변경
     }
   }
 })
