@@ -47,10 +47,21 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  // 2025-01-27: 환경변수로 API URL 설정 (배포 시 유연성 확보)
+  // 2025-07-27: 환경별 API URL 설정 (개발/테스트 vs 운영)
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL || 'http://localhost:4000'
+      // 개발/테스트 환경: localhost 사용
+      // 운영 환경: 서버 IP 사용
+      apiBase: process.env.NODE_ENV === 'production' 
+        ? (process.env.API_BASE_URL || 'https://invenone.it.kr/api')
+        : (process.env.API_BASE_URL || 'http://localhost:4000'),
+      
+      // 환경 구분을 위한 플래그
+      isProduction: process.env.NODE_ENV === 'production',
+      isDevelopment: process.env.NODE_ENV === 'development',
+      
+      // 환경별 디버그 모드
+      debugMode: process.env.NODE_ENV !== 'production'
     }
   }
 })

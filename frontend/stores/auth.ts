@@ -1,22 +1,5 @@
 import { defineStore } from 'pinia'
-
-interface User {
-  id: string
-  email: string
-  company_name: string
-  created_at?: string
-}
-
-interface LoginCredentials {
-  email: string
-  password: string
-}
-
-interface RegisterData {
-  email: string
-  password: string
-  company_name: string
-}
+import type { User, LoginCredentials, RegisterData } from '~/types'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -58,13 +41,9 @@ export const useAuthStore = defineStore('auth', {
         console.log('🚀 [AUTH STORE] Starting login process...')
         console.log('📧 [AUTH STORE] Credentials:', { email: credentials.email, passwordLength: credentials.password.length })
         
-        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (Nginx 프록시)
-        const response = await $fetch<{token: string, user: User}>('https://211.188.55.145:9443/api/auth/login', {
-          method: 'POST',
-          body: credentials,
-          // Add timeout
-          timeout: 8000
-        })
+        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        const { auth } = useApi()
+        const response = await auth.login(credentials)
         
         console.log('✅ [AUTH STORE] Login API response received')
         console.log('📦 [AUTH STORE] Response data:', response)
@@ -100,11 +79,9 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (Nginx 프록시)
-        const response = await $fetch<{token: string, user: User}>('https://211.188.55.145:9443/api/auth/register', {
-          method: 'POST',
-          body: data
-        })
+        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        const { auth } = useApi()
+        const response = await auth.register(data)
         
         // Store auth data
         this.token = response.token
@@ -146,12 +123,9 @@ export const useAuthStore = defineStore('auth', {
       
       this.loading = true
       try {
-        // 2025-07-25: HTTPS 모바일 접속을 위해 서버 URL 수정 (Nginx 프록시)
-        const response = await $fetch<{user: User}>('https://211.188.55.145:9443/api/auth/profile', {
-          headers: {
-            'Authorization': `Bearer ${this.token}`
-          }
-        })
+        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        const { auth } = useApi()
+        const response = await auth.getProfile()
         this.user = response.user
         
         // Update localStorage
@@ -174,13 +148,9 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        const response = await $fetch<{user: User}>('/api/auth/profile', {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${this.token}`
-          },
-          body: data
-        })
+        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        const { auth } = useApi()
+        const response = await auth.updateProfile(data)
         this.user = response.user
         
         // Update localStorage

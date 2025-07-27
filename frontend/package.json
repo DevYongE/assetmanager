@@ -4,8 +4,14 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
+    "dev": "NODE_ENV=development nuxt dev",
+    "dev:local": "NODE_ENV=development nuxt dev",
+    "dev:test": "NODE_ENV=development nuxt dev",
+    "dev:win": "set NODE_ENV=development && nuxt dev",
+    "dev:local:win": "set NODE_ENV=development && nuxt dev",
+    "dev:test:win": "set NODE_ENV=development && nuxt dev",
+    "build:prod": "NODE_ENV=production nuxt build",
+    "build:prod:win": "set NODE_ENV=production && nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
