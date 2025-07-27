@@ -1,0 +1,21 @@
+# 2025-01-27: QR 자산관리 시스템 systemd 서비스 파일
+# /etc/systemd/system/assetmanager.service로 복사하여 사용
+
+[Unit]
+Description=QR Asset Management System
+After=network.target
+
+[Service]
+Type=forking
+User=root
+WorkingDirectory=/root/qr-asset-management
+Environment=NODE_ENV=production
+Environment=API_BASE_URL=https://invenone.it.kr
+ExecStart=/usr/bin/pm2 start ecosystem.config.js --env production
+ExecReload=/usr/bin/pm2 reload all
+ExecStop=/usr/bin/pm2 stop all
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

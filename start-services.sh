@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# 2025-01-27: QR 자산관리 시스템 배포 스크립트 (업데이트됨)
-echo "🚀 Starting deployment to NCP server..."
+# 2025-01-27: QR 자산관리 시스템 PM2 서비스 시작 스크립트
+# 서버 재부팅 시 자동으로 실행되도록 설정
 
-# 환경변수 설정 (운영 환경)
-export NODE_ENV=production
-export API_BASE_URL=https://invenone.it.kr
+echo "🚀 Starting QR Asset Management System..."
 
 # 로그 디렉토리 생성
 mkdir -p logs
@@ -16,18 +14,25 @@ if ! command -v pm2 &> /dev/null; then
     npm install -g pm2
 fi
 
-# 기존 PM2 프로세스 중지
+# 기존 PM2 프로세스 중지 및 삭제
 echo "🔄 Stopping existing PM2 processes..."
 pm2 delete all 2>/dev/null || true
 
-# Backend 배포
-echo "📦 Deploying Backend..."
+# 환경변수 설정
+export NODE_ENV=production
+export API_BASE_URL=https://invenone.it.kr
+
+# 의존성 설치
+echo "📦 Installing dependencies..."
+
+# Backend 의존성 설치
+echo "📦 Installing Backend dependencies..."
 cd backend
 npm install --production
 cd ..
 
-# Frontend 배포 (운영 환경용)
-echo "📦 Deploying Frontend (Production Mode)..."
+# Frontend 의존성 설치 및 빌드
+echo "📦 Installing Frontend dependencies..."
 cd frontend
 npm install --production
 echo "🔨 Building Frontend..."
@@ -42,7 +47,7 @@ pm2 start ecosystem.config.js --env production
 echo "💾 Saving PM2 configuration..."
 pm2 save
 
-# PM2 startup 스크립트 생성
+# PM2 startup 스크립트 생성 (서버 재부팅 시 자동 시작)
 echo "🔧 Setting up PM2 startup script..."
 pm2 startup
 
@@ -50,12 +55,11 @@ pm2 startup
 echo "📊 Checking service status..."
 pm2 status
 
-echo "✅ Deployment completed!"
+echo "✅ Services started successfully!"
 echo "🌐 Backend: http://localhost:4000"
 echo "🌐 Frontend: http://localhost:3000"
 echo "🌐 HTTPS: https://invenone.it.kr"
 echo "📊 PM2 Status: pm2 status"
 echo "📋 PM2 Logs: pm2 logs"
 echo "🔄 Restart: pm2 restart all"
-echo "⏹️ Stop: pm2 stop all"
-echo "🔧 Environment: PRODUCTION" 
+echo "⏹️ Stop: pm2 stop all" 
