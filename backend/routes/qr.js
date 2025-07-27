@@ -5,7 +5,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Generate QR code for a specific device
+// Generate QR code for a specific device - Simplified version
 router.get('/device/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -40,21 +40,17 @@ router.get('/device/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Create QR code data with device information
+    // Create simplified QR code data with only essential information
     const qrData = {
-      type: 'device',
-      id: device.id,
-      asset_number: device.asset_number,
-      manufacturer: device.manufacturer,
-      model_name: device.model_name,
-      serial_number: device.serial_number,
-      employee: {
-        name: device.employees.name,
-        department: device.employees.department,
-        position: device.employees.position
-      },
-      company: req.user.company_name,
-      generated_at: new Date().toISOString()
+      t: 'd', // type: device (shortened)
+      i: device.id, // id (shortened)
+      a: device.asset_number, // asset_number (shortened)
+      m: device.manufacturer, // manufacturer (shortened)
+      n: device.model_name, // model_name (shortened)
+      s: device.serial_number, // serial_number (shortened)
+      e: device.employees.name, // employee name (shortened)
+      c: req.user.company_name, // company (shortened)
+      g: new Date().toISOString().split('T')[0] // generated date (shortened, date only)
     };
 
     const qrString = JSON.stringify(qrData);
@@ -97,7 +93,7 @@ router.get('/device/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Generate QR code for an employee (all their devices)
+// Generate QR code for an employee - Simplified version
 router.get('/employee/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -127,16 +123,15 @@ router.get('/employee/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
-    // Create QR code data with employee and devices information
+    // Create simplified QR code data with only essential information
     const qrData = {
-      type: 'employee',
-      id: employee.id,
-      name: employee.name,
-      department: employee.department,
-      position: employee.position,
-      devices: employee.personal_devices || [],
-      company: req.user.company_name,
-      generated_at: new Date().toISOString()
+      t: 'e', // type: employee (shortened)
+      i: employee.id, // id (shortened)
+      n: employee.name, // name (shortened)
+      d: employee.department, // department (shortened)
+      p: employee.position, // position (shortened)
+      c: req.user.company_name, // company (shortened)
+      g: new Date().toISOString().split('T')[0] // generated date (shortened, date only)
     };
 
     const qrString = JSON.stringify(qrData);
@@ -179,7 +174,7 @@ router.get('/employee/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Bulk generate QR codes for multiple devices
+// Bulk generate QR codes for multiple devices - Simplified version
 router.post('/bulk/devices', authenticateToken, async (req, res) => {
   try {
     const { device_ids, format = 'png', size = 200 } = req.body;
@@ -226,20 +221,17 @@ router.post('/bulk/devices', authenticateToken, async (req, res) => {
     const qrCodes = await Promise.all(
       devices.map(async (device) => {
         try {
+          // Create simplified QR code data
           const qrData = {
-            type: 'device',
-            id: device.id,
-            asset_number: device.asset_number,
-            manufacturer: device.manufacturer,
-            model_name: device.model_name,
-            serial_number: device.serial_number,
-            employee: {
-              name: device.employees.name,
-              department: device.employees.department,
-              position: device.employees.position
-            },
-            company: req.user.company_name,
-            generated_at: new Date().toISOString()
+            t: 'd', // type: device (shortened)
+            i: device.id, // id (shortened)
+            a: device.asset_number, // asset_number (shortened)
+            m: device.manufacturer, // manufacturer (shortened)
+            n: device.model_name, // model_name (shortened)
+            s: device.serial_number, // serial_number (shortened)
+            e: device.employees.name, // employee name (shortened)
+            c: req.user.company_name, // company (shortened)
+            g: new Date().toISOString().split('T')[0] // generated date (shortened, date only)
           };
 
           const qrString = JSON.stringify(qrData);
@@ -290,7 +282,7 @@ router.post('/bulk/devices', authenticateToken, async (req, res) => {
   }
 });
 
-// Decode QR code data (for verification)
+// Decode QR code data (for verification) - Updated for simplified format
 router.post('/decode', async (req, res) => {
   try {
     const { qr_string } = req.body;
@@ -302,14 +294,30 @@ router.post('/decode', async (req, res) => {
     try {
       const qrData = JSON.parse(qr_string);
       
-      // Basic validation
-      if (!qrData.type || !qrData.id || !qrData.generated_at) {
+      // Basic validation for simplified format
+      if (!qrData.t || !qrData.i || !qrData.g) {
         return res.status(400).json({ error: 'Invalid QR code format' });
       }
 
+      // Convert simplified format back to full format for compatibility
+      const fullFormatData = {
+        type: qrData.t === 'd' ? 'device' : 'employee',
+        id: qrData.i,
+        asset_number: qrData.a,
+        manufacturer: qrData.m,
+        model_name: qrData.n,
+        serial_number: qrData.s,
+        employee: qrData.e ? { name: qrData.e } : undefined,
+        name: qrData.n,
+        department: qrData.d,
+        position: qrData.p,
+        company: qrData.c,
+        generated_at: qrData.g
+      };
+
       res.json({
         message: 'QR code decoded successfully',
-        data: qrData,
+        data: fullFormatData,
         is_valid: true
       });
     } catch (parseError) {

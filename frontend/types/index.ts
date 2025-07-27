@@ -46,9 +46,14 @@ export interface Device {
   id: string
   employee_id: string
   asset_number: string
+  inspection_date?: string
+  purpose?: string
+  device_type?: string
   manufacturer?: string
   model_name?: string
   serial_number?: string
+  monitor_size?: string
+  issue_date?: string
   cpu?: string
   memory?: string
   storage?: string
@@ -62,9 +67,14 @@ export interface Device {
 export interface CreateDeviceData {
   employee_id: string
   asset_number: string
+  inspection_date?: string
+  purpose?: string
+  device_type?: string
   manufacturer?: string
   model_name?: string
   serial_number?: string
+  monitor_size?: string
+  issue_date?: string
   cpu?: string
   memory?: string
   storage?: string
@@ -131,6 +141,21 @@ export interface QRCodeData {
   devices?: Device[]
   company: string
   generated_at: string
+}
+
+// Simplified QR Code types (new format)
+export interface SimplifiedQRCodeData {
+  t: 'd' | 'e' // type: device or employee (shortened)
+  i: string // id (shortened)
+  a?: string // asset_number (shortened)
+  m?: string // manufacturer (shortened)
+  n?: string // model_name or name (shortened)
+  s?: string // serial_number (shortened)
+  e?: string // employee name (shortened)
+  d?: string // department (shortened)
+  p?: string // position (shortened)
+  c: string // company (shortened)
+  g: string // generated date (shortened)
 }
 
 export interface QRCodeResponse {

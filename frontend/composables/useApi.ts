@@ -360,8 +360,9 @@ export const useApi = () => {
 
   // Devices API
   const devices = {
-    async getAll(): Promise<{ devices: Device[] }> {
-      return apiCall<{ devices: Device[] }>('/api/devices')
+    async getAll(params?: Record<string, string>): Promise<{ devices: Device[] }> {
+      const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
+      return apiCall<{ devices: Device[] }>(`/api/devices${queryString}`)
     },
 
     async getById(id: string): Promise<{ device: Device }> {
