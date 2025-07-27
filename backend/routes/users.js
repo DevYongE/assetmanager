@@ -7,6 +7,8 @@ const router = express.Router();
 // Get current user's statistics
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
+    console.log('🔍 [STATS] Loading stats for user:', req.user.id);
+    
     // Get employee count and company name
     const { data: employees, error: empError } = await supabase
       .from('employees')
@@ -32,13 +34,17 @@ router.get('/stats', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch device stats' });
     }
 
-    res.json({
+    const statsData = {
       stats: {
         total_employees: employees?.length || 0,
         total_devices: devices?.length || 0,
         company_name: companyName
       }
-    });
+    };
+    
+    console.log('🔍 [STATS] Stats loaded:', statsData);
+    
+    res.json(statsData);
   } catch (error) {
     console.error('Get stats error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -48,6 +54,8 @@ router.get('/stats', authenticateToken, async (req, res) => {
 // Get dashboard data
 router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
+    console.log('🔍 [DASHBOARD] Loading dashboard data for user:', req.user.id);
+    
     // Get recent employees (last 5)
     const { data: recentEmployees, error: empError } = await supabase
       .from('employees')
@@ -117,7 +125,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       return acc;
     }, {});
 
-    res.json({
+    const dashboardData = {
       dashboard: {
         recent_employees: recentEmployees || [],
         recent_devices: recentDevices || [],
@@ -127,7 +135,15 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
           total_devices: recentDevices?.length || 0
         }
       }
+    };
+    
+    console.log('🔍 [DASHBOARD] Dashboard data loaded:', {
+      employees: recentEmployees?.length || 0,
+      devices: recentDevices?.length || 0,
+      departments: Object.keys(departmentDistribution || {}).length
     });
+    
+    res.json(dashboardData);
   } catch (error) {
     console.error('Get dashboard error:', error);
     res.status(500).json({ error: 'Internal server error' });

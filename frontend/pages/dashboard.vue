@@ -202,7 +202,7 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const { users } = useApi()
+const { dashboard: dashboardApi } = useApi()
 const authStore = useAuthStore()
 
 // Reactive data
@@ -239,13 +239,19 @@ const loadDashboardData = async () => {
   try {
     loading.value = true
     
+    console.log('🔍 [DASHBOARD] Loading dashboard data...')
+    
     // Load stats
-    const statsResponse = await users.getStats()
+    const statsResponse = await dashboardApi.getStats()
     stats.value = statsResponse.stats
     
+    console.log('🔍 [DASHBOARD] Stats loaded:', stats.value)
+    
     // Load dashboard data
-    const dashboardResponse = await users.getDashboard()
+    const dashboardResponse = await dashboardApi.getDashboard()
     dashboard.value = dashboardResponse.dashboard
+    
+    console.log('🔍 [DASHBOARD] Dashboard data loaded:', dashboard.value)
     
   } catch (error) {
     console.error('Failed to load dashboard data:', error)

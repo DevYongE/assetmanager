@@ -1,3 +1,23 @@
+// =============================================================================
+// QR 자산관리 시스템 API 호출 로직
+// =============================================================================
+//
+// 이 파일은 프론트엔드에서 백엔드 API와 통신하는 모든 로직을 담당합니다.
+// 환경별 API URL 설정, 인증 토큰 관리, 에러 처리, CORS 설정 등을 포함합니다.
+//
+// 주요 기능:
+// - 환경별 API URL 자동 설정
+// - JWT 토큰 기반 인증
+// - HTTPS/HTTP 자동 전환 (운영 환경)
+// - 에러 처리 및 재시도 로직
+// - CORS 설정
+// - 파일 업로드/다운로드
+// - QR 코드 생성 및 관리
+//
+// 작성일: 2025-01-27
+// =============================================================================
+
+// 타입 정의 import
 import type { 
   User, 
   LoginCredentials, 
@@ -14,13 +34,20 @@ import type {
   ApiResponse
 } from '~/types'
 
+// =============================================================================
+// API 호출 유틸리티 함수
+// =============================================================================
 export const useApi = () => {
+  // Nuxt 런타임 설정에서 환경변수 가져오기
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBase
   const isProduction = config.public.isProduction
   const debugMode = config.public.debugMode
 
-  // Get auth token from localStorage
+  // =============================================================================
+  // 인증 토큰 관리 함수
+  // =============================================================================
+  // localStorage에서 인증 토큰을 가져오는 함수
   const getAuthToken = () => {
     if (import.meta.client) {
       return localStorage.getItem('auth_token')
@@ -28,12 +55,16 @@ export const useApi = () => {
     return null
   }
 
-  // Create headers with auth token
+  // =============================================================================
+  // HTTP 헤더 생성 함수
+  // =============================================================================
+  // API 요청에 필요한 헤더를 생성하는 함수
   const createHeaders = () => {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json'  // JSON 데이터 전송
     }
     
+    // 인증 토큰이 있으면 Authorization 헤더에 추가
     const token = getAuthToken()
     if (token) {
       headers.Authorization = `Bearer ${token}`
@@ -42,8 +73,10 @@ export const useApi = () => {
     return headers
   }
 
-  // 2025-01-27: 개선된 API 호출 함수
-  // CSP 문제 해결 및 안정적인 API 호출
+  // =============================================================================
+  // 개선된 API 호출 함수 (환경별 처리)
+  // =============================================================================
+  // 2025-01-27: CSP 문제 해결 및 안정적인 API 호출
   const apiCallWithFallback = async <T>(
     endpoint: string, 
     options: RequestInit = {}
@@ -53,13 +86,17 @@ export const useApi = () => {
     const isProduction = config.public.isProduction
     const debugMode = config.public.debugMode
     
+    // 디버그 모드에서 환경 정보 출력
     if (debugMode) {
       console.log('🔧 [API DEBUG] Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT')
       console.log('🔧 [API DEBUG] Base URL:', baseUrl)
       console.log('🔧 [API DEBUG] Endpoint:', endpoint)
     }
     
-    // 개발/테스트 환경: 단순 호출
+    // =============================================================================
+    // 개발/테스트 환경 처리
+    // =============================================================================
+    // 개발 환경에서는 단순한 API 호출만 수행
     if (!isProduction) {
       const fullUrl = `${baseUrl}${endpoint}`
       console.log('🔍 [API DEBUG] Development mode - direct call:', fullUrl)
@@ -77,7 +114,10 @@ export const useApi = () => {
       return response.json()
     }
     
-    // 운영 환경: HTTPS 우선, 실패 시 HTTP 자동 전환
+    // =============================================================================
+    // 운영 환경 처리 (HTTPS 우선, 실패 시 HTTP 자동 전환)
+    // =============================================================================
+    // HTTPS와 HTTP URL 준비
     const httpsUrl = baseUrl.replace('http://', 'https://')
     const httpUrl = baseUrl.replace('https://', 'http://')
     
@@ -123,7 +163,10 @@ export const useApi = () => {
     }
   }
 
-  // FormData를 사용하는 API용 환경별 함수
+  // =============================================================================
+  // FormData를 사용하는 API 호출 함수
+  // =============================================================================
+  // 파일 업로드 등 FormData를 사용하는 API 호출용
   const apiCallWithFormData = async <T>(
     endpoint: string,
     formData: FormData,
@@ -134,6 +177,7 @@ export const useApi = () => {
     const isProduction = config.public.isProduction
     const debugMode = config.public.debugMode
     
+    // 인증 토큰 준비
     const token = getAuthToken()
     const headers: Record<string, string> = {}
     if (token) {
@@ -142,12 +186,11 @@ export const useApi = () => {
     
     if (debugMode) {
       console.log('🔧 [API DEBUG] FormData Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT')
+      console.log('🔧 [API DEBUG] FormData Base URL:', baseUrl)
     }
     
-    // 개발/테스트 환경: 단순 호출
+    // 개발 환경 처리
     if (!isProduction) {
-      console.log('🔍 [API DEBUG] Development mode - FormData call:', `${baseUrl}${endpoint}`)
-      
       const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers,
@@ -163,18 +206,17 @@ export const useApi = () => {
       return response.json()
     }
     
-    // 운영 환경: HTTPS 실패 시 HTTP 자동 전환
+    // 운영 환경 처리 (HTTPS 우선)
     const httpsUrl = baseUrl.replace('http://', 'https://')
     const httpUrl = baseUrl.replace('https://', 'http://')
     
-    console.log('🔍 [API DEBUG] Production mode - FormData HTTPS first:', `${httpsUrl}${endpoint}`)
-    
     try {
-      // 먼저 HTTPS로 시도
       const response = await fetch(`${httpsUrl}${endpoint}`, {
         method: 'POST',
         headers,
         body: formData,
+        mode: 'cors',
+        credentials: 'include',
         ...options
       })
 
@@ -185,14 +227,15 @@ export const useApi = () => {
 
       return response.json()
     } catch (error) {
-      console.log('⚠️ [API DEBUG] FormData HTTPS failed, trying HTTP:', `${httpUrl}${endpoint}`)
+      console.log('⚠️ [API DEBUG] HTTPS failed, trying HTTP for FormData')
       
       try {
-        // HTTPS 실패 시 HTTP로 재시도
         const response = await fetch(`${httpUrl}${endpoint}`, {
           method: 'POST',
           headers,
           body: formData,
+          mode: 'cors',
+          credentials: 'include',
           ...options
         })
 
@@ -203,13 +246,16 @@ export const useApi = () => {
 
         return response.json()
       } catch (httpError) {
-        console.error('❌ [API DEBUG] FormData both HTTPS and HTTP failed:', httpError)
+        console.error('❌ [API DEBUG] Both HTTPS and HTTP failed for FormData:', httpError)
         throw httpError
       }
     }
   }
 
-  // Blob 다운로드용 환경별 함수
+  // =============================================================================
+  // Blob 데이터를 위한 API 호출 함수
+  // =============================================================================
+  // QR 코드 이미지나 파일 다운로드 등 Blob 데이터를 받는 API 호출용
   const apiCallForBlob = async (
     endpoint: string,
     options: RequestInit = {}
@@ -219,22 +265,14 @@ export const useApi = () => {
     const isProduction = config.public.isProduction
     const debugMode = config.public.debugMode
     
-    const token = getAuthToken()
-    const headers: Record<string, string> = {}
-    if (token) {
-      headers.Authorization = `Bearer ${token}`
-    }
-    
     if (debugMode) {
       console.log('🔧 [API DEBUG] Blob Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT')
     }
     
-    // 개발/테스트 환경: 단순 호출
+    // 개발 환경 처리
     if (!isProduction) {
-      console.log('🔍 [API DEBUG] Development mode - Blob call:', `${baseUrl}${endpoint}`)
-      
       const response = await fetch(`${baseUrl}${endpoint}`, {
-        headers,
+        headers: createHeaders(),
         ...options
       })
 
@@ -245,16 +283,15 @@ export const useApi = () => {
       return response.blob()
     }
     
-    // 운영 환경: HTTPS 실패 시 HTTP 자동 전환
+    // 운영 환경 처리 (HTTPS 우선)
     const httpsUrl = baseUrl.replace('http://', 'https://')
     const httpUrl = baseUrl.replace('https://', 'http://')
     
-    console.log('🔍 [API DEBUG] Production mode - Blob HTTPS first:', `${httpsUrl}${endpoint}`)
-    
     try {
-      // 먼저 HTTPS로 시도
       const response = await fetch(`${httpsUrl}${endpoint}`, {
-        headers,
+        headers: createHeaders(),
+        mode: 'cors',
+        credentials: 'include',
         ...options
       })
 
@@ -264,12 +301,13 @@ export const useApi = () => {
 
       return response.blob()
     } catch (error) {
-      console.log('⚠️ [API DEBUG] Blob HTTPS failed, trying HTTP:', `${httpUrl}${endpoint}`)
+      console.log('⚠️ [API DEBUG] HTTPS failed, trying HTTP for Blob')
       
       try {
-        // HTTPS 실패 시 HTTP로 재시도
         const response = await fetch(`${httpUrl}${endpoint}`, {
-          headers,
+          headers: createHeaders(),
+          mode: 'cors',
+          credentials: 'include',
           ...options
         })
 
@@ -279,13 +317,16 @@ export const useApi = () => {
 
         return response.blob()
       } catch (httpError) {
-        console.error('❌ [API DEBUG] Blob both HTTPS and HTTP failed:', httpError)
+        console.error('❌ [API DEBUG] Both HTTPS and HTTP failed for Blob:', httpError)
         throw httpError
       }
     }
   }
 
-  // Generic API call function (기존 호환성을 위해 유지)
+  // =============================================================================
+  // 기본 API 호출 함수
+  // =============================================================================
+  // 일반적인 API 호출을 위한 래퍼 함수
   const apiCall = async <T>(
     endpoint: string, 
     options: RequestInit = {}
@@ -293,8 +334,11 @@ export const useApi = () => {
     return apiCallWithFallback<T>(endpoint, options)
   }
 
-  // Authentication API
+  // =============================================================================
+  // 인증 관련 API 함수들
+  // =============================================================================
   const auth = {
+    // 로그인 API
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
       return apiCall<AuthResponse>('/api/auth/login', {
         method: 'POST',
@@ -302,6 +346,7 @@ export const useApi = () => {
       })
     },
 
+    // 회원가입 API
     async register(data: RegisterData): Promise<AuthResponse> {
       return apiCall<AuthResponse>('/api/auth/register', {
         method: 'POST',
@@ -309,39 +354,50 @@ export const useApi = () => {
       })
     },
 
+    // 프로필 조회 API
     async getProfile(): Promise<{ user: User }> {
-      return apiCall<{ user: User }>('/api/auth/profile')
+      return apiCall<{ user: User }>('/api/users/profile')
     },
 
+    // 프로필 업데이트 API
     async updateProfile(data: Partial<User & { current_password?: string; new_password?: string }>): Promise<{ user: User }> {
-      return apiCall<{ user: User }>('/api/auth/profile', {
+      return apiCall<{ user: User }>('/api/users/profile', {
         method: 'PUT',
         body: JSON.stringify(data)
       })
     }
   }
 
-  // Users API
-  const users = {
+  // =============================================================================
+  // 대시보드 관련 API 함수들
+  // =============================================================================
+  const dashboard = {
+    // 통계 데이터 조회
     async getStats(): Promise<{ stats: DashboardStats }> {
       return apiCall<{ stats: DashboardStats }>('/api/users/stats')
     },
 
+    // 대시보드 데이터 조회
     async getDashboard(): Promise<{ dashboard: DashboardData }> {
       return apiCall<{ dashboard: DashboardData }>('/api/users/dashboard')
     }
   }
 
-  // Employees API
+  // =============================================================================
+  // 직원 관리 API 함수들
+  // =============================================================================
   const employees = {
+    // 전체 직원 목록 조회
     async getAll(): Promise<{ employees: Employee[] }> {
       return apiCall<{ employees: Employee[] }>('/api/employees')
     },
 
+    // 특정 직원 조회
     async getById(id: string): Promise<{ employee: Employee }> {
       return apiCall<{ employee: Employee }>(`/api/employees/${id}`)
     },
 
+    // 직원 생성
     async create(data: CreateEmployeeData): Promise<{ employee: Employee }> {
       return apiCall<{ employee: Employee }>('/api/employees', {
         method: 'POST',
@@ -349,6 +405,7 @@ export const useApi = () => {
       })
     },
 
+    // 직원 정보 업데이트
     async update(id: string, data: Partial<CreateEmployeeData>): Promise<{ employee: Employee }> {
       return apiCall<{ employee: Employee }>(`/api/employees/${id}`, {
         method: 'PUT',
@@ -356,6 +413,7 @@ export const useApi = () => {
       })
     },
 
+    // 직원 삭제
     async delete(id: string): Promise<{ message: string }> {
       return apiCall<{ message: string }>(`/api/employees/${id}`, {
         method: 'DELETE'
@@ -363,17 +421,22 @@ export const useApi = () => {
     }
   }
 
-  // Devices API
+  // =============================================================================
+  // 장비 관리 API 함수들
+  // =============================================================================
   const devices = {
+    // 전체 장비 목록 조회 (필터링 옵션 포함)
     async getAll(params?: Record<string, string>): Promise<{ devices: Device[] }> {
       const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
       return apiCall<{ devices: Device[] }>(`/api/devices${queryString}`)
     },
 
+    // 특정 장비 조회
     async getById(id: string): Promise<{ device: Device }> {
       return apiCall<{ device: Device }>(`/api/devices/${id}`)
     },
 
+    // 장비 생성
     async create(data: CreateDeviceData): Promise<{ device: Device }> {
       return apiCall<{ device: Device }>('/api/devices', {
         method: 'POST',
@@ -381,6 +444,7 @@ export const useApi = () => {
       })
     },
 
+    // 장비 정보 업데이트
     async update(id: string, data: Partial<CreateDeviceData>): Promise<{ device: Device }> {
       return apiCall<{ device: Device }>(`/api/devices/${id}`, {
         method: 'PUT',
@@ -388,50 +452,58 @@ export const useApi = () => {
       })
     },
 
+    // 장비 삭제
     async delete(id: string): Promise<{ message: string }> {
       return apiCall<{ message: string }>(`/api/devices/${id}`, {
         method: 'DELETE'
       })
     },
 
-    // 2025-07-27: FormData를 사용하는 API도 HTTPS/HTTP 자동 전환 적용
+    // Excel 파일 import
     async importExcel(file: File): Promise<ExcelImportResponse> {
       const formData = new FormData()
       formData.append('file', file)
-
       return apiCallWithFormData<ExcelImportResponse>('/api/devices/import', formData)
     },
 
+    // Excel 파일 export
     async exportExcel(): Promise<Blob> {
-      return apiCallForBlob('/api/devices/export/excel')
+      return apiCallForBlob('/api/devices/export')
     }
   }
 
-  // QR Codes API
+  // =============================================================================
+  // QR 코드 관련 API 함수들
+  // =============================================================================
   const qr = {
+    // 장비 QR 코드 생성
     async getDeviceQR(id: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
-        return apiCall<QRCodeResponse>(`/api/qr/device/${id}?format=json`)
+        return apiCall<QRCodeResponse>(`/api/qr/device/${id}`)
       } else {
         return apiCallForBlob(`/api/qr/device/${id}?format=${format}`)
       }
     },
 
+    // 직원 QR 코드 생성
     async getEmployeeQR(id: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
-        return apiCall<QRCodeResponse>(`/api/qr/employee/${id}?format=json`)
+        return apiCall<QRCodeResponse>(`/api/qr/employee/${id}`)
       } else {
         return apiCallForBlob(`/api/qr/employee/${id}?format=${format}`)
       }
     },
 
-    async bulkDeviceQR(deviceIds: string[], format: 'png' | 'json' = 'json'): Promise<any> {
-      return apiCall<any>('/api/qr/bulk/devices', {
+    // 일괄 장비 QR 코드 생성
+    async bulkDeviceQR(deviceIds: string[], format: 'png' | 'json' = 'json', useTest: boolean = false): Promise<any> {
+      const endpoint = useTest ? '/api/qr/bulk/test' : '/api/qr/bulk/devices'
+      return apiCall(endpoint, {
         method: 'POST',
         body: JSON.stringify({ device_ids: deviceIds, format })
       })
     },
 
+    // QR 코드 디코딩
     async decode(qrString: string): Promise<{ data: any; is_valid: boolean }> {
       return apiCall<{ data: any; is_valid: boolean }>('/api/qr/decode', {
         method: 'POST',
@@ -440,9 +512,12 @@ export const useApi = () => {
     }
   }
 
+  // =============================================================================
+  // API 함수들 반환
+  // =============================================================================
   return {
     auth,
-    users,
+    dashboard,
     employees,
     devices,
     qr

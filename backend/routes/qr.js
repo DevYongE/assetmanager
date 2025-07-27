@@ -179,11 +179,15 @@ router.post('/bulk/devices', authenticateToken, async (req, res) => {
   try {
     const { device_ids, format = 'png', size = 200 } = req.body;
 
+    console.log('🔍 [BULK QR] Request received:', { device_ids, format, size, user_id: req.user.id });
+
     if (!device_ids || !Array.isArray(device_ids) || device_ids.length === 0) {
+      console.log('❌ [BULK QR] Invalid device_ids:', device_ids);
       return res.status(400).json({ error: 'Device IDs array is required' });
     }
 
     if (device_ids.length > 50) {
+      console.log('❌ [BULK QR] Too many devices requested:', device_ids.length);
       return res.status(400).json({ error: 'Maximum 50 devices per bulk request' });
     }
 
@@ -196,6 +200,7 @@ router.post('/bulk/devices', authenticateToken, async (req, res) => {
         manufacturer,
         model_name,
         serial_number,
+        employee_id,
         employees (
           id,
           name,
@@ -204,22 +209,37 @@ router.post('/bulk/devices', authenticateToken, async (req, res) => {
           admin_id
         )
       `)
-      .in('id', device_ids)
-      .in('employee_id', 
-        await supabase
-          .from('employees')
-          .select('id')
-          .eq('admin_id', req.user.id)
-          .then(({ data }) => data?.map(emp => emp.id) || [])
-      );
+      .in('id', device_ids);
 
     if (error) {
       console.error('Bulk QR fetch error:', error);
       return res.status(500).json({ error: 'Failed to fetch devices' });
     }
 
+    console.log('🔍 [BULK QR] Found devices:', devices?.length || 0);
+
+    // Filter devices that belong to user's employees
+    const userEmployeeIds = await supabase
+      .from('employees')
+      .select('id')
+      .eq('admin_id', req.user.id)
+      .then(({ data }) => data?.map(emp => emp.id) || []);
+
+    console.log('🔍 [BULK QR] User employee IDs:', userEmployeeIds);
+
+    const filteredDevices = devices?.filter(device => 
+      userEmployeeIds.includes(device.employee_id)
+    ) || [];
+
+    console.log('🔍 [BULK QR] Filtered devices:', filteredDevices.length);
+
+    if (filteredDevices.length === 0) {
+      console.log('❌ [BULK QR] No devices found for user employees');
+      return res.status(404).json({ error: 'No devices found for your employees' });
+    }
+
     const qrCodes = await Promise.all(
-      devices.map(async (device) => {
+      filteredDevices.map(async (device) => {
         try {
           // Create simplified QR code data
           const qrData = {
@@ -287,33 +307,66 @@ router.post('/decode', async (req, res) => {
   try {
     const { qr_string } = req.body;
 
-    if (!qr_string) {
-      return res.status(400).json({ error: 'QR string is required' });
+    // Validate input
+    if (!qr_string || typeof qr_string !== 'string' || qr_string.trim() === '') {
+      return res.status(400).json({ 
+        error: 'QR string is required and must be a non-empty string',
+        is_valid: false
+      });
     }
 
     try {
       const qrData = JSON.parse(qr_string);
       
-      // Basic validation for simplified format
-      if (!qrData.t || !qrData.i || !qrData.g) {
-        return res.status(400).json({ error: 'Invalid QR code format' });
+      // Validate QR data structure
+      if (!qrData || typeof qrData !== 'object') {
+        return res.status(400).json({ 
+          error: 'Invalid QR code format - must be valid JSON object',
+          is_valid: false
+        });
       }
 
-      // Convert simplified format back to full format for compatibility
-      const fullFormatData = {
-        type: qrData.t === 'd' ? 'device' : 'employee',
-        id: qrData.i,
-        asset_number: qrData.a,
-        manufacturer: qrData.m,
-        model_name: qrData.n,
-        serial_number: qrData.s,
-        employee: qrData.e ? { name: qrData.e } : undefined,
-        name: qrData.n,
-        department: qrData.d,
-        position: qrData.p,
-        company: qrData.c,
-        generated_at: qrData.g
-      };
+      // Support both simplified and full format
+      let isValid = false;
+      let fullFormatData = {};
+
+      // Check for simplified format (new)
+      if (qrData.t && qrData.i && qrData.g) {
+        isValid = true;
+        fullFormatData = {
+          type: qrData.t === 'd' ? 'device' : 'employee',
+          id: qrData.i,
+          asset_number: qrData.a || '',
+          manufacturer: qrData.m || '',
+          model_name: qrData.n || '',
+          serial_number: qrData.s || '',
+          employee: qrData.e ? { name: qrData.e } : undefined,
+          name: qrData.n || '',
+          department: qrData.d || '',
+          position: qrData.p || '',
+          company: qrData.c || '',
+          generated_at: qrData.g
+        };
+      }
+      // Check for full format (legacy)
+      else if (qrData.type && qrData.id) {
+        isValid = true;
+        fullFormatData = qrData;
+      }
+      // Invalid format
+      else {
+        return res.status(400).json({ 
+          error: 'Invalid QR code format - missing required fields',
+          is_valid: false
+        });
+      }
+
+      if (!isValid) {
+        return res.status(400).json({ 
+          error: 'Invalid QR code format',
+          is_valid: false
+        });
+      }
 
       res.json({
         message: 'QR code decoded successfully',
@@ -321,15 +374,68 @@ router.post('/decode', async (req, res) => {
         is_valid: true
       });
     } catch (parseError) {
+      console.error('QR parse error:', parseError);
       res.status(400).json({ 
-        error: 'Invalid QR code format',
+        error: 'Invalid QR code format - must be valid JSON',
         is_valid: false
       });
     }
   } catch (error) {
     console.error('QR decode error:', error);
-    res.status(500).json({ error: 'Failed to decode QR code' });
+    res.status(500).json({ 
+      error: 'Failed to decode QR code',
+      is_valid: false
+    });
   }
 });
+
+// Test endpoint for bulk QR generation (development only)
+if (process.env.NODE_ENV === 'development') {
+  router.post('/bulk/test', async (req, res) => {
+    try {
+      const { device_ids, format = 'json' } = req.body;
+      
+      console.log('🔍 [BULK QR TEST] Test request:', { device_ids, format });
+      
+      // Generate mock QR codes for testing
+      const mockQRCodes = device_ids.map((deviceId, index) => ({
+        device_id: deviceId,
+        asset_number: `AS-TEST-${String(index + 1).padStart(3, '0')}`,
+        qr_data: {
+          t: 'd',
+          i: deviceId,
+          a: `AS-TEST-${String(index + 1).padStart(3, '0')}`,
+          m: 'Test Manufacturer',
+          n: 'Test Model',
+          s: `TEST-${String(index + 1).padStart(6, '0')}`,
+          e: 'Test Employee',
+          c: 'Test Company',
+          g: new Date().toISOString().split('T')[0]
+        },
+        qr_string: JSON.stringify({
+          t: 'd',
+          i: deviceId,
+          a: `AS-TEST-${String(index + 1).padStart(3, '0')}`,
+          m: 'Test Manufacturer',
+          n: 'Test Model',
+          s: `TEST-${String(index + 1).padStart(6, '0')}`,
+          e: 'Test Employee',
+          c: 'Test Company',
+          g: new Date().toISOString().split('T')[0]
+        })
+      }));
+      
+      res.json({
+        message: 'Test bulk QR codes generated',
+        total_requested: device_ids.length,
+        total_generated: mockQRCodes.length,
+        qr_codes: mockQRCodes
+      });
+    } catch (error) {
+      console.error('Test bulk QR error:', error);
+      res.status(500).json({ error: 'Failed to generate test QR codes' });
+    }
+  });
+}
 
 module.exports = router; 

@@ -113,6 +113,12 @@
             >
               QR 코드 처리
             </button>
+            <button 
+              @click="loadTestQR"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 md:py-3 md:px-6 rounded-lg transition-colors duration-200 mt-2 ml-2 text-sm md:text-base"
+            >
+              테스트 QR 로드
+            </button>
           </div>
         </div>
       </div>
@@ -282,6 +288,7 @@ const startQRScanning = () => {
         g: new Date().toISOString().split('T')[0] // generated date
       }
       
+      console.log('🔍 [QR SCANNER] Using mock QR data for testing')
       processQRString(JSON.stringify(mockQRData))
     }, 3000)
   }
@@ -293,8 +300,17 @@ const processQRString = async (qrString: string) => {
     processing.value = true
     processingMessage.value = 'QR 코드를 분석하는 중...'
 
+    // Validate QR string
+    if (!qrString || qrString.trim() === '') {
+      throw new Error('QR 코드 데이터가 비어있습니다.')
+    }
+
+    console.log('🔍 [QR SCANNER] Processing QR string:', qrString.substring(0, 100) + '...')
+
     // Try to decode QR string
     const decodedResult = await api.qr.decode(qrString)
+    
+    console.log('🔍 [QR SCANNER] Decoded result:', decodedResult)
     
     if (!decodedResult.is_valid) {
       throw new Error('유효하지 않은 QR 코드입니다.')
@@ -389,7 +405,17 @@ const processManualQR = async () => {
       throw new Error('QR 코드에 타입 정보가 없습니다.')
     }
 
-    await processQRData(qrData)
+    // Convert to QR string format for API
+    const qrString = JSON.stringify(qrData)
+    
+    // Use the same decode API for consistency
+    const decodedResult = await api.qr.decode(qrString)
+    
+    if (!decodedResult.is_valid) {
+      throw new Error('유효하지 않은 QR 코드입니다.')
+    }
+
+    await processQRData(decodedResult.data)
     
   } catch (err: any) {
     console.error('Manual QR processing error:', err)
@@ -399,6 +425,24 @@ const processManualQR = async () => {
     processing.value = false
     manualQRInput.value = ''
   }
+}
+
+// Load test QR data for debugging
+const loadTestQR = () => {
+  const testQRData = {
+    t: 'd', // type: device (simplified)
+    i: 'test-device-123',
+    a: 'AS-TEST-001', // asset_number
+    m: 'Samsung', // manufacturer
+    n: 'Galaxy Tab S9', // model_name
+    s: 'TEST123456', // serial_number
+    e: '테스트 사용자', // employee name
+    c: 'Test Company', // company
+    g: new Date().toISOString().split('T')[0] // generated date
+  }
+  
+  manualQRInput.value = JSON.stringify(testQRData, null, 2)
+  console.log('🔍 [QR SCANNER] Loaded test QR data')
 }
 
 // Mobile-specific optimizations

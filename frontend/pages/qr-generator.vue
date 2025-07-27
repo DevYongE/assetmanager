@@ -638,6 +638,11 @@ const generateBulkQR = async () => {
   try {
     bulkQRLoading.value = true
     
+    // Validate device data
+    if (!devices.value || devices.value.length === 0) {
+      throw new Error('장비 데이터를 불러올 수 없습니다.')
+    }
+    
     let deviceIds: string[]
     if (bulkDeviceCount.value === 'all') {
       deviceIds = devices.value.map(d => d.id)
@@ -646,7 +651,13 @@ const generateBulkQR = async () => {
       deviceIds = devices.value.slice(0, count).map(d => d.id)
     }
     
-    const result = await api.qr.bulkDeviceQR(deviceIds, bulkQRFormat.value)
+    console.log('🔍 [BULK QR] Generating QR codes for devices:', deviceIds)
+    
+    // Use test mode in development
+    const useTestMode = process.env.NODE_ENV === 'development'
+    const result = await api.qr.bulkDeviceQR(deviceIds, bulkQRFormat.value, useTestMode)
+    
+    console.log('🔍 [BULK QR] Generated result:', result)
     
     // Download as JSON file
     const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
@@ -659,8 +670,12 @@ const generateBulkQR = async () => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     
-  } catch (error) {
+    // Show success message
+    alert(`일괄 QR 코드 생성 완료!\n총 ${result.total_generated || deviceIds.length}개의 QR 코드가 생성되었습니다.`)
+    
+  } catch (error: any) {
     console.error('Failed to generate bulk QR:', error)
+    alert(`일괄 QR 코드 생성 실패: ${error.message || '알 수 없는 오류가 발생했습니다.'}`)
   } finally {
     bulkQRLoading.value = false
   }
