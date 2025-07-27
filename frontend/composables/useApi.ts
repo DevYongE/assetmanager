@@ -42,9 +42,8 @@ export const useApi = () => {
     return headers
   }
 
-  // 2025-07-27: 환경별 API 호출 함수
-  // 개발/테스트 환경: 단순 호출
-  // 운영 환경: HTTPS 실패 시 HTTP 자동 전환
+  // 2025-01-27: 개선된 API 호출 함수
+  // CSP 문제 해결 및 안정적인 API 호출
   const apiCallWithFallback = async <T>(
     endpoint: string, 
     options: RequestInit = {}
@@ -57,13 +56,15 @@ export const useApi = () => {
     if (debugMode) {
       console.log('🔧 [API DEBUG] Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT')
       console.log('🔧 [API DEBUG] Base URL:', baseUrl)
+      console.log('🔧 [API DEBUG] Endpoint:', endpoint)
     }
     
     // 개발/테스트 환경: 단순 호출
     if (!isProduction) {
-      console.log('🔍 [API DEBUG] Development mode - direct call:', `${baseUrl}${endpoint}`)
+      const fullUrl = `${baseUrl}${endpoint}`
+      console.log('🔍 [API DEBUG] Development mode - direct call:', fullUrl)
       
-      const response = await fetch(`${baseUrl}${endpoint}`, {
+      const response = await fetch(fullUrl, {
         headers: createHeaders(),
         ...options
       })
@@ -76,7 +77,7 @@ export const useApi = () => {
       return response.json()
     }
     
-    // 운영 환경: HTTPS 실패 시 HTTP 자동 전환
+    // 운영 환경: HTTPS 우선, 실패 시 HTTP 자동 전환
     const httpsUrl = baseUrl.replace('http://', 'https://')
     const httpUrl = baseUrl.replace('https://', 'http://')
     
@@ -86,7 +87,9 @@ export const useApi = () => {
       // 먼저 HTTPS로 시도
       const response = await fetch(`${httpsUrl}${endpoint}`, {
         headers: createHeaders(),
-        ...options
+        ...options,
+        mode: 'cors', // CORS 모드 명시적 설정
+        credentials: 'include' // 쿠키 포함
       })
 
       if (!response.ok) {
@@ -102,7 +105,9 @@ export const useApi = () => {
         // HTTPS 실패 시 HTTP로 재시도
         const response = await fetch(`${httpUrl}${endpoint}`, {
           headers: createHeaders(),
-          ...options
+          ...options,
+          mode: 'cors', // CORS 모드 명시적 설정
+          credentials: 'include' // 쿠키 포함
         })
 
         if (!response.ok) {

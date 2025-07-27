@@ -51,9 +51,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // 개발/테스트 환경: localhost 사용
-      // 운영 환경: 서버 IP 사용
+      // 운영 환경: 서버 IP 사용 (2025-01-27: API 경로 중복 문제 해결)
       apiBase: process.env.NODE_ENV === 'production' 
-        ? (process.env.API_BASE_URL || 'https://invenone.it.kr/api')
+        ? (process.env.API_BASE_URL || 'https://invenone.it.kr')
         : (process.env.API_BASE_URL || 'http://localhost:4000'),
       
       // 환경 구분을 위한 플래그
