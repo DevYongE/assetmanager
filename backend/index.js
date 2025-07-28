@@ -45,7 +45,20 @@ const PORT = process.env.PORT || 4000;
 // =============================================================================
 // 2025-07-25: CORS 설정 수정 - 모바일 접속을 위해 모든 도메인 허용
 const corsOptions = {
-  origin: true,  // 모든 도메인에서의 접근 허용
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3002',
+    'https://localhost:3000',
+    'https://localhost:3002',
+    'http://211.188.55.145:3000',
+    'http://211.188.55.145:3002',
+    'https://211.188.55.145:3000',
+    'https://211.188.55.145:3002',
+    'https://invenone.it.kr',
+    'https://www.invenone.it.kr',
+    'http://invenone.it.kr',
+    'http://www.invenone.it.kr'
+  ],
   credentials: true,  // 쿠키/인증 정보 포함 허용
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // 허용할 HTTP 메서드
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']  // 허용할 헤더

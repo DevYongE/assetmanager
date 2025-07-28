@@ -138,16 +138,16 @@ export const useApi = () => {
       }
 
       return response.json()
-    } catch (error) {
+    } catch (httpsError) {
       console.log('⚠️ [API DEBUG] HTTPS failed, trying HTTP:', `${httpUrl}${endpoint}`)
       
       try {
-        // HTTPS 실패 시 HTTP로 재시도
+        // HTTPS 실패 시 HTTP로 시도
         const response = await fetch(`${httpUrl}${endpoint}`, {
           headers: createHeaders(),
           ...options,
-          mode: 'cors', // CORS 모드 명시적 설정
-          credentials: 'include' // 쿠키 포함
+          mode: 'cors',
+          credentials: 'include'
         })
 
         if (!response.ok) {
