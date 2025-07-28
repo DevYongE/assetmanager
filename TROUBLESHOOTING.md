@@ -1,21 +1,23 @@
 # 로그인 실패 문제 해결 가이드
 
-## 2025-01-27: Mixed Content 오류 및 URL 중복 문제 해결
+## 2025-01-27: 정적 파일 서빙 문제 및 MIME 타입 오류 해결
 
 ### 문제 상황
-1. **Mixed Content 오류**: HTTPS 페이지에서 HTTP 리소스 요청
-   - `https://invenone.it.kr/login` → `http://invenone.it.kr/api/api/auth/login`
-2. **URL 중복 문제**: `api/api/auth/login` (api가 두 번 들어감)
-3. **404 Not Found**: API 엔드포인트를 찾을 수 없음
-4. **CORS 오류**: 도메인 간 요청 차단
+1. **CSS MIME 타입 오류**: CSS 파일이 `application/json` MIME 타입으로 서빙됨
+2. **500 Internal Server Error**: JavaScript 파일들이 서버에서 제대로 서빙되지 않음
+3. **Mixed Content 오류**: HTTPS 페이지에서 HTTP 리소스 요청
+4. **DOM 경고**: Password input에 `autocomplete` 속성 누락
 
 ### 해결 방법
 
-#### 1. API URL 설정 수정 (완료)
-- Frontend: `nuxt.config.ts`에서 API Base URL에 `/api` 경로 추가
-- Backend: CORS 설정에 HTTPS 도메인 추가
+#### 1. Nuxt 설정 개선 (완료)
+- `nuxt.config.ts`에서 Nitro 설정에 `static: true` 추가
+- 정적 파일 서빙 활성화
 
-#### 2. 브라우저 캐시 완전 삭제
+#### 2. Password Input 수정 (완료)
+- `login.vue`에서 password input에 `autocomplete="current-password"` 추가
+
+#### 3. 브라우저 캐시 완전 삭제
 ```bash
 # Chrome/Edge에서:
 # 1. F12 (개발자 도구 열기)
@@ -25,7 +27,7 @@
 # 5. 또는 Ctrl+Shift+Delete로 캐시 삭제
 ```
 
-#### 3. 서버 재시작
+#### 4. 서버 재시작
 ```bash
 # 백엔드 서버 재시작 (4000 포트)
 cd backend
@@ -36,7 +38,7 @@ cd frontend
 npm run dev
 ```
 
-#### 4. 포트 확인
+#### 5. 포트 확인
 ```bash
 # 백엔드가 4000 포트에서 실행 중인지 확인
 netstat -an | findstr :4000
@@ -45,7 +47,7 @@ netstat -an | findstr :4000
 netstat -an | findstr :3000
 ```
 
-#### 5. API URL 확인
+#### 6. API URL 확인
 브라우저 개발자 도구 콘솔에서 다음 로그 확인:
 ```
 🔍 [API DEBUG] Environment: PRODUCTION
@@ -54,13 +56,13 @@ netstat -an | findstr :3000
 🔍 [API DEBUG] Production mode - trying HTTPS first: https://invenone.it.kr/api/auth/login
 ```
 
-#### 6. 환경 변수 확인
+#### 7. 환경 변수 확인
 ```bash
 # 프론트엔드에서 환경 변수 확인
 echo $NODE_ENV
 ```
 
-#### 7. 수동 API 테스트
+#### 8. 수동 API 테스트
 ```bash
 # 백엔드 헬스체크
 curl https://invenone.it.kr/api/health
@@ -91,8 +93,9 @@ npm run dev
 
 ### 예상 결과
 성공적으로 수정되면:
-- 브라우저 콘솔에 `🔍 [API DEBUG] Production mode - trying HTTPS first: https://invenone.it.kr/api/auth/login` 로그 표시
-- 로그인 요청이 올바른 HTTPS URL로 전송됨
+- CSS 파일이 올바른 MIME 타입으로 서빙됨
+- JavaScript 파일들이 정상적으로 로드됨
+- Password input에 autocomplete 속성 추가됨
 - Mixed Content 오류 해결
 - CORS 오류 해결
 - 로그인 성공
@@ -103,13 +106,13 @@ npm run dev
 3. 서버 재시작
 4. 다른 브라우저로 테스트
 
-### Mixed Content 오류 해결 확인사항
-- Backend 서버가 HTTPS를 지원하는지 확인
-- CORS 설정에 HTTPS 도메인이 포함되어 있는지 확인
-- API 요청이 올바른 HTTPS URL로 전송되는지 확인
-- 브라우저에서 Mixed Content 차단 설정 확인
+### 정적 파일 서빙 문제 해결 확인사항
+- Nuxt 설정에서 `static: true` 설정 확인
+- 빌드된 파일들이 `.output/public` 디렉토리에 있는지 확인
+- 서버에서 정적 파일 경로가 올바르게 설정되었는지 확인
+- MIME 타입이 올바르게 설정되었는지 확인
 
-### URL 중복 문제 해결 확인사항
-- `nuxt.config.ts`에서 API Base URL이 올바르게 설정되었는지 확인
-- API 호출 시 `/api` 경로가 중복되지 않는지 확인
-- 브라우저 개발자 도구에서 실제 요청 URL 확인 
+### MIME 타입 오류 해결 확인사항
+- CSS 파일이 `text/css` MIME 타입으로 서빙되는지 확인
+- JavaScript 파일이 `application/javascript` MIME 타입으로 서빙되는지 확인
+- 브라우저 개발자 도구에서 파일 요청 헤더 확인 
