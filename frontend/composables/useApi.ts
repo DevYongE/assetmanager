@@ -340,7 +340,7 @@ export const useApi = () => {
   const auth = {
     // 로그인 API
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-      return apiCall<AuthResponse>('/api/auth/login', {
+      return apiCall<AuthResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials)
       })
@@ -348,7 +348,7 @@ export const useApi = () => {
 
     // 회원가입 API
     async register(data: RegisterData): Promise<AuthResponse> {
-      return apiCall<AuthResponse>('/api/auth/register', {
+      return apiCall<AuthResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data)
       })
@@ -356,12 +356,12 @@ export const useApi = () => {
 
     // 프로필 조회 API
     async getProfile(): Promise<{ user: User }> {
-      return apiCall<{ user: User }>('/api/users/profile')
+      return apiCall<{ user: User }>('/users/profile')
     },
 
     // 프로필 업데이트 API
     async updateProfile(data: Partial<User & { current_password?: string; new_password?: string }>): Promise<{ user: User }> {
-      return apiCall<{ user: User }>('/api/users/profile', {
+      return apiCall<{ user: User }>('/users/profile', {
         method: 'PUT',
         body: JSON.stringify(data)
       })
@@ -374,12 +374,12 @@ export const useApi = () => {
   const dashboard = {
     // 통계 데이터 조회
     async getStats(): Promise<{ stats: DashboardStats }> {
-      return apiCall<{ stats: DashboardStats }>('/api/users/stats')
+      return apiCall<{ stats: DashboardStats }>('/users/stats')
     },
 
     // 대시보드 데이터 조회
     async getDashboard(): Promise<{ dashboard: DashboardData }> {
-      return apiCall<{ dashboard: DashboardData }>('/api/users/dashboard')
+      return apiCall<{ dashboard: DashboardData }>('/users/dashboard')
     }
   }
 
@@ -389,17 +389,17 @@ export const useApi = () => {
   const employees = {
     // 전체 직원 목록 조회
     async getAll(): Promise<{ employees: Employee[] }> {
-      return apiCall<{ employees: Employee[] }>('/api/employees')
+      return apiCall<{ employees: Employee[] }>('/employees')
     },
 
     // 특정 직원 조회
     async getById(id: string): Promise<{ employee: Employee }> {
-      return apiCall<{ employee: Employee }>(`/api/employees/${id}`)
+      return apiCall<{ employee: Employee }>(`/employees/${id}`)
     },
 
     // 직원 생성
     async create(data: CreateEmployeeData): Promise<{ employee: Employee }> {
-      return apiCall<{ employee: Employee }>('/api/employees', {
+      return apiCall<{ employee: Employee }>('/employees', {
         method: 'POST',
         body: JSON.stringify(data)
       })
@@ -407,7 +407,7 @@ export const useApi = () => {
 
     // 직원 정보 업데이트
     async update(id: string, data: Partial<CreateEmployeeData>): Promise<{ employee: Employee }> {
-      return apiCall<{ employee: Employee }>(`/api/employees/${id}`, {
+      return apiCall<{ employee: Employee }>(`/employees/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       })
@@ -415,7 +415,7 @@ export const useApi = () => {
 
     // 직원 삭제
     async delete(id: string): Promise<{ message: string }> {
-      return apiCall<{ message: string }>(`/api/employees/${id}`, {
+      return apiCall<{ message: string }>(`/employees/${id}`, {
         method: 'DELETE'
       })
     }
@@ -428,17 +428,17 @@ export const useApi = () => {
     // 전체 장비 목록 조회 (필터링 옵션 포함)
     async getAll(params?: Record<string, string>): Promise<{ devices: Device[] }> {
       const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-      return apiCall<{ devices: Device[] }>(`/api/devices${queryString}`)
+      return apiCall<{ devices: Device[] }>(`/devices${queryString}`)
     },
 
     // 특정 장비 조회
     async getById(id: string): Promise<{ device: Device }> {
-      return apiCall<{ device: Device }>(`/api/devices/${id}`)
+      return apiCall<{ device: Device }>(`/devices/${id}`)
     },
 
     // 장비 생성
     async create(data: CreateDeviceData): Promise<{ device: Device }> {
-      return apiCall<{ device: Device }>('/api/devices', {
+      return apiCall<{ device: Device }>('/devices', {
         method: 'POST',
         body: JSON.stringify(data)
       })
@@ -446,7 +446,7 @@ export const useApi = () => {
 
     // 장비 정보 업데이트
     async update(id: string, data: Partial<CreateDeviceData>): Promise<{ device: Device }> {
-      return apiCall<{ device: Device }>(`/api/devices/${id}`, {
+      return apiCall<{ device: Device }>(`/devices/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       })
@@ -454,7 +454,7 @@ export const useApi = () => {
 
     // 장비 삭제
     async delete(id: string): Promise<{ message: string }> {
-      return apiCall<{ message: string }>(`/api/devices/${id}`, {
+      return apiCall<{ message: string }>(`/devices/${id}`, {
         method: 'DELETE'
       })
     },
@@ -463,12 +463,12 @@ export const useApi = () => {
     async importExcel(file: File): Promise<ExcelImportResponse> {
       const formData = new FormData()
       formData.append('file', file)
-      return apiCallWithFormData<ExcelImportResponse>('/api/devices/import', formData)
+      return apiCallWithFormData<ExcelImportResponse>('/devices/import', formData)
     },
 
     // Excel 파일 export
     async exportExcel(): Promise<Blob> {
-      return apiCallForBlob('/api/devices/export')
+      return apiCallForBlob('/devices/export')
     }
   }
 
@@ -479,24 +479,24 @@ export const useApi = () => {
     // 장비 QR 코드 생성
     async getDeviceQR(id: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
-        return apiCall<QRCodeResponse>(`/api/qr/device/${id}`)
+        return apiCall<QRCodeResponse>(`/qr/device/${id}`)
       } else {
-        return apiCallForBlob(`/api/qr/device/${id}?format=${format}`)
+        return apiCallForBlob(`/qr/device/${id}?format=${format}`)
       }
     },
 
     // 직원 QR 코드 생성
     async getEmployeeQR(id: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
-        return apiCall<QRCodeResponse>(`/api/qr/employee/${id}`)
+        return apiCall<QRCodeResponse>(`/qr/employee/${id}`)
       } else {
-        return apiCallForBlob(`/api/qr/employee/${id}?format=${format}`)
+        return apiCallForBlob(`/qr/employee/${id}?format=${format}`)
       }
     },
 
     // 일괄 장비 QR 코드 생성
     async bulkDeviceQR(deviceIds: string[], format: 'png' | 'json' = 'json', useTest: boolean = false): Promise<any> {
-      const endpoint = useTest ? '/api/qr/bulk/test' : '/api/qr/bulk/devices'
+      const endpoint = useTest ? '/qr/bulk/test' : '/qr/bulk/devices'
       return apiCall(endpoint, {
         method: 'POST',
         body: JSON.stringify({ device_ids: deviceIds, format })
@@ -505,7 +505,7 @@ export const useApi = () => {
 
     // QR 코드 디코딩
     async decode(qrString: string): Promise<{ data: any; is_valid: boolean }> {
-      return apiCall<{ data: any; is_valid: boolean }>('/api/qr/decode', {
+      return apiCall<{ data: any; is_valid: boolean }>('/qr/decode', {
         method: 'POST',
         body: JSON.stringify({ qr_string: qrString })
       })
