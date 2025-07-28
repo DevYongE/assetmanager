@@ -578,23 +578,6 @@ const downloadExcelTemplate = async () => {
     // Excel 템플릿 데이터 생성 - 더 명확한 예시
     const templateData = [
       {
-        '자산번호': 'AS-NB-23-001',
-        '조사일자': '2025-07-27',
-        '사용자': '김규일',
-        '용도': '업무용',
-        '장비 Type': '노트북',
-        '제조사': 'HP',
-        '모델명': 'HP ProBook 450 G6',
-        'S/N': 'SCD85185FP',
-        '모니터크기': '15인치',
-        '지급일자': '2023-02-01',
-        'CPU': 'Intel(R) Core(TM) i7-8565U CPU @ 1.80 GHz',
-        '메모리': '32GB',
-        '하드디스크': '500GB SSD',
-        '그래픽카드': 'NVIDIA GeForce MX130',
-        'OS': 'Windows 11 Pro'
-      },
-      {
         '자산번호': 'AS-NB-23-002',
         '조사일자': '2025-07-27',
         '사용자': '이영희',
