@@ -66,6 +66,7 @@
             :disabled="loading"
             class="input-modern"
             placeholder="••••••••"
+            autocomplete="current-password"
           />
         </div>
 
