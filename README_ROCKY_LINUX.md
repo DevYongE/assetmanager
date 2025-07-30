@@ -62,19 +62,31 @@ chmod +x pm2_management_corrected.sh
 ./pm2_management_corrected.sh env-help
 ```
 
-#### 2.3 프론트엔드 빌드 (로컬 경로용)
+#### 2.3 백엔드 환경 변수 문제 해결
+```bash
+chmod +x fix_backend_env.sh
+./fix_backend_env.sh
+```
+
+#### 2.4 프론트엔드 빌드 (로컬 경로용)
 ```bash
 chmod +x fix_frontend_build_local.sh
 ./fix_frontend_build_local.sh
 ```
 
-#### 2.4 Let's Encrypt SSL 인증서 설정 (Rocky Linux용)
+#### 2.5 Nuxt 빌드 문제 해결
+```bash
+chmod +x fix_nuxt_build_issue.sh
+./fix_nuxt_build_issue.sh
+```
+
+#### 2.6 Let's Encrypt SSL 인증서 설정 (Rocky Linux용)
 ```bash
 chmod +x setup_ssl_rocky.sh
 ./setup_ssl_rocky.sh
 ```
 
-#### 2.5 배포 상태 확인 (Rocky Linux용)
+#### 2.7 배포 상태 확인 (Rocky Linux용)
 ```bash
 chmod +x check_deployment_rocky.sh
 ./check_deployment_rocky.sh

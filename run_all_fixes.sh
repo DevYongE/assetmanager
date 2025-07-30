@@ -86,19 +86,25 @@ run_script "fix_port_conflict.sh" "포트 80, 443 충돌 문제 해결"
 # 3단계: Nginx 오류 해결
 run_script "fix_nginx_error.sh" "Nginx 서비스 시작 실패 해결"
 
-# 4단계: 백엔드 크래시 해결
+# 4단계: 백엔드 환경 변수 문제 해결
+run_script "fix_backend_env.sh" "백엔드 환경 변수 문제 해결"
+
+# 5단계: 백엔드 크래시 해결
 run_script "fix_backend_crash.sh" "백엔드 크래시 문제 해결"
 
-# 5단계: PM2 프로세스 오류 해결
+# 6단계: PM2 프로세스 오류 해결
 run_script "fix_pm2_errors.sh" "PM2 프로세스 오류 해결"
 
 # 6단계: 프론트엔드 빌드 해결
 run_script "fix_frontend_build_local.sh" "프론트엔드 빌드 문제 해결"
 
-# 7단계: Nuxt 빌드 문제 해결 (필요시)
+# 7단계: 프론트엔드 빌드 해결
+run_script "fix_frontend_build_local.sh" "프론트엔드 빌드 문제 해결"
+
+# 8단계: Nuxt 빌드 문제 해결 (필요시)
 run_script "fix_nuxt_build_issue.sh" "Nuxt 빌드 문제 진단 및 해결"
 
-# 8단계: 최종 상태 확인
+# 9단계: 최종 상태 확인
 run_script "check_deployment_ncp_rocky.sh" "전체 배포 상태 확인"
 
 echo ""
