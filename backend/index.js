@@ -22,8 +22,6 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const https = require('https');
-const fs = require('fs');
 const path = require('path');
 
 // 라우터 모듈들
@@ -141,58 +139,9 @@ console.log('');
 // 2024-12-19: NCP 서버 배포를 위해 포트를 4000으로 변경
 const PORT = process.env.PORT || 4000;
 
-// 2025-01-27: HTTPS 서버 설정 추가
-const createHttpsServer = () => {
-  try {
-    // SSL 인증서 파일 경로
-    const certPath = '/etc/letsencrypt/live/invenone.it.kr/fullchain.pem';
-    const keyPath = '/etc/letsencrypt/live/invenone.it.kr/privkey.pem';
-    
-    // 인증서 파일 존재 확인
-    if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
-      console.log('⚠️ SSL 인증서 파일을 찾을 수 없습니다. HTTP 서버로 시작합니다.');
-      return null;
-    }
-    
-    // SSL 옵션 설정
-    const httpsOptions = {
-      cert: fs.readFileSync(certPath),
-      key: fs.readFileSync(keyPath)
-    };
-    
-    // HTTPS 서버 생성
-    const httpsServer = https.createServer(httpsOptions, app);
-    
-    console.log('🔒 HTTPS 서버가 성공적으로 설정되었습니다.');
-    return httpsServer;
-    
-  } catch (error) {
-    console.log('⚠️ HTTPS 서버 설정 중 오류 발생:', error.message);
-    console.log('HTTP 서버로 시작합니다.');
-    return null;
-  }
-};
-
-// 서버 시작 함수
-const startServer = () => {
-  const httpsServer = createHttpsServer();
-  
-  if (httpsServer) {
-    // HTTPS 서버 시작
-    httpsServer.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 HTTPS 서버가 포트 ${PORT}에서 실행 중입니다.`);
-      console.log(`🔗 https://invenone.it.kr:${PORT}`);
-      console.log(`📊 헬스체크: https://invenone.it.kr:${PORT}/api/health`);
-    });
-  } else {
-    // HTTP 서버 시작 (fallback)
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 HTTP 서버가 포트 ${PORT}에서 실행 중입니다.`);
-      console.log(`🔗 http://invenone.it.kr:${PORT}`);
-      console.log(`📊 헬스체크: http://invenone.it.kr:${PORT}/api/health`);
-    });
-  }
-};
-
 // 서버 시작
-startServer(); 
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 HTTP 서버가 포트 ${PORT}에서 실행 중입니다.`);
+  console.log(`🔗 http://localhost:${PORT}`);
+  console.log(`📊 헬스체크: http://localhost:${PORT}/api/health`);
+}); 
