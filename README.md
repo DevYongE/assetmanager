@@ -62,6 +62,15 @@ chmod +x fix_pm2_config.sh
 ./fix_pm2_config.sh
 ```
 
+### 4. Nuxt.js 모듈 오류 해결 (필요시)
+
+c12 모듈 오류가 발생하는 경우:
+
+```bash
+chmod +x fix_nuxt_modules.sh
+./fix_nuxt_modules.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
@@ -231,7 +240,20 @@ pm2 restart qr-frontend
 pm2 logs qr-frontend
 ```
 
-### 5. SSL 인증서 문제
+### 5. Nuxt.js 모듈 문제
+```bash
+# 의존성 확인
+npm list c12
+
+# node_modules 재설치
+rm -rf node_modules package-lock.json
+npm install
+
+# 빌드 재실행
+npm run build
+```
+
+### 6. SSL 인증서 문제
 ```bash
 # SSL 인증서 확인
 ls -la /etc/letsencrypt/live/invenone.it.kr/
