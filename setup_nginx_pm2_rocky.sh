@@ -86,13 +86,74 @@ log_info "프로젝트 디렉토리를 설정합니다: $PROJECT_DIR"
 sudo mkdir -p $PROJECT_DIR
 sudo chown -R $USER:$USER $PROJECT_DIR
 
+# 프로젝트 파일 복사 또는 Git 클론
+log_info "프로젝트 파일들을 설정합니다..."
+if [ -d "backend" ] && [ -d "frontend" ]; then
+    log_info "로컬 프로젝트 파일을 서버로 복사합니다..."
+    cp -r backend $PROJECT_DIR/
+    cp -r frontend $PROJECT_DIR/
+    log_success "프로젝트 파일 복사가 완료되었습니다."
+elif [ -d ".git" ]; then
+    log_info "Git 저장소를 서버로 복사합니다..."
+    cp -r . $PROJECT_DIR/
+    cd $PROJECT_DIR
+    log_success "Git 프로젝트 복사가 완료되었습니다."
+else
+    log_warning "로컬 프로젝트 파일이 없습니다."
+    echo ""
+    echo "🔧 프로젝트 파일 복사 옵션:"
+    echo "1. 수동으로 파일 복사"
+    echo "2. Git 저장소에서 클론"
+    echo "3. 스크립트 중단"
+    echo ""
+    read -p "선택하세요 (1-3): " copy_choice
+    
+    case $copy_choice in
+        1)
+            log_info "수동으로 프로젝트를 복사해주세요."
+            echo "다음 명령어로 프로젝트를 복사하세요:"
+            echo "  scp -r backend/ user@server:/var/www/qr-asset-management/"
+            echo "  scp -r frontend/ user@server:/var/www/qr-asset-management/"
+            echo ""
+            read -p "프로젝트 파일을 복사한 후 Enter를 누르세요..."
+            ;;
+        2)
+            log_info "Git 저장소 URL을 입력해주세요:"
+            read -p "Git URL: " git_url
+            if [ ! -z "$git_url" ]; then
+                cd $PROJECT_DIR
+                git clone $git_url .
+                log_success "Git 프로젝트 클론이 완료되었습니다."
+            else
+                log_error "Git URL이 입력되지 않았습니다."
+                exit 1
+            fi
+            ;;
+        3)
+            log_info "스크립트를 중단합니다."
+            exit 0
+            ;;
+        *)
+            log_error "잘못된 선택입니다."
+            exit 1
+            ;;
+    esac
+fi
+
 # 백엔드 설정
 log_info "백엔드를 설정합니다..."
 cd $PROJECT_DIR/backend
 
 # 백엔드 의존성 설치
 log_info "백엔드 의존성을 설치합니다..."
-npm install
+if [ -f "package.json" ]; then
+    npm install
+    log_success "백엔드 의존성 설치가 완료되었습니다."
+else
+    log_error "backend/package.json 파일을 찾을 수 없습니다!"
+    log_error "프로젝트 파일이 올바르게 복사되었는지 확인해주세요."
+    exit 1
+fi
 
 # 환경 변수 파일 생성 (Supabase 설정)
 log_info "백엔드 환경 변수를 설정합니다..."
@@ -129,11 +190,19 @@ cd $PROJECT_DIR/frontend
 
 # 프론트엔드 의존성 설치
 log_info "프론트엔드 의존성을 설치합니다..."
-npm install
-
-# 프론트엔드 빌드
-log_info "프론트엔드를 빌드합니다..."
-npm run build
+if [ -f "package.json" ]; then
+    npm install
+    log_success "프론트엔드 의존성 설치가 완료되었습니다."
+    
+    # 프론트엔드 빌드
+    log_info "프론트엔드를 빌드합니다..."
+    npm run build
+    log_success "프론트엔드 빌드가 완료되었습니다."
+else
+    log_error "frontend/package.json 파일을 찾을 수 없습니다!"
+    log_error "프로젝트 파일이 올바르게 복사되었는지 확인해주세요."
+    exit 1
+fi
 
 # Let's Encrypt 인증서 디렉토리 확인
 log_info "Let's Encrypt 인증서 디렉토리를 확인합니다..."
