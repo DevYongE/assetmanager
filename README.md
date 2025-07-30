@@ -116,6 +116,15 @@ chmod +x check_api_health.sh
 ./check_api_health.sh
 ```
 
+### 10. 모든 문제 종합 해결 (권장)
+
+포트 충돌, 프론트엔드 오류, Nginx 설정 문제를 모두 해결:
+
+```bash
+chmod +x fix_all_issues.sh
+./fix_all_issues.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
