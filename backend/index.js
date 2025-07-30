@@ -2,134 +2,183 @@
 // QR 자산관리 시스템 백엔드 서버
 // =============================================================================
 //
-// 이 파일은 QR 자산관리 시스템의 백엔드 API 서버입니다.
-// Express.js를 사용하여 RESTful API를 제공하며,
-// 인증, 직원 관리, 장비 관리, QR 코드 생성 등의 기능을 담당합니다.
+// 이 파일은 Express.js 기반의 백엔드 API 서버입니다.
+// 사용자 인증, QR 코드 생성/스캔, 자산 관리 등의 API를 제공합니다.
 //
 // 주요 기능:
-// - 사용자 인증 (JWT 토큰 기반)
-// - 직원 정보 관리 (CRUD)
-// - 장비 정보 관리 (CRUD)
-// - QR 코드 생성 및 관리
-// - Excel 파일 import/export
-// - 데이터베이스 연동
+// - 사용자 인증 (로그인/로그아웃)
+// - QR 코드 생성 및 스캔
+// - 자산 정보 관리
+// - CORS 설정
+// - HTTPS 지원
 //
-// 작성일: 2025-01-27
+// 작성일: 2024-12-19
 // =============================================================================
 
-// 필수 모듈 import
-const express = require('express');        // 웹 프레임워크
-const cors = require('cors');              // CORS 설정
-const dotenv = require('dotenv');          // 환경변수 관리
-const path = require('path');              // 파일 경로 처리
+const express = require('express');
+const cors = require('cors');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-// HTTPS 관련 모듈 (현재는 주석 처리 - HTTP 사용)
-// const https = require('https');
-// const fs = require('fs');
+// 라우터 모듈들
+const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
+const employeesRoutes = require('./routes/employees');
+const devicesRoutes = require('./routes/devices');
+const qrRoutes = require('./routes/qr');
 
-// 환경변수 로드 (.env 파일에서 설정 읽기)
-dotenv.config();
-
-// Express 애플리케이션 인스턴스 생성
 const app = express();
 
 // =============================================================================
-// 서버 포트 설정
+// 미들웨어 설정
 // =============================================================================
-// 환경변수에서 포트를 가져오거나 기본값 4000 사용
-// 2025-01-27: 임시로 HTTP 서버로 변경 (SSL 인증서 문제 해결)
-const PORT = process.env.PORT || 4000;
+
+// JSON 파싱 미들웨어
+app.use(express.json());
+
+// URL 인코딩 파싱 미들웨어
+app.use(express.urlencoded({ extended: true }));
 
 // =============================================================================
-// CORS (Cross-Origin Resource Sharing) 설정
+// CORS 설정
 // =============================================================================
-// 2025-07-25: CORS 설정 수정 - 모바일 접속을 위해 모든 도메인 허용
+// 2024-12-19: CORS 설정 수정 - 모든 도메인 허용 및 특정 도메인 추가
 const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://localhost:3002',
-    'https://localhost:3000',
-    'https://localhost:3002',
     'http://211.188.55.145:3000',
     'http://211.188.55.145:3002',
-    'https://211.188.55.145:3000',
-    'https://211.188.55.145:3002',
+    'http://your-ncp-server-ip:3000',  // NCP 서버 IP로 변경 필요
+    'http://your-ncp-server-ip:3002',   // NCP 서버 IP로 변경 필요
     'https://invenone.it.kr',
     'https://www.invenone.it.kr',
     'http://invenone.it.kr',
     'http://www.invenone.it.kr'
   ],
-  credentials: true,  // 쿠키/인증 정보 포함 허용
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // 허용할 HTTP 메서드
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']  // 허용할 헤더
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
 };
 
-// =============================================================================
-// 미들웨어 설정
-// =============================================================================
 // CORS 미들웨어 적용
 app.use(cors(corsOptions));
-
-// JSON 요청 본문 파싱 (최대 10MB)
-app.use(express.json({ limit: '10mb' }));
-
-// URL 인코딩된 요청 본문 파싱
-app.use(express.urlencoded({ extended: true }));
 
 // =============================================================================
 // 라우터 설정
 // =============================================================================
-console.log('🔧 [BACKEND] Setting up routes...')
 
-// 각 기능별 라우터를 /api 경로 하위에 마운트
-app.use('/api/auth', require('./routes/auth'));      // 인증 관련 (로그인, 회원가입)
-app.use('/api/users', require('./routes/users'));    // 사용자 관리
-app.use('/api/employees', require('./routes/employees')); // 직원 관리
-app.use('/api/devices', require('./routes/devices')); // 장비 관리
-app.use('/api/qr', require('./routes/qr'));         // QR 코드 생성
-
-console.log('✅ [BACKEND] Routes configured successfully')
+// API 라우터들
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/employees', employeesRoutes);
+app.use('/api/devices', devicesRoutes);
+app.use('/api/qr', qrRoutes);
 
 // =============================================================================
-// 헬스 체크 엔드포인트
+// 기본 라우트
 // =============================================================================
-// 서비스 상태 확인용 엔드포인트 (모니터링, 로드밸런서용)
-app.get('/health', (req, res) => {
+
+// 루트 경로
+app.get('/', (req, res) => {
   res.json({ 
-    status: 'OK', 
+    message: 'QR 자산관리 시스템 API 서버',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 헬스체크 엔드포인트
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),  // 서버 가동 시간
-    environment: process.env.NODE_ENV || 'development'  // 현재 환경
-  })
-})
+    uptime: process.uptime()
+  });
+});
 
 // =============================================================================
-// 404 에러 핸들러 (주석 처리됨)
+// 에러 핸들링 미들웨어
 // =============================================================================
-// path-to-regexp 이슈 해결을 위해 주석 처리
-// app.all('*', (req, res) => {
-//   res.status(404).json({ error: 'Route not found' });
-// });
 
-// =============================================================================
+// 404 에러 처리
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    error: 'API 엔드포인트를 찾을 수 없습니다',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
+
 // 전역 에러 핸들러
-// =============================================================================
-// 모든 라우터에서 발생하는 에러를 처리
 app.use((err, req, res, next) => {
-  console.error(err.stack);  // 에러 스택 트레이스 출력
-  res.status(500).json({ error: 'Something went wrong!' });
+  console.error('서버 에러:', err);
+  res.status(500).json({ 
+    error: '서버 내부 오류가 발생했습니다',
+    message: err.message
+  });
 });
 
 // =============================================================================
 // 서버 시작
 // =============================================================================
-// 2025-01-27: 임시 HTTP 서버로 변경 (SSL 인증서 문제 해결)
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 [BACKEND] HTTP Server is running on port', PORT);
-  console.log('🌐 [BACKEND] Health check: http://0.0.0.0:' + PORT + '/health');
-  console.log('🔐 [BACKEND] Auth endpoint: http://0.0.0.0:' + PORT + '/api/auth/login');
-  console.log('⚠️ [BACKEND] Note: Running in HTTP mode (SSL certificate issue)');
-});
 
-// 애플리케이션 인스턴스 내보내기 (테스트용)
-module.exports = app; 
+// 2024-12-19: NCP 서버 배포를 위해 포트를 4000으로 변경
+const PORT = process.env.PORT || 4000;
+
+// 2025-01-27: HTTPS 서버 설정 추가
+const createHttpsServer = () => {
+  try {
+    // SSL 인증서 파일 경로
+    const certPath = '/etc/letsencrypt/live/invenone.it.kr/fullchain.pem';
+    const keyPath = '/etc/letsencrypt/live/invenone.it.kr/privkey.pem';
+    
+    // 인증서 파일 존재 확인
+    if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+      console.log('⚠️ SSL 인증서 파일을 찾을 수 없습니다. HTTP 서버로 시작합니다.');
+      return null;
+    }
+    
+    // SSL 옵션 설정
+    const httpsOptions = {
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(keyPath)
+    };
+    
+    // HTTPS 서버 생성
+    const httpsServer = https.createServer(httpsOptions, app);
+    
+    console.log('🔒 HTTPS 서버가 성공적으로 설정되었습니다.');
+    return httpsServer;
+    
+  } catch (error) {
+    console.log('⚠️ HTTPS 서버 설정 중 오류 발생:', error.message);
+    console.log('HTTP 서버로 시작합니다.');
+    return null;
+  }
+};
+
+// 서버 시작 함수
+const startServer = () => {
+  const httpsServer = createHttpsServer();
+  
+  if (httpsServer) {
+    // HTTPS 서버 시작
+    httpsServer.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 HTTPS 서버가 포트 ${PORT}에서 실행 중입니다.`);
+      console.log(`🔗 https://invenone.it.kr:${PORT}`);
+      console.log(`📊 헬스체크: https://invenone.it.kr:${PORT}/api/health`);
+    });
+  } else {
+    // HTTP 서버 시작 (fallback)
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 HTTP 서버가 포트 ${PORT}에서 실행 중입니다.`);
+      console.log(`🔗 http://invenone.it.kr:${PORT}`);
+      console.log(`📊 헬스체크: http://invenone.it.kr:${PORT}/api/health`);
+    });
+  }
+};
+
+// 서버 시작
+startServer(); 
