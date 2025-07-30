@@ -233,6 +233,13 @@ sudo mkdir -p /etc/letsencrypt/live/invenone.it.kr
 
 # Nginx 설정 (SSL 포함) - NCP Rocky Linux용 경로
 log_info "Nginx 설정을 생성합니다 (SSL 포함, NCP 운영서버용)..."
+
+# Rate limiting zone 설정을 http 블록에 추가
+sudo tee /etc/nginx/conf.d/rate_limit.conf << 'RATE_LIMIT_EOF'
+# Rate limiting 설정 (http 블록에 위치)
+limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+RATE_LIMIT_EOF
+
 sudo tee /etc/nginx/conf.d/invenone.it.kr.conf << EOF
 # HTTP에서 HTTPS로 리다이렉트
 server {
@@ -338,7 +345,6 @@ server {
     }
 
     # Rate limiting (NCP 운영서버 보안)
-    limit_req_zone \$binary_remote_addr zone=api:10m rate=10r/s;
     limit_req zone=api burst=20 nodelay;
     
     # 파일 업로드 크기 제한
