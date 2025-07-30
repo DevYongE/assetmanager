@@ -95,7 +95,10 @@ run_script "fix_pm2_errors.sh" "PM2 프로세스 오류 해결"
 # 6단계: 프론트엔드 빌드 해결
 run_script "fix_frontend_build_local.sh" "프론트엔드 빌드 문제 해결"
 
-# 7단계: 최종 상태 확인
+# 7단계: Nuxt 빌드 문제 해결 (필요시)
+run_script "fix_nuxt_build_issue.sh" "Nuxt 빌드 문제 진단 및 해결"
+
+# 8단계: 최종 상태 확인
 run_script "check_deployment_ncp_rocky.sh" "전체 배포 상태 확인"
 
 echo ""

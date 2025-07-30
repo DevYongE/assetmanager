@@ -145,12 +145,55 @@ if [ -d ".output" ]; then
     echo "  - .output 내용:"
     ls -la .output/
     
+    # 서버 파일 확인
     if [ -f ".output/server/index.mjs" ]; then
         log_success "서버 파일이 생성되었습니다."
         echo "  - 파일 크기: $(ls -lh .output/server/index.mjs | awk '{print $5}')"
+    elif [ -f ".output/server/index.js" ]; then
+        log_success "서버 파일이 생성되었습니다 (index.js)."
+        echo "  - 파일 크기: $(ls -lh .output/server/index.js | awk '{print $5}')"
+    elif [ -d ".output/server" ]; then
+        log_warning "server 디렉토리는 있지만 index.mjs가 없습니다."
+        echo "  - server 디렉토리 내용:"
+        ls -la .output/server/
     else
         log_error "서버 파일이 생성되지 않았습니다!"
-        exit 1
+        echo ""
+        echo "🔧 문제 해결 방법:"
+        echo "1. Nuxt 설정 확인"
+        echo "2. 개발 서버로 실행"
+        echo "3. 정적 사이트로 빌드"
+        echo ""
+        
+        # Nuxt 설정 확인
+        log_info "Nuxt 설정을 확인합니다..."
+        if [ -f "nuxt.config.ts" ]; then
+            echo "=== nuxt.config.ts 내용 ==="
+            cat nuxt.config.ts
+        fi
+        
+        # package.json 스크립트 확인
+        if [ -f "package.json" ]; then
+            echo ""
+            echo "=== package.json 스크립트 ==="
+            grep -A 10 '"scripts"' package.json
+        fi
+        
+        # 개발 서버로 실행하는 옵션 제공
+        echo ""
+        echo "🔄 개발 서버로 실행하시겠습니까? (y/n)"
+        read -p "선택: " dev_choice
+        
+        if [ "$dev_choice" = "y" ] || [ "$dev_choice" = "Y" ]; then
+            log_info "개발 서버로 실행합니다..."
+            pm2 start npm --name "qr-frontend-dev" -- run dev
+            log_success "개발 서버가 시작되었습니다!"
+            echo "  - 개발 서버: http://localhost:3000"
+            exit 0
+        else
+            log_error "빌드 문제를 해결할 수 없습니다."
+            exit 1
+        fi
     fi
 else
     log_error ".output 디렉토리가 생성되지 않았습니다!"
@@ -159,12 +202,24 @@ fi
 
 # 10. PM2 설정 파일 생성 (로컬 경로 사용)
 log_info "10. PM2 설정 파일을 생성합니다..."
+
+# 서버 파일 경로 결정
+SERVER_FILE=""
+if [ -f ".output/server/index.mjs" ]; then
+    SERVER_FILE=".output/server/index.mjs"
+elif [ -f ".output/server/index.js" ]; then
+    SERVER_FILE=".output/server/index.js"
+else
+    log_error "서버 파일을 찾을 수 없습니다!"
+    exit 1
+fi
+
 cat > ecosystem.config.js << EOF
 module.exports = {
   apps: [{
     name: 'qr-frontend',
     script: 'node',
-    args: '.output/server/index.mjs',
+    args: '$SERVER_FILE',
     cwd: '$FRONTEND_DIR',
     instances: 1,
     autorestart: true,
@@ -185,6 +240,9 @@ module.exports = {
   }]
 }
 EOF
+
+log_success "PM2 설정 파일이 생성되었습니다."
+echo "  - 서버 파일: $SERVER_FILE"
 
 # 11. 로그 디렉토리 생성
 log_info "11. 로그 디렉토리를 생성합니다..."
