@@ -89,6 +89,24 @@ chmod +x fix_user_permissions.sh
 ./fix_user_permissions.sh
 ```
 
+### 7. 고집스러운 프로세스 강제 종료 (필요시)
+
+포트를 사용하는 프로세스가 죽지 않는 경우:
+
+```bash
+chmod +x kill_stubborn_process.sh
+./kill_stubborn_process.sh
+```
+
+### 8. 프론트엔드 503 오류 해결 (필요시)
+
+503 Service Unavailable 오류가 발생하는 경우:
+
+```bash
+chmod +x fix_frontend_503.sh
+./fix_frontend_503.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
@@ -309,7 +327,46 @@ cd /home/dmanager/assetmanager/backend && pm2 start index.js --name 'qr-backend'
 cd /home/dmanager/assetmanager/frontend && pm2 start ecosystem.config.cjs
 ```
 
-### 8. SSL 인증서 문제
+### 8. 고집스러운 프로세스 문제
+```bash
+# 포트 사용 프로세스 확인
+lsof -i :3000
+lsof -i :4000
+
+# 프로세스 강제 종료
+kill -9 $(lsof -i :3000 -t)
+kill -9 $(lsof -i :4000 -t)
+
+# 모든 Node.js 프로세스 종료
+pkill -f "node"
+
+# PM2 완전 정리
+pm2 delete all
+pm2 kill
+```
+
+### 9. 프론트엔드 503 오류 문제
+```bash
+# 프론트엔드 상태 확인
+pm2 status
+lsof -i :3000
+
+# 프론트엔드 재빌드
+cd frontend
+rm -rf node_modules package-lock.json .output .nuxt
+npm cache clean --force
+npm install
+npm run build
+
+# PM2 재시작
+pm2 delete qr-frontend
+pm2 start ecosystem.config.cjs
+
+# Nginx 재시작
+sudo systemctl restart nginx
+```
+
+### 10. SSL 인증서 문제
 ```bash
 # SSL 인증서 확인
 ls -la /etc/letsencrypt/live/invenone.it.kr/
