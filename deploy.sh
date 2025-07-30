@@ -230,6 +230,12 @@ if [ -d ".nuxt" ]; then
     rm -rf .nuxt
 fi
 
+# 기존 PM2 설정 파일 정리
+if [ -f "ecosystem.config.js" ]; then
+    log_info "기존 PM2 설정 파일을 정리합니다..."
+    rm -f ecosystem.config.js
+fi
+
 # Nuxt 설정 수정
 log_info "Nuxt 설정을 수정합니다..."
 cat > nuxt.config.ts << 'EOF'
@@ -276,9 +282,9 @@ else
     exit 1
 fi
 
-# PM2 설정 파일 생성
+# PM2 설정 파일 생성 (CommonJS 형식)
 log_info "PM2 설정 파일을 생성합니다..."
-cat > ecosystem.config.js << 'EOF'
+cat > ecosystem.config.cjs << 'EOF'
 module.exports = {
   apps: [{
     name: 'qr-frontend',
@@ -302,7 +308,7 @@ EOF
 # 프론트엔드 시작
 log_info "프론트엔드를 PM2로 시작합니다..."
 pm2 delete qr-frontend 2>/dev/null || true
-pm2 start ecosystem.config.js
+pm2 start ecosystem.config.cjs
 
 sleep 5
 

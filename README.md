@@ -53,6 +53,15 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
+### 3. PM2 설정 문제 해결 (필요시)
+
+ES 모듈 오류가 발생하는 경우:
+
+```bash
+chmod +x fix_pm2_config.sh
+./fix_pm2_config.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
@@ -210,7 +219,19 @@ ss -tlnp | grep :80
 ss -tlnp | grep :443
 ```
 
-### 4. SSL 인증서 문제
+### 4. PM2 설정 파일 문제
+```bash
+# PM2 설정 파일 확인
+cat frontend/ecosystem.config.cjs
+
+# PM2 재시작
+pm2 restart qr-frontend
+
+# PM2 로그 확인
+pm2 logs qr-frontend
+```
+
+### 5. SSL 인증서 문제
 ```bash
 # SSL 인증서 확인
 ls -la /etc/letsencrypt/live/invenone.it.kr/
