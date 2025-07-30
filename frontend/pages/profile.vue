@@ -244,6 +244,9 @@ definePageMeta({
   middleware: 'auth'
 })
 
+// 2025-01-27: 배포 환경에서 useAuthStore 오류 해결을 위해 명시적 import 추가
+import { useAuthStore } from '~/stores/auth'
+
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 

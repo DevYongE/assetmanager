@@ -261,7 +261,10 @@ const pageTitle = computed(() => {
 
 // Handle logout
 const handleLogout = () => {
-  const authStore = useAuthStore()
+  // 2025-01-27: 배포 환경에서 useAuthStore 오류 해결을 위해 명시적 import 추가
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
   authStore.logout()
   router.push('/login')
 }
