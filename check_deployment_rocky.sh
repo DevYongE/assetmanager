@@ -47,7 +47,7 @@ PROJECT_DIR="/var/www/qr-asset-management"
 BACKEND_DIR="$PROJECT_DIR/backend"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
 DOMAIN="invenone.it.kr"
-SSL_DIR="/etc/ssl/$DOMAIN"
+SSL_DIR="/etc/letsencrypt/live/$DOMAIN"
 
 # 함수: 시스템 정보 확인
 check_system_info() {
@@ -94,25 +94,25 @@ check_nginx() {
 
 # 함수: SSL 인증서 상태 확인
 check_ssl() {
-    log_info "SSL 인증서 상태를 확인합니다..."
+    log_info "Let's Encrypt SSL 인증서 상태를 확인합니다..."
     
-    if [ -f "$SSL_DIR/certificate.crt" ] && [ -f "$SSL_DIR/private.key" ]; then
-        log_success "SSL 인증서 파일이 존재합니다."
-        echo "  - Certificate: $SSL_DIR/certificate.crt"
-        echo "  - Private Key: $SSL_DIR/private.key"
+    if [ -f "$SSL_DIR/fullchain.pem" ] && [ -f "$SSL_DIR/privkey.pem" ]; then
+        log_success "Let's Encrypt SSL 인증서 파일이 존재합니다."
+        echo "  - Certificate: $SSL_DIR/fullchain.pem"
+        echo "  - Private Key: $SSL_DIR/privkey.pem"
         
         # 인증서 유효성 확인
-        if openssl x509 -checkend 86400 -noout -in "$SSL_DIR/certificate.crt" > /dev/null 2>&1; then
-            log_success "SSL 인증서가 유효합니다."
+        if openssl x509 -checkend 86400 -noout -in "$SSL_DIR/fullchain.pem" > /dev/null 2>&1; then
+            log_success "Let's Encrypt SSL 인증서가 유효합니다."
             
             # 인증서 정보
-            echo "  - Subject: $(openssl x509 -in "$SSL_DIR/certificate.crt" -noout -subject | cut -d'=' -f3)"
-            echo "  - Valid Until: $(openssl x509 -in "$SSL_DIR/certificate.crt" -noout -enddate | cut -d'=' -f2)"
+            echo "  - Subject: $(openssl x509 -in "$SSL_DIR/fullchain.pem" -noout -subject | cut -d'=' -f3)"
+            echo "  - Valid Until: $(openssl x509 -in "$SSL_DIR/fullchain.pem" -noout -enddate | cut -d'=' -f2)"
         else
-            log_warning "SSL 인증서가 만료되었거나 곧 만료됩니다."
+            log_warning "Let's Encrypt SSL 인증서가 만료되었거나 곧 만료됩니다."
         fi
     else
-        log_error "SSL 인증서 파일이 없습니다!"
+        log_error "Let's Encrypt SSL 인증서 파일이 없습니다!"
     fi
 }
 

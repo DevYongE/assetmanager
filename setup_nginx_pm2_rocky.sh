@@ -135,9 +135,9 @@ npm install
 log_info "프론트엔드를 빌드합니다..."
 npm run build
 
-# SSL 인증서 디렉토리 생성
-log_info "SSL 인증서 디렉토리를 생성합니다..."
-sudo mkdir -p /etc/ssl/invenone.it.kr
+# Let's Encrypt 인증서 디렉토리 확인
+log_info "Let's Encrypt 인증서 디렉토리를 확인합니다..."
+sudo mkdir -p /etc/letsencrypt/live/invenone.it.kr
 
 # Nginx 설정 (SSL 포함) - Rocky Linux용 경로
 log_info "Nginx 설정을 생성합니다 (SSL 포함)..."
@@ -154,9 +154,9 @@ server {
     listen 443 ssl http2;
     server_name invenone.it.kr www.invenone.it.kr;
     
-    # SSL 인증서 설정
-    ssl_certificate /etc/ssl/invenone.it.kr/certificate.crt;
-    ssl_certificate_key /etc/ssl/invenone.it.kr/private.key;
+    # SSL 인증서 설정 (Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/invenone.it.kr/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/invenone.it.kr/privkey.pem;
     
     # SSL 설정
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -289,9 +289,9 @@ echo "  - Health Check: https://invenone.it.kr/health"
 echo ""
 echo "⚠️  중요: 다음 설정을 완료해주세요!"
 echo "   1. Supabase 환경 변수 설정"
-echo "   2. SSL 인증서 파일 배치:"
-echo "      - /etc/ssl/invenone.it.kr/certificate.crt"
-echo "      - /etc/ssl/invenone.it.kr/private.key"
+echo "   2. Let's Encrypt SSL 인증서 설정:"
+echo "      - /etc/letsencrypt/live/invenone.it.kr/fullchain.pem"
+echo "      - /etc/letsencrypt/live/invenone.it.kr/privkey.pem"
 echo ""
 echo "📝 유용한 명령어 (Rocky Linux용):"
 echo "  - PM2 상태 확인: pm2 status"

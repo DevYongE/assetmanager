@@ -39,7 +39,7 @@ fi
 
 # 도메인 설정
 DOMAIN="invenone.it.kr"
-SSL_DIR="/etc/ssl/$DOMAIN"
+SSL_DIR="/etc/letsencrypt/live/$DOMAIN"
 
 # EPEL 저장소 활성화 (Rocky Linux용)
 log_info "EPEL 저장소를 활성화합니다..."
@@ -49,25 +49,25 @@ sudo dnf install -y epel-release
 log_info "Certbot을 설치합니다..."
 sudo dnf install -y certbot python3-certbot-nginx
 
-# SSL 디렉토리 생성
-log_info "SSL 디렉토리를 생성합니다..."
+# Let's Encrypt 디렉토리 확인
+log_info "Let's Encrypt 디렉토리를 확인합니다..."
 sudo mkdir -p $SSL_DIR
 
-# 기존 SSL 인증서 확인
-log_info "기존 SSL 인증서를 확인합니다..."
-if [ -f "$SSL_DIR/certificate.crt" ] && [ -f "$SSL_DIR/private.key" ]; then
-    log_success "기존 SSL 인증서가 발견되었습니다."
-    echo "  - Certificate: $SSL_DIR/certificate.crt"
-    echo "  - Private Key: $SSL_DIR/private.key"
+# 기존 Let's Encrypt 인증서 확인
+log_info "기존 Let's Encrypt 인증서를 확인합니다..."
+if [ -f "$SSL_DIR/fullchain.pem" ] && [ -f "$SSL_DIR/privkey.pem" ]; then
+    log_success "기존 Let's Encrypt 인증서가 발견되었습니다."
+    echo "  - Certificate: $SSL_DIR/fullchain.pem"
+    echo "  - Private Key: $SSL_DIR/privkey.pem"
     
     # 인증서 유효성 확인
-    if openssl x509 -checkend 86400 -noout -in "$SSL_DIR/certificate.crt" > /dev/null 2>&1; then
+    if openssl x509 -checkend 86400 -noout -in "$SSL_DIR/fullchain.pem" > /dev/null 2>&1; then
         log_success "SSL 인증서가 유효합니다."
     else
         log_warning "SSL 인증서가 만료되었거나 곧 만료됩니다."
     fi
 else
-    log_info "기존 SSL 인증서가 없습니다. 새로 생성합니다."
+    log_info "기존 Let's Encrypt 인증서가 없습니다. 새로 생성합니다."
 fi
 
 # Let's Encrypt 인증서 생성 (옵션 1)
@@ -107,42 +107,42 @@ case $ssl_choice in
         fi
         ;;
     2)
-        log_info "기존 인증서 파일을 사용합니다..."
+        log_info "기존 Let's Encrypt 인증서 파일을 사용합니다..."
         echo ""
-        echo "📁 인증서 파일을 다음 위치에 배치하세요:"
-        echo "  - Certificate: $SSL_DIR/certificate.crt"
-        echo "  - Private Key: $SSL_DIR/private.key"
+        echo "📁 Let's Encrypt 인증서 파일을 다음 위치에 배치하세요:"
+        echo "  - Certificate: $SSL_DIR/fullchain.pem"
+        echo "  - Private Key: $SSL_DIR/privkey.pem"
         echo ""
         read -p "인증서 파일을 배치한 후 Enter를 누르세요..."
         
-        if [ -f "$SSL_DIR/certificate.crt" ] && [ -f "$SSL_DIR/private.key" ]; then
-            log_success "인증서 파일이 확인되었습니다."
+        if [ -f "$SSL_DIR/fullchain.pem" ] && [ -f "$SSL_DIR/privkey.pem" ]; then
+            log_success "Let's Encrypt 인증서 파일이 확인되었습니다."
             
             # 파일 권한 설정
-            sudo chmod 644 $SSL_DIR/certificate.crt
-            sudo chmod 600 $SSL_DIR/private.key
+            sudo chmod 644 $SSL_DIR/fullchain.pem
+            sudo chmod 600 $SSL_DIR/privkey.pem
             
-            log_success "기존 SSL 인증서 설정이 완료되었습니다!"
+            log_success "기존 Let's Encrypt SSL 인증서 설정이 완료되었습니다!"
         else
-            log_error "인증서 파일을 찾을 수 없습니다."
+            log_error "Let's Encrypt 인증서 파일을 찾을 수 없습니다."
             exit 1
         fi
         ;;
     3)
         log_info "수동 설정을 선택했습니다..."
         echo ""
-        echo "🔧 수동 SSL 설정 가이드 (Rocky Linux):"
-        echo "1. SSL 인증서 파일을 준비하세요:"
-        echo "   - certificate.crt (공개키)"
-        echo "   - private.key (개인키)"
+        echo "🔧 수동 Let's Encrypt SSL 설정 가이드 (Rocky Linux):"
+        echo "1. Let's Encrypt 인증서 파일을 준비하세요:"
+        echo "   - fullchain.pem (공개키)"
+        echo "   - privkey.pem (개인키)"
         echo ""
         echo "2. 파일을 다음 위치에 복사하세요:"
-        echo "   sudo cp certificate.crt $SSL_DIR/"
-        echo "   sudo cp private.key $SSL_DIR/"
+        echo "   sudo cp fullchain.pem $SSL_DIR/"
+        echo "   sudo cp privkey.pem $SSL_DIR/"
         echo ""
         echo "3. 파일 권한을 설정하세요:"
-        echo "   sudo chmod 644 $SSL_DIR/certificate.crt"
-        echo "   sudo chmod 600 $SSL_DIR/private.key"
+        echo "   sudo chmod 644 $SSL_DIR/fullchain.pem"
+        echo "   sudo chmod 600 $SSL_DIR/privkey.pem"
         echo ""
         echo "4. Nginx 설정을 테스트하세요:"
         echo "   sudo nginx -t"
@@ -163,9 +163,9 @@ esac
 log_info "SSL 설정을 확인합니다..."
 
 # 인증서 정보 확인
-if [ -f "$SSL_DIR/certificate.crt" ]; then
-    log_info "SSL 인증서 정보:"
-    openssl x509 -in "$SSL_DIR/certificate.crt" -text -noout | grep -E "(Subject:|Not Before|Not After|DNS:)"
+if [ -f "$SSL_DIR/fullchain.pem" ]; then
+    log_info "Let's Encrypt SSL 인증서 정보:"
+    openssl x509 -in "$SSL_DIR/fullchain.pem" -text -noout | grep -E "(Subject:|Not Before|Not After|DNS:)"
 fi
 
 # Nginx 설정 테스트
@@ -193,10 +193,10 @@ fi
 echo ""
 log_success "SSL 인증서 설정이 완료되었습니다!"
 echo ""
-echo "📊 SSL 상태:"
+echo "📊 Let's Encrypt SSL 상태:"
 echo "  - Domain: $DOMAIN"
-echo "  - Certificate: $SSL_DIR/certificate.crt"
-echo "  - Private Key: $SSL_DIR/private.key"
+echo "  - Certificate: $SSL_DIR/fullchain.pem"
+echo "  - Private Key: $SSL_DIR/privkey.pem"
 echo "  - Nginx Status: $(sudo systemctl is-active nginx)"
 echo ""
 echo "🌐 접속 정보:"

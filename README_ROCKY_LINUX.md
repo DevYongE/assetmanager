@@ -55,7 +55,7 @@ chmod +x pm2_management_corrected.sh
 ./pm2_management_corrected.sh env-help
 ```
 
-#### 2.2 SSL 인증서 설정 (Rocky Linux용)
+#### 2.2 Let's Encrypt SSL 인증서 설정 (Rocky Linux용)
 ```bash
 chmod +x setup_ssl_rocky.sh
 ./setup_ssl_rocky.sh
@@ -174,7 +174,7 @@ CORS_ORIGIN=https://invenone.it.kr
 
 # 확인 항목:
 # - Nginx 상태
-# - SSL 인증서 상태
+# - Let's Encrypt SSL 인증서 상태
 # - Supabase 연결 상태
 # - PM2 프로세스 상태
 # - 백엔드 API 응답 (포트 4000)
@@ -321,12 +321,12 @@ sudo ss -tlnp | grep :4000
 sudo kill -9 [PID]
 ```
 
-### SSL 인증서 문제
+### Let's Encrypt SSL 인증서 문제
 ```bash
-# SSL 인증서 확인
+# Let's Encrypt SSL 인증서 확인
 sudo certbot certificates
 
-# SSL 인증서 갱신
+# Let's Encrypt SSL 인증서 갱신
 sudo certbot renew
 
 # Nginx 설정 테스트
