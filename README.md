@@ -1,270 +1,251 @@
-# QR Asset Management System
-
-QR 코드를 활용한 자산 관리 시스템입니다.
+# QR 자산관리 시스템 배포 가이드
 
 ## 📋 프로젝트 개요
 
+QR 자산관리 시스템은 QR 코드를 활용한 자산 관리 솔루션입니다.
+
+### 🏗️ 기술 스택
+
+- **백엔드**: Node.js + Express + Supabase
 - **프론트엔드**: Nuxt.js 3 + Vue 3 + TypeScript
-- **백엔드**: Node.js + Express + MySQL
-- **배포**: Nginx + PM2
-- **작성일**: 2024-12-19
+- **데이터베이스**: Supabase (PostgreSQL)
+- **웹 서버**: Nginx
+- **프로세스 관리**: PM2
+- **도메인**: invenone.it.kr
+- **SSL**: Let's Encrypt
 
-## 🚀 배포 가이드
-
-### 1. 전체 배포 (권장)
-
-```bash
-# 스크립트 실행 권한 부여 (Linux/Mac)
-chmod +x setup_nginx_pm2.sh
-
-# 전체 배포 실행
-./setup_nginx_pm2.sh
-```
-
-### 2. 단계별 배포
-
-#### 2.1 Nginx 설정만 적용
-```bash
-chmod +x nginx_config.sh
-./nginx_config.sh
-```
-
-#### 2.2 PM2 관리
-```bash
-chmod +x pm2_management.sh
-
-# 백엔드 시작
-./pm2_management.sh start
-
-# 상태 확인
-./pm2_management.sh status
-
-# 로그 확인
-./pm2_management.sh logs
-
-# 재시작
-./pm2_management.sh restart
-
-# 중지
-./pm2_management.sh stop
-```
-
-#### 2.3 배포 상태 확인
-```bash
-chmod +x check_deployment.sh
-./check_deployment.sh
-```
-
-## 📁 프로젝트 구조
+### 📁 프로젝트 구조
 
 ```
 qr-asset-management/
 ├── backend/                 # 백엔드 (Node.js + Express)
-│   ├── config/             # 데이터베이스 설정
+│   ├── config/             # Supabase 설정
 │   ├── middleware/         # 미들웨어
 │   ├── routes/            # API 라우트
-│   └── index.js           # 메인 서버 파일
+│   └── index.js           # 메인 서버 파일 (포트 4000)
 ├── frontend/              # 프론트엔드 (Nuxt.js 3)
 │   ├── components/        # Vue 컴포넌트
 │   ├── pages/            # 페이지
 │   ├── stores/           # 상태 관리
 │   └── app.vue           # 메인 앱 컴포넌트
 └── scripts/              # 배포 스크립트
-    ├── setup_nginx_pm2.sh    # 전체 배포 스크립트
-    ├── nginx_config.sh       # Nginx 설정 스크립트
-    ├── pm2_management.sh     # PM2 관리 스크립트
-    └── check_deployment.sh   # 배포 상태 확인 스크립트
+    ├── deploy.sh         # 통합 배포 스크립트
+    └── diagnose.sh       # 시스템 진단 스크립트
 ```
 
-## 🔧 기술 스택
+## 🚀 배포 방법
 
-### 프론트엔드
-- **Nuxt.js 3**: Vue 3 기반 풀스택 프레임워크
-- **Vue 3**: 반응형 UI 프레임워크
-- **TypeScript**: 타입 안전성
-- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
-- **Pinia**: 상태 관리
+### 1. 현재 상황 진단
 
-### 백엔드
-- **Node.js**: JavaScript 런타임
-- **Express**: 웹 프레임워크
-- **MySQL**: 관계형 데이터베이스
-- **JWT**: 인증 토큰
-- **CORS**: 크로스 오리진 리소스 공유
+먼저 현재 시스템 상태를 진단합니다:
 
-### 배포
-- **Nginx**: 웹 서버 및 리버스 프록시
-- **PM2**: Node.js 프로세스 관리자
-- **MySQL**: 데이터베이스 서버
+```bash
+chmod +x diagnose.sh
+./diagnose.sh
+```
+
+### 2. 통합 배포 실행
+
+진단 결과에 따라 시스템을 배포합니다:
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+## 📊 배포 스크립트 설명
+
+### `deploy.sh` - 통합 배포 스크립트
+
+**기능:**
+- 시스템 환경 자동 감지 (Rocky Linux / Ubuntu)
+- NCP 환경 자동 감지
+- 백엔드 설정 및 실행 (포트 4000)
+- 프론트엔드 빌드 및 실행 (포트 3000)
+- Nginx 설정 및 SSL 지원
+- 방화벽 설정
+- PM2 프로세스 관리
+
+**실행 단계:**
+1. 시스템 환경 확인
+2. 시스템 패키지 설치
+3. 방화벽 설정
+4. 백엔드 설정
+5. 프론트엔드 설정
+6. Nginx 설정
+7. SSL 인증서 확인
+8. 최종 상태 확인
+
+### `diagnose.sh` - 시스템 진단 스크립트
+
+**기능:**
+- 시스템 정보 확인
+- 프로젝트 구조 확인
+- 백엔드 상태 확인
+- 프론트엔드 상태 확인
+- Nginx 상태 확인
+- SSL 인증서 확인
+- 방화벽 상태 확인
+- 도메인 연결 테스트
+- 시스템 리소스 확인
+- 문제점 요약 및 해결 방안 제시
+
+## 🔧 환경 변수 설정
+
+### 백엔드 (.env)
+
+```env
+# Supabase Configuration
+SUPABASE_URL=https://miiagipiurokjjotbuol.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paWFnaXBpdXJva2pqb3RidW9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTI1MDUsImV4cCI6MjA2NDkyODUwNX0.9S7zWwA5fw2WSJgMJb8iZ7Nnq-Cml0l7vfULCy-Qz5g
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paWFnaXBpdXJva2pqb3RidW9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzM1MjUwNSwiZXhwIjoyMDY0OTI4NTA1fQ.YOM-UqbSIZPi0qWtM0jlUb4oS9mBDi-CMs95FYTPAXg
+
+# Server Configuration
+PORT=4000
+NODE_ENV=production
+
+# JWT Configuration
+JWT_SECRET=your_super_secret_jwt_key_here_make_it_long_and_random
+JWT_EXPIRES_IN=24h
+
+# CORS Configuration
+CORS_ORIGIN=https://invenone.it.kr
+```
 
 ## 🌐 접속 정보
 
 배포 완료 후 다음 URL로 접속할 수 있습니다:
 
-- **프론트엔드**: http://localhost
-- **백엔드 API**: http://localhost/api
-- **헬스 체크**: http://localhost/health
+- **프론트엔드**: https://invenone.it.kr
+- **백엔드 API**: https://invenone.it.kr/api
+- **헬스 체크**: https://invenone.it.kr/api/health
 
-## 📝 주요 기능
-
-### 사용자 관리
-- 회원가입/로그인
-- JWT 기반 인증
-- 사용자 프로필 관리
-
-### QR 코드 관리
-- QR 코드 생성
-- QR 코드 스캔
-- 자산 정보 연동
-
-### 자산 관리
-- 디바이스 등록/수정/삭제
-- 직원 정보 관리
-- 자산 이력 추적
-
-## 🔍 배포 상태 확인
-
-```bash
-# 전체 시스템 상태 확인
-./check_deployment.sh
-
-# 확인 항목:
-# - Nginx 상태
-# - MySQL 상태
-# - PM2 프로세스 상태
-# - 백엔드 API 응답
-# - 프론트엔드 접속
-# - 시스템 리소스 사용량
-```
-
-## 🛠️ 유용한 명령어
+## 📝 유용한 명령어
 
 ### PM2 관리
 ```bash
-# 프로세스 상태 확인
+# PM2 상태 확인
 pm2 status
 
-# 로그 확인
+# 백엔드 로그 확인
 pm2 logs qr-backend
 
-# 재시작
+# 프론트엔드 로그 확인
+pm2 logs qr-frontend
+
+# 모든 서비스 재시작
+pm2 restart all
+
+# 특정 서비스 재시작
 pm2 restart qr-backend
-
-# 중지
-pm2 stop qr-backend
-
-# 삭제
-pm2 delete qr-backend
+pm2 restart qr-frontend
 ```
 
 ### Nginx 관리
 ```bash
-# 상태 확인
+# Nginx 상태 확인
 sudo systemctl status nginx
 
-# 재시작
-sudo systemctl restart nginx
-
-# 설정 테스트
+# Nginx 설정 테스트
 sudo nginx -t
 
-# 로그 확인
-sudo tail -f /var/log/nginx/qr-asset-error.log
+# Nginx 재시작
+sudo systemctl restart nginx
+
+# Nginx 로그 확인
+sudo tail -f /var/log/nginx/error.log
 ```
 
-### MySQL 관리
+### 시스템 모니터링
 ```bash
-# 상태 확인
-sudo systemctl status mysql
+# 포트 사용 상태 확인
+ss -tlnp
 
-# 재시작
-sudo systemctl restart mysql
+# 시스템 리소스 확인
+htop
 
-# 데이터베이스 접속
-mysql -u qr_user -p
+# 디스크 사용량 확인
+df -h
+
+# 메모리 사용량 확인
+free -h
 ```
 
-## 🔒 보안 설정
+## ⚠️ 문제 해결
 
-### 방화벽 설정
+### 1. 백엔드가 응답하지 않는 경우
 ```bash
-# Nginx 포트 허용
-sudo ufw allow 'Nginx Full'
-
-# SSH 포트 허용
-sudo ufw allow ssh
-
-# 방화벽 활성화
-sudo ufw --force enable
-```
-
-### 환경 변수
-백엔드 `.env` 파일에서 다음 설정을 확인하세요:
-
-```env
-# Database Configuration
-DB_HOST=localhost
-DB_USER=qr_user
-DB_PASSWORD=qr_password_2024
-DB_NAME=qr_asset_db
-DB_PORT=3306
-
-# Server Configuration
-PORT=3000
-NODE_ENV=production
-
-# JWT Configuration
-JWT_SECRET=your_jwt_secret_key_2024
-JWT_EXPIRES_IN=24h
-```
-
-## 🚨 문제 해결
-
-### 502 Bad Gateway 오류
-```bash
-# 백엔드 프로세스 확인
-pm2 status
+# 백엔드 로그 확인
+pm2 logs qr-backend
 
 # 백엔드 재시작
 pm2 restart qr-backend
 
-# Nginx 재시작
-sudo systemctl restart nginx
+# 환경 변수 확인
+cat backend/.env
 ```
 
-### 데이터베이스 연결 오류
+### 2. 프론트엔드가 응답하지 않는 경우
 ```bash
-# MySQL 상태 확인
-sudo systemctl status mysql
+# 프론트엔드 로그 확인
+pm2 logs qr-frontend
 
-# 데이터베이스 연결 테스트
-mysql -u qr_user -pqr_password_2024 -e "SELECT 1;"
+# 프론트엔드 재시작
+pm2 restart qr-frontend
+
+# 빌드 파일 확인
+ls -la frontend/.output/
 ```
 
-### 포트 충돌
+### 3. Nginx가 실행되지 않는 경우
 ```bash
-# 포트 사용 확인
-sudo netstat -tlnp | grep :80
-sudo netstat -tlnp | grep :3000
+# Nginx 상태 확인
+sudo systemctl status nginx
 
-# 프로세스 종료
-sudo kill -9 [PID]
+# Nginx 설정 테스트
+sudo nginx -t
+
+# 포트 충돌 확인
+ss -tlnp | grep :80
+ss -tlnp | grep :443
+```
+
+### 4. SSL 인증서 문제
+```bash
+# SSL 인증서 확인
+ls -la /etc/letsencrypt/live/invenone.it.kr/
+
+# 인증서 만료일 확인
+openssl x509 -in /etc/letsencrypt/live/invenone.it.kr/fullchain.pem -noout -enddate
+```
+
+## 🔄 재배포
+
+시스템에 문제가 있을 때 전체 재배포:
+
+```bash
+# 1. 현재 상태 진단
+./diagnose.sh
+
+# 2. 전체 재배포
+./deploy.sh
+
+# 3. 재배포 후 상태 확인
+./diagnose.sh
 ```
 
 ## 📞 지원
 
-문제가 발생하면 다음 순서로 확인해보세요:
+문제가 발생하면 다음 순서로 확인하세요:
 
-1. `./check_deployment.sh` 실행하여 전체 상태 확인
-2. PM2 로그 확인: `pm2 logs qr-backend`
-3. Nginx 로그 확인: `sudo tail -f /var/log/nginx/qr-asset-error.log`
-4. MySQL 로그 확인: `sudo tail -f /var/log/mysql/error.log`
-
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+1. `./diagnose.sh` 실행하여 문제점 파악
+2. 로그 확인 (PM2, Nginx)
+3. 환경 변수 확인
+4. 포트 충돌 확인
+5. `./deploy.sh` 실행하여 재배포
 
 ---
 
-**마지막 업데이트**: 2024-12-19
-**배포 방식**: Nginx + PM2 
+**작성일**: 2024-12-19  
+**버전**: 1.0.0  
+**도메인**: invenone.it.kr 
