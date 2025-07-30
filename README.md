@@ -80,6 +80,15 @@ chmod +x fix_port_conflict.sh
 ./fix_port_conflict.sh
 ```
 
+### 6. 사용자 권한 문제 해결 (필요시)
+
+PM2 프로세스가 root 계정으로 실행되는 경우:
+
+```bash
+chmod +x fix_user_permissions.sh
+./fix_user_permissions.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
@@ -276,7 +285,31 @@ kill -9 $(ss -tlnp | grep ':3000 ' | awk '{print $7}' | cut -d',' -f2 | cut -d'=
 kill -9 $(ss -tlnp | grep ':4000 ' | awk '{print $7}' | cut -d',' -f2 | cut -d'=' -f2)
 ```
 
-### 7. SSL 인증서 문제
+### 7. 사용자 권한 문제
+```bash
+# 현재 사용자 확인
+whoami
+
+# dmanager 계정으로 전환
+su - dmanager
+
+# PM2 프로세스 소유자 확인
+pm2 list | grep -E "(qr-backend|qr-frontend)" | while read line; do
+    PID=$(echo "$line" | awk '{print $6}')
+    if [ ! -z "$PID" ] && [ "$PID" != "0" ]; then
+        OWNER=$(ps -o user= -p $PID 2>/dev/null || echo "알 수 없음")
+        echo "PID $PID 소유자: $OWNER"
+    fi
+done
+
+# dmanager 계정으로 PM2 재시작
+pm2 delete all
+pm2 kill
+cd /home/dmanager/assetmanager/backend && pm2 start index.js --name 'qr-backend'
+cd /home/dmanager/assetmanager/frontend && pm2 start ecosystem.config.cjs
+```
+
+### 8. SSL 인증서 문제
 ```bash
 # SSL 인증서 확인
 ls -la /etc/letsencrypt/live/invenone.it.kr/
