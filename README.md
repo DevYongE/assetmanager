@@ -107,6 +107,15 @@ chmod +x fix_frontend_503.sh
 ./fix_frontend_503.sh
 ```
 
+### 9. API Health 체크 (권장)
+
+백엔드 API 상태를 종합적으로 확인:
+
+```bash
+chmod +x check_api_health.sh
+./check_api_health.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
@@ -366,7 +375,26 @@ pm2 start ecosystem.config.cjs
 sudo systemctl restart nginx
 ```
 
-### 10. SSL 인증서 문제
+### 10. API Health 문제
+```bash
+# API Health 체크
+curl -s http://localhost:4000/api/health
+
+# 백엔드 상태 확인
+pm2 status
+lsof -i :4000
+
+# 백엔드 재시작
+pm2 restart qr-backend
+
+# 백엔드 로그 확인
+pm2 logs qr-backend --lines 10
+
+# Supabase 연결 테스트
+curl -s "$SUPABASE_URL/rest/v1/"
+```
+
+### 11. SSL 인증서 문제
 ```bash
 # SSL 인증서 확인
 ls -la /etc/letsencrypt/live/invenone.it.kr/
