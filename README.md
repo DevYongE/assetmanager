@@ -125,6 +125,15 @@ chmod +x fix_all_issues.sh
 ./fix_all_issues.sh
 ```
 
+### 11. Nuxt.js 의존성 문제 해결 (필요시)
+
+@nuxt/kit 등 Nuxt.js 의존성 문제가 발생하는 경우:
+
+```bash
+chmod +x fix_nuxt_dependencies.sh
+./fix_nuxt_dependencies.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
@@ -403,7 +412,26 @@ pm2 logs qr-backend --lines 10
 curl -s "$SUPABASE_URL/rest/v1/"
 ```
 
-### 11. SSL 인증서 문제
+### 11. Nuxt.js 의존성 문제
+```bash
+# Node.js 버전 확인
+node --version
+
+# 의존성 완전 재설치
+rm -rf node_modules package-lock.json .output .nuxt
+npm cache clean --force
+npm install
+
+# 핵심 모듈 확인
+npm list @nuxt/kit
+npm list @nuxt/cli
+npm list nuxt
+
+# 빌드 테스트
+npm run build
+```
+
+### 12. SSL 인증서 문제
 ```bash
 # SSL 인증서 확인
 ls -la /etc/letsencrypt/live/invenone.it.kr/
