@@ -71,6 +71,15 @@ chmod +x fix_nuxt_modules.sh
 ./fix_nuxt_modules.sh
 ```
 
+### 5. 포트 충돌 문제 해결 (필요시)
+
+포트 3000, 4000 충돌이 발생하는 경우:
+
+```bash
+chmod +x fix_port_conflict.sh
+./fix_port_conflict.sh
+```
+
 ## 📊 배포 스크립트 설명
 
 ### `deploy.sh` - 통합 배포 스크립트
@@ -253,7 +262,21 @@ npm install
 npm run build
 ```
 
-### 6. SSL 인증서 문제
+### 6. 포트 충돌 문제
+```bash
+# 포트 사용 상태 확인
+ss -tlnp | grep ':3000\|:4000'
+
+# PM2 프로세스 정리
+pm2 delete all
+pm2 kill
+
+# 포트 사용 프로세스 종료
+kill -9 $(ss -tlnp | grep ':3000 ' | awk '{print $7}' | cut -d',' -f2 | cut -d'=' -f2)
+kill -9 $(ss -tlnp | grep ':4000 ' | awk '{print $7}' | cut -d',' -f2 | cut -d'=' -f2)
+```
+
+### 7. SSL 인증서 문제
 ```bash
 # SSL 인증서 확인
 ls -la /etc/letsencrypt/live/invenone.it.kr/
