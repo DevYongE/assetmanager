@@ -105,7 +105,7 @@ module.exports = {
   apps: [
     {
       name: 'backend',
-      script: './backend/index.js',
+      script: 'index.js',
       cwd: './backend',
       instances: 1,
       autorestart: true,
@@ -119,14 +119,14 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 4000
       },
-      error_file: './logs/backend-error.log',
-      out_file: './logs/backend-out.log',
-      log_file: './logs/backend-combined.log',
+      error_file: '../logs/backend-error.log',
+      out_file: '../logs/backend-out.log',
+      log_file: '../logs/backend-combined.log',
       time: true
     },
     {
       name: 'frontend',
-      script: './frontend/.output/server/index.mjs',
+      script: '.output/server/index.mjs',
       cwd: './frontend',
       instances: 1,
       autorestart: true,
@@ -140,9 +140,9 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000
       },
-      error_file: './logs/frontend-error.log',
-      out_file: './logs/frontend-out.log',
-      log_file: './logs/frontend-combined.log',
+      error_file: '../logs/frontend-error.log',
+      out_file: '../logs/frontend-out.log',
+      log_file: '../logs/frontend-combined.log',
       time: true
     }
   ]
@@ -222,22 +222,12 @@ invenone.it.kr {
         path /api/*
     }
     handle @api {
-        reverse_proxy localhost:4000 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
-        }
+        reverse_proxy localhost:4000
     }
     
     # 나머지 요청을 프론트엔드로 프록시
     handle {
-        reverse_proxy localhost:3000 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
-        }
+        reverse_proxy localhost:3000
     }
     
     # 보안 헤더
