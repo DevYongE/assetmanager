@@ -15,6 +15,11 @@
 // 작성일: 2024-12-19
 // =============================================================================
 
+// =============================================================================
+// 환경 변수 설정
+// =============================================================================
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const https = require('https');
@@ -123,6 +128,15 @@ app.use((err, req, res, next) => {
 // =============================================================================
 // 서버 시작
 // =============================================================================
+
+// 환경 변수 로딩 확인
+console.log('🔧 환경 변수 로딩 상태:');
+console.log('   NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('   PORT:', process.env.PORT || 'not set (using default: 4000)');
+console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
+console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+console.log('   SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
+console.log('');
 
 // 2024-12-19: NCP 서버 배포를 위해 포트를 4000으로 변경
 const PORT = process.env.PORT || 4000;
