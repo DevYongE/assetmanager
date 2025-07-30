@@ -92,7 +92,10 @@ run_script "fix_backend_crash.sh" "백엔드 크래시 문제 해결"
 # 5단계: PM2 프로세스 오류 해결
 run_script "fix_pm2_errors.sh" "PM2 프로세스 오류 해결"
 
-# 6단계: 최종 상태 확인
+# 6단계: 프론트엔드 빌드 해결
+run_script "fix_frontend_build_local.sh" "프론트엔드 빌드 문제 해결"
+
+# 7단계: 최종 상태 확인
 run_script "check_deployment_ncp_rocky.sh" "전체 배포 상태 확인"
 
 echo ""

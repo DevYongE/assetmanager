@@ -38,7 +38,14 @@ chmod +x setup_nginx_pm2_rocky.sh
 
 ### 2. 단계별 배포
 
-#### 2.1 PM2 관리 (수정된 버전)
+#### 2.1 현재 디렉토리 확인
+```bash
+# 현재 디렉토리가 assetmanager인지 확인
+pwd
+ls -la
+```
+
+#### 2.2 PM2 관리 (수정된 버전)
 ```bash
 chmod +x pm2_management_corrected.sh
 
@@ -55,13 +62,19 @@ chmod +x pm2_management_corrected.sh
 ./pm2_management_corrected.sh env-help
 ```
 
-#### 2.2 Let's Encrypt SSL 인증서 설정 (Rocky Linux용)
+#### 2.3 프론트엔드 빌드 (로컬 경로용)
+```bash
+chmod +x fix_frontend_build_local.sh
+./fix_frontend_build_local.sh
+```
+
+#### 2.4 Let's Encrypt SSL 인증서 설정 (Rocky Linux용)
 ```bash
 chmod +x setup_ssl_rocky.sh
 ./setup_ssl_rocky.sh
 ```
 
-#### 2.3 배포 상태 확인 (Rocky Linux용)
+#### 2.5 배포 상태 확인 (Rocky Linux용)
 ```bash
 chmod +x check_deployment_rocky.sh
 ./check_deployment_rocky.sh

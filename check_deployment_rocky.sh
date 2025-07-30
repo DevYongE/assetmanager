@@ -42,8 +42,9 @@ if ! grep -q "Rocky Linux" /etc/os-release; then
     log_warning "이 스크립트는 Rocky Linux용입니다. 다른 시스템에서는 문제가 발생할 수 있습니다."
 fi
 
-# 프로젝트 디렉토리 설정
-PROJECT_DIR="/var/www/qr-asset-management"
+# 프로젝트 디렉토리 설정 (현재 디렉토리 기준)
+CURRENT_DIR=$(pwd)
+PROJECT_DIR="$CURRENT_DIR"
 BACKEND_DIR="$PROJECT_DIR/backend"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
 DOMAIN="invenone.it.kr"

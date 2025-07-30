@@ -50,8 +50,9 @@ else
     log_info "일반 Rocky Linux 환경입니다."
 fi
 
-# 프로젝트 디렉토리 설정
-PROJECT_DIR="/var/www/qr-asset-management"
+# 프로젝트 디렉토리 설정 (현재 디렉토리 기준)
+CURRENT_DIR=$(pwd)
+PROJECT_DIR="$CURRENT_DIR"
 BACKEND_DIR="$PROJECT_DIR/backend"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
 DOMAIN="invenone.it.kr"

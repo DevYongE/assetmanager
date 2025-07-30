@@ -31,8 +31,9 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# 프로젝트 디렉토리 설정
-PROJECT_DIR="/var/www/qr-asset-management"
+# 프로젝트 디렉토리 설정 (현재 디렉토리 기준)
+CURRENT_DIR=$(pwd)
+PROJECT_DIR="$CURRENT_DIR"
 BACKEND_DIR="$PROJECT_DIR/backend"
 
 # 함수: Supabase 환경 변수 확인
@@ -75,7 +76,7 @@ check_pm2_status() {
 # 함수: 백엔드 시작
 start_backend() {
     log_info "백엔드를 시작합니다..."
-    cd $BACKEND_DIR
+    cd "$BACKEND_DIR"
     
     # Supabase 환경 변수 확인
     if ! check_supabase_env; then

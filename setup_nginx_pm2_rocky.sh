@@ -78,8 +78,9 @@ sudo firewall-cmd --permanent --add-service=https
 sudo firewall-cmd --permanent --add-service=ssh
 sudo firewall-cmd --reload
 
-# 프로젝트 디렉토리 설정
-PROJECT_DIR="/var/www/qr-asset-management"
+# 프로젝트 디렉토리 설정 (현재 디렉토리 기준)
+CURRENT_DIR=$(pwd)
+PROJECT_DIR="$CURRENT_DIR"
 log_info "프로젝트 디렉토리를 설정합니다: $PROJECT_DIR"
 
 # 디렉토리 생성
@@ -142,7 +143,7 @@ fi
 
 # 백엔드 설정
 log_info "백엔드를 설정합니다..."
-cd $PROJECT_DIR/backend
+cd "$BACKEND_DIR"
 
 # 백엔드 의존성 설치
 log_info "백엔드 의존성을 설치합니다..."
@@ -186,7 +187,7 @@ pm2 start index.js --name "qr-backend" --env production
 
 # 프론트엔드 설정
 log_info "프론트엔드를 설정합니다..."
-cd $PROJECT_DIR/frontend
+cd "$FRONTEND_DIR"
 
 # 프론트엔드 의존성 설치
 log_info "프론트엔드 의존성을 설치합니다..."
