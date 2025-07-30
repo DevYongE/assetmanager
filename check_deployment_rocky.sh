@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# 완전한 배포 상태 확인 스크립트
+# Rocky Linux용 배포 상태 확인 스크립트
 # 작성일: 2024-12-19
-# 설명: invenone.it.kr 도메인과 SSL 인증서를 포함한 전체 배포 상태를 확인합니다.
+# 설명: Rocky Linux에서 invenone.it.kr 도메인과 SSL 인증서를 포함한 전체 배포 상태를 확인합니다.
 # - Supabase 연결 확인
 # - 올바른 포트 설정 (백엔드: 4000, 프론트엔드: 3000)
 # - SSL 인증서 상태 확인
 # - 도메인 연결 확인
+# - firewalld 방화벽 확인
 
 set -e
 
-echo "🔍 QR Asset Management 완전 배포 상태를 확인합니다..."
+echo "🔍 QR Asset Management Rocky Linux 배포 상태를 확인합니다..."
 
 # 색상 정의
 RED='\033[0;31m'
@@ -35,6 +36,12 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Rocky Linux 확인
+log_info "Rocky Linux 시스템을 확인합니다..."
+if ! grep -q "Rocky Linux" /etc/os-release; then
+    log_warning "이 스크립트는 Rocky Linux용입니다. 다른 시스템에서는 문제가 발생할 수 있습니다."
+fi
+
 # 프로젝트 디렉토리 설정
 PROJECT_DIR="/var/www/qr-asset-management"
 BACKEND_DIR="$PROJECT_DIR/backend"
@@ -45,7 +52,7 @@ SSL_DIR="/etc/ssl/$DOMAIN"
 # 함수: 시스템 정보 확인
 check_system_info() {
     log_info "시스템 정보를 확인합니다..."
-    echo "  - OS: $(lsb_release -d | cut -f2)"
+    echo "  - OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
     echo "  - Kernel: $(uname -r)"
     echo "  - CPU: $(nproc) cores"
     echo "  - Memory: $(free -h | grep Mem | awk '{print $2}')"
@@ -69,13 +76,13 @@ check_nginx() {
         fi
         
         # 포트 확인
-        if netstat -tlnp | grep -q ":80 "; then
+        if ss -tlnp | grep -q ":80 "; then
             log_success "Nginx가 포트 80에서 실행 중입니다."
         else
             log_error "Nginx가 포트 80에서 실행되지 않습니다!"
         fi
         
-        if netstat -tlnp | grep -q ":443 "; then
+        if ss -tlnp | grep -q ":443 "; then
             log_success "Nginx가 포트 443에서 실행 중입니다."
         else
             log_error "Nginx가 포트 443에서 실행되지 않습니다!"
@@ -267,22 +274,35 @@ check_frontend() {
     fi
 }
 
-# 함수: 방화벽 상태 확인
+# 함수: 방화벽 상태 확인 (Rocky Linux용 - firewalld)
 check_firewall() {
-    log_info "방화벽 상태를 확인합니다..."
+    log_info "방화벽 상태를 확인합니다 (firewalld)..."
     
-    if ufw status | grep -q "Status: active"; then
-        log_success "방화벽이 활성화되어 있습니다."
-        echo "  - UFW Status: $(ufw status | grep Status)"
+    if systemctl is-active --quiet firewalld; then
+        log_success "firewalld가 활성화되어 있습니다."
+        echo "  - Firewalld Status: $(systemctl is-active firewalld)"
         
-        # Nginx 포트 확인
-        if ufw status | grep -q "Nginx Full"; then
-            log_success "Nginx 방화벽 규칙이 설정되어 있습니다."
+        # HTTP/HTTPS 포트 확인
+        if sudo firewall-cmd --list-services | grep -q "http"; then
+            log_success "HTTP 서비스가 허용되어 있습니다."
         else
-            log_warning "Nginx 방화벽 규칙이 설정되지 않았습니다."
+            log_warning "HTTP 서비스가 허용되지 않았습니다."
+        fi
+        
+        if sudo firewall-cmd --list-services | grep -q "https"; then
+            log_success "HTTPS 서비스가 허용되어 있습니다."
+        else
+            log_warning "HTTPS 서비스가 허용되지 않았습니다."
+        fi
+        
+        # SSH 포트 확인
+        if sudo firewall-cmd --list-services | grep -q "ssh"; then
+            log_success "SSH 서비스가 허용되어 있습니다."
+        else
+            log_warning "SSH 서비스가 허용되지 않았습니다."
         fi
     else
-        log_warning "방화벽이 비활성화되어 있습니다."
+        log_warning "firewalld가 비활성화되어 있습니다."
     fi
 }
 
@@ -327,33 +347,33 @@ check_performance() {
     echo "  - Load Average: ${LOAD_AVG}"
 }
 
-# 함수: 포트 사용 확인
+# 함수: 포트 사용 확인 (Rocky Linux용 - ss 명령어)
 check_ports() {
     log_info "포트 사용 상태를 확인합니다..."
     
     # 포트 80 (Nginx)
-    if netstat -tlnp | grep -q ":80 "; then
+    if ss -tlnp | grep -q ":80 "; then
         log_success "포트 80이 사용 중입니다 (Nginx)."
     else
         log_warning "포트 80이 사용되지 않습니다."
     fi
     
     # 포트 443 (HTTPS)
-    if netstat -tlnp | grep -q ":443 "; then
+    if ss -tlnp | grep -q ":443 "; then
         log_success "포트 443이 사용 중입니다 (HTTPS)."
     else
         log_warning "포트 443이 사용되지 않습니다."
     fi
     
     # 포트 3000 (프론트엔드)
-    if netstat -tlnp | grep -q ":3000 "; then
+    if ss -tlnp | grep -q ":3000 "; then
         log_success "포트 3000이 사용 중입니다 (프론트엔드)."
     else
         log_warning "포트 3000이 사용되지 않습니다."
     fi
     
     # 포트 4000 (백엔드)
-    if netstat -tlnp | grep -q ":4000 "; then
+    if ss -tlnp | grep -q ":4000 "; then
         log_success "포트 4000이 사용 중입니다 (백엔드)."
     else
         log_warning "포트 4000이 사용되지 않습니다."
@@ -363,7 +383,7 @@ check_ports() {
 # 메인 실행
 echo ""
 echo "=========================================="
-echo "🔍 QR Asset Management 완전 배포 상태 확인"
+echo "🔍 QR Asset Management Rocky Linux 배포 상태 확인"
 echo "작성일: 2024-12-19"
 echo "도메인: $DOMAIN"
 echo "=========================================="
@@ -413,6 +433,7 @@ echo ""
 # 전체 상태 요약
 echo "✅ 정상 동작 중인 서비스:"
 systemctl is-active nginx &> /dev/null && echo "  - Nginx"
+systemctl is-active firewalld &> /dev/null && echo "  - Firewalld"
 pm2 list | grep -q "qr-backend" && echo "  - Backend (PM2)"
 
 echo ""
@@ -429,11 +450,12 @@ echo "  - 백엔드 포트: 4000"
 echo "  - 프론트엔드 포트: 3000"
 
 echo ""
-echo "📝 유용한 명령어:"
+echo "📝 유용한 명령어 (Rocky Linux용):"
 echo "  - 전체 상태 확인: $0"
 echo "  - PM2 관리: ./pm2_management_corrected.sh [명령어]"
-echo "  - SSL 설정: ./setup_ssl_invenone.sh"
-echo "  - 배포: ./setup_nginx_pm2_complete.sh"
+echo "  - SSL 설정: ./setup_ssl_rocky.sh"
+echo "  - 배포: ./setup_nginx_pm2_rocky.sh"
+echo "  - 방화벽 상태: sudo firewall-cmd --list-all"
 
 echo ""
-log_success "완전한 배포 상태 확인이 완료되었습니다! 🎉" 
+log_success "Rocky Linux 배포 상태 확인이 완료되었습니다! 🎉" 

@@ -1,17 +1,15 @@
 #!/bin/bash
 
-# QR Asset Management - 완전한 Nginx + PM2 배포 스크립트
+# QR Asset Management - Rocky Linux용 Nginx + PM2 배포 스크립트
 # 작성일: 2024-12-19
-# 설명: invenone.it.kr 도메인과 SSL 인증서를 포함한 완전한 배포 스크립트
-# - Supabase 데이터베이스 사용
-# - 백엔드 포트: 4000
-# - 프론트엔드 포트: 3000
-# - SSL 인증서 설정
-# - invenone.it.kr 도메인 설정
+# 설명: Rocky Linux용 완전한 배포 스크립트
+# - dnf 패키지 관리자 사용
+# - Rocky Linux 특성 반영
+# - invenone.it.kr 도메인과 SSL 인증서 포함
 
 set -e
 
-echo "🚀 QR Asset Management 완전 배포를 시작합니다..."
+echo "🚀 QR Asset Management Rocky Linux 배포를 시작합니다..."
 
 # 색상 정의
 RED='\033[0;31m'
@@ -37,34 +35,48 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# 시스템 업데이트
+# Rocky Linux 확인
+log_info "Rocky Linux 시스템을 확인합니다..."
+if ! grep -q "Rocky Linux" /etc/os-release; then
+    log_warning "이 스크립트는 Rocky Linux용입니다. 다른 시스템에서는 문제가 발생할 수 있습니다."
+fi
+
+# 시스템 업데이트 (Rocky Linux용)
 log_info "시스템 패키지를 업데이트합니다..."
-sudo apt update && sudo apt upgrade -y
+sudo dnf update -y
 
-# 필수 패키지 설치
+# EPEL 저장소 활성화 (Rocky Linux용)
+log_info "EPEL 저장소를 활성화합니다..."
+sudo dnf install -y epel-release
+
+# 필수 패키지 설치 (Rocky Linux용)
 log_info "필수 패키지들을 설치합니다..."
-sudo apt install -y curl wget git build-essential
+sudo dnf install -y curl wget git gcc gcc-c++ make
 
-# Node.js 설치 (v18 LTS)
+# Node.js 설치 (Rocky Linux용)
 log_info "Node.js 18 LTS를 설치합니다..."
 if ! command -v node &> /dev/null; then
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    sudo apt-get install -y nodejs
+    # NodeSource 저장소 추가 (Rocky Linux용)
+    curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+    sudo dnf install -y nodejs
 fi
 
 # PM2 전역 설치
 log_info "PM2를 설치합니다..."
 sudo npm install -g pm2
 
-# Nginx 설치
+# Nginx 설치 (Rocky Linux용)
 log_info "Nginx를 설치합니다..."
-sudo apt install -y nginx
+sudo dnf install -y nginx
 
-# 방화벽 설정
+# 방화벽 설정 (Rocky Linux용 - firewalld 사용)
 log_info "방화벽을 설정합니다..."
-sudo ufw allow 'Nginx Full'
-sudo ufw allow ssh
-sudo ufw --force enable
+sudo systemctl enable firewalld
+sudo systemctl start firewalld
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --permanent --add-service=ssh
+sudo firewall-cmd --reload
 
 # 프로젝트 디렉토리 설정
 PROJECT_DIR="/var/www/qr-asset-management"
@@ -127,9 +139,9 @@ npm run build
 log_info "SSL 인증서 디렉토리를 생성합니다..."
 sudo mkdir -p /etc/ssl/invenone.it.kr
 
-# Nginx 설정 (SSL 포함)
+# Nginx 설정 (SSL 포함) - Rocky Linux용 경로
 log_info "Nginx 설정을 생성합니다 (SSL 포함)..."
-sudo tee /etc/nginx/sites-available/invenone.it.kr << EOF
+sudo tee /etc/nginx/conf.d/invenone.it.kr.conf << EOF
 # HTTP에서 HTTPS로 리다이렉트
 server {
     listen 80;
@@ -242,10 +254,9 @@ server {
 }
 EOF
 
-# Nginx 사이트 활성화
-log_info "Nginx 사이트를 활성화합니다..."
-sudo ln -sf /etc/nginx/sites-available/invenone.it.kr /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
+# 기본 Nginx 설정 비활성화 (Rocky Linux용)
+log_info "기본 Nginx 설정을 비활성화합니다..."
+sudo rm -f /etc/nginx/conf.d/default.conf
 
 # Nginx 설정 테스트
 log_info "Nginx 설정을 테스트합니다..."
@@ -268,6 +279,7 @@ log_success "배포가 완료되었습니다!"
 echo ""
 echo "📊 서비스 상태:"
 echo "  - Nginx: $(sudo systemctl is-active nginx)"
+echo "  - Firewalld: $(sudo systemctl is-active firewalld)"
 echo "  - PM2 Backend: $(pm2 status | grep qr-backend || echo 'Not running')"
 echo ""
 echo "🌐 접속 정보:"
@@ -281,11 +293,12 @@ echo "   2. SSL 인증서 파일 배치:"
 echo "      - /etc/ssl/invenone.it.kr/certificate.crt"
 echo "      - /etc/ssl/invenone.it.kr/private.key"
 echo ""
-echo "📝 유용한 명령어:"
+echo "📝 유용한 명령어 (Rocky Linux용):"
 echo "  - PM2 상태 확인: pm2 status"
 echo "  - PM2 로그 확인: pm2 logs"
 echo "  - Nginx 상태: sudo systemctl status nginx"
 echo "  - 백엔드 재시작: pm2 restart qr-backend"
 echo "  - SSL 인증서 확인: sudo nginx -t"
+echo "  - 방화벽 상태: sudo firewall-cmd --list-all"
 echo ""
-log_success "QR Asset Management가 성공적으로 배포되었습니다! 🎉" 
+log_success "QR Asset Management가 Rocky Linux에 성공적으로 배포되었습니다! 🎉" 
