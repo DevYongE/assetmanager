@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # =============================================================================
-# useAuthStore Import 문제 해결 스크립트
+# useAuthStore Import 문제 해결 스크립트 (Nginx 기반)
 # =============================================================================
 
-echo "🔧 useAuthStore import 문제를 해결합니다..."
+echo "🔧 useAuthStore import 문제를 해결합니다 (Nginx 기반)..."
 echo ""
 
 # =============================================================================
@@ -18,6 +18,10 @@ pm2 status
 echo ""
 echo "프론트엔드 빌드 파일 확인..."
 ls -la frontend/.output/server/ 2>/dev/null || echo "❌ 빌드 파일 없음"
+
+echo ""
+echo "Nginx 상태 확인..."
+sudo systemctl status nginx --no-pager
 
 echo ""
 
@@ -69,7 +73,7 @@ else
 module.exports = {
   apps: [
     {
-      name: 'backend',
+      name: 'qr-backend',
       script: 'index.js',
       cwd: './backend',
       instances: 1,
@@ -81,7 +85,7 @@ module.exports = {
       }
     },
     {
-      name: 'frontend',
+      name: 'qr-frontend',
       script: '.output/server/index.mjs',
       cwd: './frontend',
       instances: 1,
@@ -122,15 +126,18 @@ curl -I http://localhost:3000 2>/dev/null && echo "✅ 프론트엔드 정상" |
 echo ""
 
 # =============================================================================
-# 5. Caddy 재시작
+# 5. Nginx 재시작
 # =============================================================================
-echo "🌐 5단계: Caddy 재시작"
+echo "🌐 5단계: Nginx 재시작"
 
-echo "Caddy 재시작..."
-sudo systemctl restart caddy
+echo "Nginx 설정 테스트..."
+sudo nginx -t
 
-echo "Caddy 상태 확인..."
-sudo systemctl status caddy --no-pager
+echo "Nginx 재시작..."
+sudo systemctl restart nginx
+
+echo "Nginx 상태 확인..."
+sudo systemctl status nginx --no-pager
 
 echo ""
 
@@ -161,7 +168,7 @@ echo ""
 echo "🔧 관리 명령어:"
 echo "   PM2 상태: pm2 status"
 echo "   PM2 로그: pm2 logs"
-echo "   Caddy 상태: sudo systemctl status caddy"
-echo "   Caddy 로그: sudo journalctl -u caddy -f"
+echo "   Nginx 상태: sudo systemctl status nginx"
+echo "   Nginx 로그: sudo tail -f /var/log/nginx/error.log"
 echo ""
 echo "✅ 모든 설정이 완료되었습니다!" 

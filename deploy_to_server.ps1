@@ -1,8 +1,8 @@
 # =============================================================================
-# Windows PowerShell Server Deployment Script
+# Windows PowerShell Server Deployment Script (Nginx 기반)
 # =============================================================================
 
-Write-Host "Starting server deployment..." -ForegroundColor Green
+Write-Host "Starting server deployment (Nginx based)..." -ForegroundColor Green
 Write-Host ""
 
 # =============================================================================
@@ -35,9 +35,9 @@ Write-Host ""
 Write-Host "3. Pull latest code:" -ForegroundColor White
 Write-Host "   git pull origin main" -ForegroundColor Gray
 Write-Host ""
-Write-Host "4. Run fix_auth_store.sh:" -ForegroundColor White
-Write-Host "   chmod +x fix_auth_store.sh" -ForegroundColor Gray
-Write-Host "   ./fix_auth_store.sh" -ForegroundColor Gray
+Write-Host "4. Run fix_auth_store_nginx.sh:" -ForegroundColor White
+Write-Host "   chmod +x fix_auth_store_nginx.sh" -ForegroundColor Gray
+Write-Host "   ./fix_auth_store_nginx.sh" -ForegroundColor Gray
 Write-Host ""
 
 # =============================================================================
@@ -60,12 +60,12 @@ Write-Host ""
 Write-Host "3. Restart with PM2:" -ForegroundColor White
 Write-Host "   pm2 start ecosystem.config.js" -ForegroundColor Gray
 Write-Host ""
-Write-Host "4. Restart Caddy:" -ForegroundColor White
-Write-Host "   sudo systemctl restart caddy" -ForegroundColor Gray
+Write-Host "4. Restart Nginx:" -ForegroundColor White
+Write-Host "   sudo systemctl restart nginx" -ForegroundColor Gray
 Write-Host ""
 Write-Host "5. Check status:" -ForegroundColor White
 Write-Host "   pm2 status" -ForegroundColor Gray
-Write-Host "   sudo systemctl status caddy" -ForegroundColor Gray
+Write-Host "   sudo systemctl status nginx" -ForegroundColor Gray
 Write-Host ""
 
 # =============================================================================
@@ -80,7 +80,7 @@ Write-Host "   3. Check Console tab in Developer Tools" -ForegroundColor White
 Write-Host ""
 Write-Host "Troubleshooting commands:" -ForegroundColor Cyan
 Write-Host "   PM2 logs: pm2 logs" -ForegroundColor Gray
-Write-Host "   Caddy logs: sudo journalctl -u caddy -f" -ForegroundColor Gray
+Write-Host "   Nginx logs: sudo journalctl -u nginx -f" -ForegroundColor Gray
 Write-Host "   Port check: sudo netstat -tlnp | grep -E ':(80|443|3000|4000)'" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Deployment preparation completed!" -ForegroundColor Green 
