@@ -111,9 +111,9 @@ export default defineNuxtConfig({
       // API 기본 URL 설정
       // =============================================================================
       // 개발 환경: localhost 사용
-      // 운영 환경: HTTPS 도메인 사용 (2025-01-27: HTTPS로 변경)
+      // 운영 환경: 상대 경로 사용 (2025-01-27: localhost 호출 문제 해결)
       apiBase: process.env.NODE_ENV === 'production' 
-        ? (process.env.API_BASE_URL || 'https://invenone.it.kr/api')  // HTTPS로 변경
+        ? (process.env.API_BASE_URL || '/api')  // 상대 경로로 변경하여 localhost 호출 방지
         : (process.env.API_BASE_URL || 'http://localhost:4000/api'),  // 개발환경은 HTTP
       
       // =============================================================================

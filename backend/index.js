@@ -46,7 +46,7 @@ app.use(express.urlencoded({ extended: true }));
 // =============================================================================
 // CORS 설정
 // =============================================================================
-// 2024-12-19: CORS 설정 수정 - 모든 도메인 허용 및 특정 도메인 추가
+// 2025-01-27: CORS 설정 수정 - 상대 경로 API 호출 허용 및 localhost 호출 문제 해결
 const corsOptions = {
   origin: [
     'http://localhost:3000',
@@ -58,7 +58,10 @@ const corsOptions = {
     'https://invenone.it.kr',
     'https://www.invenone.it.kr',
     'http://invenone.it.kr',
-    'http://www.invenone.it.kr'
+    'http://www.invenone.it.kr',
+    // 2025-01-27: 상대 경로 API 호출을 위한 추가 설정
+    /^https?:\/\/.*\.it\.kr$/,  // 모든 it.kr 서브도메인 허용
+    /^https?:\/\/.*\.invenone\.it\.kr$/  // invenone.it.kr 서브도메인 허용
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

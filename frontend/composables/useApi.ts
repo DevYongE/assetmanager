@@ -76,7 +76,7 @@ export const useApi = () => {
   // =============================================================================
   // 개선된 API 호출 함수 (환경별 처리)
   // =============================================================================
-  // 2025-01-27: CSP 문제 해결 및 안정적인 API 호출
+  // 2025-01-27: 상대 경로 API 호출로 localhost 문제 해결
   const apiCallWithFallback = async <T>(
     endpoint: string, 
     options: RequestInit = {}
@@ -94,9 +94,9 @@ export const useApi = () => {
     }
     
     // =============================================================================
-    // 개발/테스트 환경 처리
+    // 개발 환경 처리
     // =============================================================================
-    // 개발 환경에서는 단순한 API 호출만 수행
+    // 개발 환경에서는 절대 URL 사용
     if (!isProduction) {
       const fullUrl = `${baseUrl}${endpoint}`
       console.log('🔍 [API DEBUG] Development mode - direct call:', fullUrl)
@@ -115,17 +115,14 @@ export const useApi = () => {
     }
     
     // =============================================================================
-    // 운영 환경 처리 (HTTPS 우선, 실패 시 HTTP 자동 전환)
+    // 운영 환경 처리 (상대 경로 사용)
     // =============================================================================
-    // HTTPS와 HTTP URL 준비
-    const httpsUrl = baseUrl.replace('http://', 'https://')
-    const httpUrl = baseUrl.replace('https://', 'http://')
-    
-    console.log('🔍 [API DEBUG] Production mode - trying HTTPS first:', `${httpsUrl}${endpoint}`)
+    // 2025-01-27: 상대 경로를 사용하여 localhost 호출 문제 해결
+    const apiUrl = `${baseUrl}${endpoint}`
+    console.log('🔍 [API DEBUG] Production mode - relative path call:', apiUrl)
     
     try {
-      // 먼저 HTTPS로 시도
-      const response = await fetch(`${httpsUrl}${endpoint}`, {
+      const response = await fetch(apiUrl, {
         headers: createHeaders(),
         ...options,
         mode: 'cors', // CORS 모드 명시적 설정
@@ -138,28 +135,9 @@ export const useApi = () => {
       }
 
       return response.json()
-    } catch (httpsError) {
-      console.log('⚠️ [API DEBUG] HTTPS failed, trying HTTP:', `${httpUrl}${endpoint}`)
-      
-      try {
-        // HTTPS 실패 시 HTTP로 시도
-        const response = await fetch(`${httpUrl}${endpoint}`, {
-          headers: createHeaders(),
-          ...options,
-          mode: 'cors',
-          credentials: 'include'
-        })
-
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({ error: 'Network error' }))
-          throw new Error(error.error || `HTTP ${response.status}`)
-        }
-
-        return response.json()
-      } catch (httpError) {
-        console.error('❌ [API DEBUG] Both HTTPS and HTTP failed:', httpError)
-        throw httpError
-      }
+    } catch (error) {
+      console.error('❌ [API ERROR] Production API call failed:', error)
+      throw error
     }
   }
 
