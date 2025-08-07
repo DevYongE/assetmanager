@@ -49,7 +49,7 @@ log_info "🚀 QR 자산관리 시스템 Rocky Linux 배포 시작 (Supabase 기
 log_info "📦 시스템 업데이트 및 필수 패키지 설치 중..."
 
 sudo dnf update -y
-sudo dnf install -y git nodejs npm nginx pm2
+sudo dnf install -y git nodejs npm nginx
 
 # Node.js 최신 버전 설치 (필요시)
 if ! command -v node &> /dev/null; then
@@ -57,6 +57,10 @@ if ! command -v node &> /dev/null; then
     curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
     sudo dnf install -y nodejs
 fi
+
+# PM2 글로벌 설치 (sudo 없이)
+log_info "PM2 글로벌 설치 중..."
+npm install -g pm2
 
 # =============================================================================
 # 2. 프로젝트 디렉토리 설정
@@ -85,12 +89,20 @@ sudo cp -r "$SCRIPT_DIR/frontend" "$PROJECT_DIR/"
 sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 
 # =============================================================================
-# 4. Supabase 환경변수 설정
+# 4. 기존 .env 파일 확인 및 설정
 # =============================================================================
-log_info "🗄️ Supabase 환경변수 설정 중..."
+log_info "🗄️ 환경변수 파일 확인 중..."
 
-# 백엔드 환경변수 파일 생성
-cat > "$BACKEND_DIR/.env" << 'EOF'
+# 백업에서 .env 파일 복사 시도
+if [ -f "${PROJECT_DIR}_backup_$(date +%Y%m%d_%H%M%S)/backend/.env" ]; then
+    log_info "기존 .env 파일을 복사합니다..."
+    cp "${PROJECT_DIR}_backup_$(date +%Y%m%d_%H%M%S)/backend/.env" "$BACKEND_DIR/.env"
+    log_success "기존 .env 파일 복사 완료"
+else
+    log_warning "기존 .env 파일이 없습니다. 새로 생성합니다..."
+    
+    # 백엔드 환경변수 파일 생성
+    cat > "$BACKEND_DIR/.env" << 'EOF'
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url_here
 SUPABASE_KEY=your_supabase_anon_key_here
@@ -108,19 +120,20 @@ JWT_EXPIRES_IN=24h
 CORS_ORIGIN=https://your-domain.com
 EOF
 
-log_warning "⚠️  Supabase 환경변수를 설정해주세요!"
-log_warning "   $BACKEND_DIR/.env 파일을 편집하여 다음을 설정하세요:"
-log_warning "   - SUPABASE_URL: Supabase 프로젝트 URL"
-log_warning "   - SUPABASE_KEY: Supabase anon key"
-log_warning "   - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key"
-log_warning "   - JWT_SECRET: JWT 시크릿 키"
-log_warning "   - CORS_ORIGIN: 프론트엔드 도메인"
+    log_warning "⚠️  Supabase 환경변수를 설정해주세요!"
+    log_warning "   $BACKEND_DIR/.env 파일을 편집하여 다음을 설정하세요:"
+    log_warning "   - SUPABASE_URL: Supabase 프로젝트 URL"
+    log_warning "   - SUPABASE_KEY: Supabase anon key"
+    log_warning "   - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key"
+    log_warning "   - JWT_SECRET: JWT 시크릿 키"
+    log_warning "   - CORS_ORIGIN: 프론트엔드 도메인"
 
-# 사용자에게 환경변수 설정 요청
-read -p "Supabase 환경변수를 설정하셨나요? (y/N): " env_configured
-if [[ $env_configured != [yY] ]]; then
-    log_error "환경변수 설정이 필요합니다. 스크립트를 중단합니다."
-    exit 1
+    # 사용자에게 환경변수 설정 요청
+    read -p "Supabase 환경변수를 설정하셨나요? (y/N): " env_configured
+    if [[ $env_configured != [yY] ]]; then
+        log_error "환경변수 설정이 필요합니다. 스크립트를 중단합니다."
+        exit 1
+    fi
 fi
 
 # =============================================================================
@@ -132,6 +145,9 @@ cd "$BACKEND_DIR"
 
 # 의존성 설치
 npm install
+
+# 환경변수 파일 권한 설정
+chmod 600 .env
 
 # Supabase 마이그레이션 실행
 log_info "Supabase 마이그레이션 실행 중..."
@@ -156,14 +172,22 @@ npm run build:prod
 log_success "프론트엔드 설정 완료"
 
 # =============================================================================
-# 7. PM2 설정
+# 7. PM2 설정 (수정된 버전)
 # =============================================================================
 log_info "⚡ PM2 설정 중..."
 
-# PM2 글로벌 설치
-sudo npm install -g pm2
+# PM2 경로 확인
+PM2_PATH=$(which pm2)
+if [ -z "$PM2_PATH" ]; then
+    log_error "PM2가 설치되지 않았습니다. 다시 설치합니다..."
+    npm install -g pm2
+fi
 
-# 백엔드 PM2 설정
+# PM2 버전 확인
+log_info "PM2 버전 확인:"
+pm2 --version
+
+# 백엔드 PM2 설정 (환경변수 파일 경로 지정)
 cd "$BACKEND_DIR"
 pm2 start index.js --name "assetmanager-backend" --env production
 
@@ -173,7 +197,11 @@ pm2 start "npx serve .output/public -p 3000" --name "assetmanager-frontend"
 
 # PM2 설정 저장 및 자동 시작
 pm2 save
+
+# PM2 startup 설정 (사용자별)
+log_info "PM2 startup 설정 중..."
 pm2 startup
+log_warning "위 명령어의 출력을 복사하여 실행하세요!"
 
 log_success "PM2 설정 완료"
 
@@ -419,11 +447,12 @@ echo "3. 방화벽 설정 확인"
 echo "4. 포트 충돌 해결"
 echo "5. 권한 문제 해결"
 echo "6. Supabase 연결 확인"
-echo "7. 전체 시스템 재시작"
-echo "8. 종료"
+echo "7. PM2 재설치"
+echo "8. 전체 시스템 재시작"
+echo "9. 종료"
 echo ""
 
-read -p "선택하세요 (1-8): " choice
+read -p "선택하세요 (1-9): " choice
 
 case $choice in
     1)
@@ -467,6 +496,7 @@ case $choice in
         log_info "권한 문제 해결 중..."
         sudo chown -R dmanager:dmanager /home/dmanager/assetmanager
         sudo chmod -R 755 /home/dmanager/assetmanager
+        chmod 600 /home/dmanager/assetmanager/backend/.env
         log_success "권한 설정 완료"
         ;;
     6)
@@ -478,6 +508,12 @@ case $choice in
         curl -s http://localhost:4000/api/health || echo "백엔드 연결 실패"
         ;;
     7)
+        log_info "PM2 재설치 중..."
+        npm uninstall -g pm2
+        npm install -g pm2
+        log_success "PM2 재설치 완료"
+        ;;
+    8)
         log_warning "전체 시스템 재시작을 진행합니다..."
         read -p "정말 재시작하시겠습니까? (y/N): " confirm
         if [[ $confirm == [yY] ]]; then
@@ -486,7 +522,7 @@ case $choice in
             log_info "재시작이 취소되었습니다."
         fi
         ;;
-    8)
+    9)
         log_info "종료합니다."
         exit 0
         ;;
@@ -552,4 +588,5 @@ echo "Nginx 로그: sudo tail -f /var/log/nginx/access.log"
 echo ""
 echo "=== 중요 사항 ==="
 echo "⚠️  Supabase 환경변수가 올바르게 설정되었는지 확인하세요!"
-echo "⚠️  프론트엔드에서 API 호출이 정상적으로 작동하는지 확인하세요!" 
+echo "⚠️  프론트엔드에서 API 호출이 정상적으로 작동하는지 확인하세요!"
+echo "⚠️  PM2 startup 명령어를 실행하여 자동 시작을 설정하세요!" 

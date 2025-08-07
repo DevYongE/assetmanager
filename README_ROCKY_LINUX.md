@@ -35,22 +35,32 @@ chmod +x deploy_rocky_linux.sh
 ### 1. 시스템 업데이트
 ```bash
 sudo dnf update -y
-sudo dnf install -y git nodejs npm nginx pm2
+sudo dnf install -y git nodejs npm nginx
 ```
 
-### 2. 프로젝트 설정
+### 2. PM2 설치
+```bash
+# PM2 글로벌 설치 (sudo 없이)
+npm install -g pm2
+
+# PM2 버전 확인
+pm2 --version
+```
+
+### 3. 프로젝트 설정
 ```bash
 cd /home/dmanager
 git clone https://github.com/DevYongE/assetmanager.git
 cd assetmanager
 ```
 
-### 3. Supabase 환경변수 설정
+### 4. 기존 .env 파일 확인
 ```bash
-cd backend
+# 백업에서 .env 파일 복사 (있다면)
+cp /path/to/backup/backend/.env backend/.env
 
-# 환경변수 파일 생성
-cat > .env << EOF
+# 또는 새로 생성
+cat > backend/.env << EOF
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url_here
 SUPABASE_KEY=your_supabase_anon_key_here
@@ -67,9 +77,12 @@ JWT_EXPIRES_IN=24h
 # CORS Configuration
 CORS_ORIGIN=https://your-domain.com
 EOF
+
+# 환경변수 파일 권한 설정
+chmod 600 backend/.env
 ```
 
-### 4. 백엔드 설정
+### 5. 백엔드 설정
 ```bash
 cd backend
 npm install
@@ -78,18 +91,15 @@ npm install
 node run-migration.js
 ```
 
-### 5. 프론트엔드 설정
+### 6. 프론트엔드 설정
 ```bash
 cd ../frontend
 npm install
 npm run build:prod
 ```
 
-### 6. PM2 설정
+### 7. PM2 설정
 ```bash
-# PM2 글로벌 설치
-sudo npm install -g pm2
-
 # 백엔드 시작
 cd ../backend
 pm2 start index.js --name "assetmanager-backend"
@@ -100,10 +110,13 @@ pm2 start "npx serve .output/public -p 3000" --name "assetmanager-frontend"
 
 # PM2 설정 저장
 pm2 save
+
+# PM2 startup 설정 (중요!)
 pm2 startup
+# 위 명령어의 출력을 복사하여 실행하세요!
 ```
 
-### 7. Nginx 설정
+### 8. Nginx 설정
 ```bash
 sudo tee /etc/nginx/conf.d/assetmanager.conf > /dev/null << 'EOF'
 server {
@@ -141,7 +154,7 @@ sudo systemctl restart nginx
 sudo systemctl enable nginx
 ```
 
-### 8. 방화벽 설정
+### 9. 방화벽 설정
 ```bash
 sudo systemctl enable firewalld
 sudo systemctl start firewalld
@@ -197,7 +210,20 @@ chmod +x troubleshoot.sh
 
 ### 일반적인 문제들
 
-#### 1. 포트 충돌
+#### 1. PM2 설치 문제
+```bash
+# PM2 재설치
+npm uninstall -g pm2
+npm install -g pm2
+
+# PM2 경로 확인
+which pm2
+
+# PM2 버전 확인
+pm2 --version
+```
+
+#### 2. 포트 충돌
 ```bash
 # 포트 사용 확인
 sudo netstat -tlnp | grep -E ':(80|3000|4000)'
@@ -206,20 +232,21 @@ sudo netstat -tlnp | grep -E ':(80|3000|4000)'
 sudo kill -9 [PID]
 ```
 
-#### 2. 권한 문제
+#### 3. 권한 문제
 ```bash
 sudo chown -R dmanager:dmanager /home/dmanager/assetmanager
 sudo chmod -R 755 /home/dmanager/assetmanager
+chmod 600 /home/dmanager/assetmanager/backend/.env
 ```
 
-#### 3. 방화벽 문제
+#### 4. 방화벽 문제
 ```bash
 sudo firewall-cmd --list-all
 sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --reload
 ```
 
-#### 4. Supabase 연결 문제
+#### 5. Supabase 연결 문제
 ```bash
 # 환경변수 확인
 cat /home/dmanager/assetmanager/backend/.env | grep SUPABASE
@@ -353,6 +380,13 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 JWT_SECRET=your_jwt_secret_key_2025
 ```
 
+### PM2 자동 시작 설정
+```bash
+# PM2 startup 명령어 실행 후 출력된 명령어를 복사하여 실행
+pm2 startup
+# 예: sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u dmanager --hp /home/dmanager
+```
+
 ## 📞 지원
 
 문제가 발생하면 다음을 확인하세요:
@@ -361,9 +395,11 @@ JWT_SECRET=your_jwt_secret_key_2025
 2. **문제 해결 도구**: `./troubleshoot.sh`
 3. **백업 확인**: `/home/dmanager/backup.sh`
 4. **Supabase 연결**: 환경변수 설정 확인
+5. **PM2 문제**: `npm install -g pm2` 재설치
 
 ## 📝 변경 이력
 
 - **2025-01-27**: Supabase 기반 배포 가이드 작성
 - **2025-01-27**: 자동화 스크립트 추가
-- **2025-01-27**: 문제 해결 도구 추가 
+- **2025-01-27**: 문제 해결 도구 추가
+- **2025-01-27**: PM2 설치 문제 해결 및 .env 파일 확인 추가 
