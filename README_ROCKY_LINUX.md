@@ -1,384 +1,368 @@
-# QR Asset Management System - Rocky Linux 배포 가이드
+# QR 자산관리 시스템 - Rocky Linux 배포 가이드
 
-QR 코드를 활용한 자산 관리 시스템입니다.
+## 📋 개요
 
-## 📋 프로젝트 개요
+이 문서는 Rocky Linux 서버에 QR 자산관리 시스템을 배포하는 방법을 설명합니다.
 
-- **프론트엔드**: Nuxt.js 3 + Vue 3 + TypeScript
-- **백엔드**: Node.js + Express + Supabase
-- **배포**: Nginx + PM2 (Rocky Linux)
-- **작성일**: 2024-12-19
+## 🚀 빠른 배포
 
-## 🔍 프로젝트 분석 결과
+### 1. 서버 접속
+```bash
+ssh dmanager@your-server-ip
+```
 
-### ✅ 올바른 기술 스택
-- **데이터베이스**: MySQL이 아닌 **Supabase** 사용
-- **백엔드 포트**: 4000
-- **프론트엔드 포트**: 3000
-- **마이그레이션**: Supabase RPC 함수 사용
-- **운영체제**: Rocky Linux (RHEL/CentOS 계열)
-
-### ❌ 이전 스크립트의 문제점
-- MySQL 설정으로 잘못된 가정
-- 잘못된 포트 설정
-- Supabase 환경 변수 누락
-- Ubuntu/Debian 명령어 사용 (Rocky Linux는 dnf 사용)
-
-## 🚀 Rocky Linux 배포 가이드
-
-### 1. 전체 배포 (권장)
-
+### 2. 배포 스크립트 실행
 ```bash
 # 스크립트 실행 권한 부여
-chmod +x setup_nginx_pm2_rocky.sh
+chmod +x deploy_rocky_linux.sh
 
-# 전체 배포 실행
-./setup_nginx_pm2_rocky.sh
+# 배포 실행
+./deploy_rocky_linux.sh
 ```
 
-### 2. 단계별 배포
+## 📦 시스템 요구사항
 
-#### 2.1 현재 디렉토리 확인
+- **OS**: Rocky Linux 8/9
+- **CPU**: 2코어 이상
+- **RAM**: 4GB 이상
+- **Storage**: 20GB 이상
+- **Network**: 인터넷 연결
+
+## 🔧 수동 설치 (스크립트 사용 불가 시)
+
+### 1. 시스템 업데이트
 ```bash
-# 현재 디렉토리가 assetmanager인지 확인
-pwd
-ls -la
+sudo dnf update -y
+sudo dnf install -y git nodejs npm nginx mysql mysql-server pm2
 ```
 
-#### 2.2 PM2 관리 (수정된 버전)
+### 2. 프로젝트 설정
 ```bash
-chmod +x pm2_management_corrected.sh
-
-# 백엔드 시작 (환경 변수 확인 포함)
-./pm2_management_corrected.sh start
-
-# 상태 확인
-./pm2_management_corrected.sh status
-
-# 로그 확인
-./pm2_management_corrected.sh logs
-
-# 환경 변수 설정 도움말
-./pm2_management_corrected.sh env-help
+cd /home/dmanager
+git clone https://github.com/DevYongE/assetmanager.git
+cd assetmanager
 ```
 
-#### 2.3 백엔드 환경 변수 문제 해결
+### 3. 데이터베이스 설정
 ```bash
-chmod +x fix_backend_env.sh
-./fix_backend_env.sh
+# MySQL 시작
+sudo systemctl start mysqld
+sudo systemctl enable mysqld
+
+# 보안 설정
+sudo mysql_secure_installation
+
+# 데이터베이스 생성
+sudo mysql -u root -p
 ```
 
-#### 2.4 프론트엔드 빌드 (로컬 경로용)
+MySQL 명령어:
+```sql
+CREATE DATABASE assetmanager;
+CREATE USER 'assetmanager'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON assetmanager.* TO 'assetmanager'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### 4. 백엔드 설정
 ```bash
-chmod +x fix_frontend_build_local.sh
-./fix_frontend_build_local.sh
-```
+cd backend
+npm install
 
-#### 2.5 Nuxt 빌드 문제 해결
-```bash
-chmod +x fix_nuxt_build_issue.sh
-./fix_nuxt_build_issue.sh
-```
-
-#### 2.6 Let's Encrypt SSL 인증서 설정 (Rocky Linux용)
-```bash
-chmod +x setup_ssl_rocky.sh
-./setup_ssl_rocky.sh
-```
-
-#### 2.7 배포 상태 확인 (Rocky Linux용)
-```bash
-chmod +x check_deployment_rocky.sh
-./check_deployment_rocky.sh
-```
-
-## 📁 프로젝트 구조
-
-```
-qr-asset-management/
-├── backend/                 # 백엔드 (Node.js + Express + Supabase)
-│   ├── config/             # Supabase 설정
-│   ├── middleware/         # 미들웨어
-│   ├── routes/            # API 라우트
-│   └── index.js           # 메인 서버 파일 (포트 4000)
-├── frontend/              # 프론트엔드 (Nuxt.js 3)
-│   ├── components/        # Vue 컴포넌트
-│   ├── pages/            # 페이지
-│   ├── stores/           # 상태 관리
-│   └── app.vue           # 메인 앱 컴포넌트
-└── scripts/              # 배포 스크립트 (Rocky Linux용)
-    ├── setup_nginx_pm2_rocky.sh        # Rocky Linux 배포 스크립트
-    ├── setup_ssl_rocky.sh              # Rocky Linux SSL 설정
-    ├── check_deployment_rocky.sh       # Rocky Linux 상태 확인
-    └── pm2_management_corrected.sh     # PM2 관리 스크립트
-```
-
-## 🔧 기술 스택
-
-### 프론트엔드
-- **Nuxt.js 3**: Vue 3 기반 풀스택 프레임워크
-- **Vue 3**: 반응형 UI 프레임워크
-- **TypeScript**: 타입 안전성
-- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
-- **Pinia**: 상태 관리
-
-### 백엔드
-- **Node.js**: JavaScript 런타임
-- **Express**: 웹 프레임워크
-- **Supabase**: PostgreSQL 기반 백엔드 서비스
-- **JWT**: 인증 토큰
-- **CORS**: 크로스 오리진 리소스 공유
-
-### 배포 (Rocky Linux)
-- **Nginx**: 웹 서버 및 리버스 프록시
-- **PM2**: Node.js 프로세스 관리자
-- **firewalld**: 방화벽 (Rocky Linux용)
-- **dnf**: 패키지 관리자 (Rocky Linux용)
-
-## 🌐 접속 정보
-
-배포 완료 후 다음 URL로 접속할 수 있습니다:
-
-- **프론트엔드**: https://invenone.it.kr
-- **백엔드 API**: https://invenone.it.kr/api
-- **헬스 체크**: https://invenone.it.kr/health
-
-## ⚠️ 중요: Supabase 환경 변수 설정
-
-### 필수 환경 변수
-백엔드 `.env` 파일에서 다음 변수들을 설정해야 합니다:
-
-```env
-# Supabase Configuration (2024-12-19: MySQL이 아닌 Supabase 사용)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your_supabase_anon_key_here
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
-
-# Server Configuration
+# 환경변수 설정
+cat > .env << EOF
+DB_HOST=localhost
+DB_USER=assetmanager
+DB_PASSWORD=your_password
+DB_NAME=assetmanager
+JWT_SECRET=your_jwt_secret
 PORT=4000
 NODE_ENV=production
+EOF
 
-# JWT Configuration
-JWT_SECRET=your_jwt_secret_key_2024
-JWT_EXPIRES_IN=24h
-
-# CORS Configuration (invenone.it.kr 도메인 포함)
-CORS_ORIGIN=https://invenone.it.kr
+# 마이그레이션 실행
+node run-migration.js
 ```
 
-### Supabase 설정 방법
-1. [Supabase](https://supabase.com)에서 프로젝트 생성
-2. Project Settings > API에서 다음 정보 확인:
-   - Project URL
-   - anon/public key
-   - service_role key
-3. 백엔드 `.env` 파일에 설정
-
-## 📝 주요 기능
-
-### 사용자 관리
-- 회원가입/로그인
-- JWT 기반 인증
-- 사용자 프로필 관리
-
-### QR 코드 관리
-- QR 코드 생성
-- QR 코드 스캔
-- 자산 정보 연동
-
-### 자산 관리
-- 디바이스 등록/수정/삭제
-- 직원 정보 관리
-- 자산 이력 추적
-
-## 🔍 배포 상태 확인
-
+### 5. 프론트엔드 설정
 ```bash
-# 전체 시스템 상태 확인 (Rocky Linux용)
-./check_deployment_rocky.sh
-
-# 확인 항목:
-# - Nginx 상태
-# - Let's Encrypt SSL 인증서 상태
-# - Supabase 연결 상태
-# - PM2 프로세스 상태
-# - 백엔드 API 응답 (포트 4000)
-# - 프론트엔드 접속 (포트 3000)
-# - firewalld 방화벽 상태
-# - 시스템 리소스 사용량
+cd ../frontend
+npm install
+npm run build:prod
 ```
 
-## 🛠️ 유용한 명령어 (Rocky Linux용)
-
-### PM2 관리
+### 6. PM2 설정
 ```bash
-# 프로세스 상태 확인
-pm2 status
+# PM2 글로벌 설치
+sudo npm install -g pm2
 
-# 로그 확인
-pm2 logs qr-backend
+# 백엔드 시작
+cd ../backend
+pm2 start index.js --name "assetmanager-backend"
 
-# 재시작
-pm2 restart qr-backend
+# 프론트엔드 시작
+cd ../frontend
+pm2 start "npx serve .output/public -p 3000" --name "assetmanager-frontend"
 
-# 중지
-pm2 stop qr-backend
-
-# 삭제
-pm2 delete qr-backend
-
-# 환경 변수 설정 도움말
-./pm2_management_corrected.sh env-help
+# PM2 설정 저장
+pm2 save
+pm2 startup
 ```
 
-### Nginx 관리 (Rocky Linux용)
+### 7. Nginx 설정
 ```bash
-# 상태 확인
-sudo systemctl status nginx
+sudo tee /etc/nginx/conf.d/assetmanager.conf > /dev/null << 'EOF'
+server {
+    listen 80;
+    server_name _;
 
-# 재시작
-sudo systemctl restart nginx
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
 
-# 설정 테스트
+    location /api {
+        proxy_pass http://localhost:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOF
+
 sudo nginx -t
-
-# 로그 확인
-sudo tail -f /var/log/nginx/invenone.it.kr-error.log
+sudo systemctl restart nginx
+sudo systemctl enable nginx
 ```
 
-### 방화벽 관리 (Rocky Linux용 - firewalld)
+### 8. 방화벽 설정
 ```bash
-# 방화벽 상태 확인
-sudo firewall-cmd --list-all
-
-# HTTP/HTTPS 서비스 허용
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
-sudo firewall-cmd --reload
-
-# SSH 서비스 허용
-sudo firewall-cmd --permanent --add-service=ssh
-sudo firewall-cmd --reload
-```
-
-### 패키지 관리 (Rocky Linux용 - dnf)
-```bash
-# 시스템 업데이트
-sudo dnf update -y
-
-# 패키지 설치
-sudo dnf install -y [패키지명]
-
-# 저장소 확인
-sudo dnf repolist
-
-# EPEL 저장소 활성화
-sudo dnf install -y epel-release
-```
-
-## 🔒 보안 설정 (Rocky Linux용)
-
-### 방화벽 설정
-```bash
-# firewalld 활성화
 sudo systemctl enable firewalld
 sudo systemctl start firewalld
-
-# HTTP/HTTPS 포트 허용
 sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --permanent --add-service=https
-
-# SSH 포트 허용
-sudo firewall-cmd --permanent --add-service=ssh
-
-# 방화벽 규칙 적용
+sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=4000/tcp
 sudo firewall-cmd --reload
 ```
 
-### SELinux 설정 (필요시)
+## 🔍 모니터링 및 관리
+
+### 상태 확인
 ```bash
-# SELinux 상태 확인
-sestatus
+# 전체 상태 확인
+/home/dmanager/monitor.sh
 
-# Nginx 포트 허용
-sudo semanage port -a -t http_port_t -p tcp 80
-sudo semanage port -a -t http_port_t -p tcp 443
-
-# Nginx 컨텍스트 설정
-sudo setsebool -P httpd_can_network_connect 1
-```
-
-## 🚨 문제 해결 (Rocky Linux용)
-
-### 502 Bad Gateway 오류
-```bash
-# 백엔드 프로세스 확인
+# PM2 상태
 pm2 status
 
-# 백엔드 재시작
-pm2 restart qr-backend
+# Nginx 상태
+sudo systemctl status nginx
+
+# MySQL 상태
+sudo systemctl status mysqld
+```
+
+### 로그 확인
+```bash
+# 백엔드 로그
+pm2 logs assetmanager-backend
+
+# 프론트엔드 로그
+pm2 logs assetmanager-frontend
+
+# Nginx 로그
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
+```
+
+### 서비스 재시작
+```bash
+# PM2 재시작
+pm2 restart all
 
 # Nginx 재시작
 sudo systemctl restart nginx
 
-# 방화벽 확인
-sudo firewall-cmd --list-all
+# MySQL 재시작
+sudo systemctl restart mysqld
 ```
 
-### Supabase 연결 오류
-```bash
-# 환경 변수 확인
-./pm2_management_corrected.sh env-help
+## 🛠️ 문제 해결
 
-# 백엔드 로그 확인
-pm2 logs qr-backend
+### 문제 해결 도구 실행
+```bash
+chmod +x troubleshoot.sh
+./troubleshoot.sh
 ```
 
-### 포트 충돌
-```bash
-# 포트 사용 확인 (Rocky Linux용 - ss 명령어)
-sudo ss -tlnp | grep :80
-sudo ss -tlnp | grep :443
-sudo ss -tlnp | grep :3000
-sudo ss -tlnp | grep :4000
+### 일반적인 문제들
 
-# 프로세스 종료
+#### 1. 포트 충돌
+```bash
+# 포트 사용 확인
+sudo netstat -tlnp | grep -E ':(80|3000|4000)'
+
+# 충돌하는 프로세스 종료
 sudo kill -9 [PID]
 ```
 
-### Let's Encrypt SSL 인증서 문제
+#### 2. 권한 문제
 ```bash
-# Let's Encrypt SSL 인증서 확인
-sudo certbot certificates
+sudo chown -R dmanager:dmanager /home/dmanager/assetmanager
+sudo chmod -R 755 /home/dmanager/assetmanager
+```
 
-# Let's Encrypt SSL 인증서 갱신
-sudo certbot renew
+#### 3. 방화벽 문제
+```bash
+sudo firewall-cmd --list-all
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --reload
+```
 
-# Nginx 설정 테스트
-sudo nginx -t
+#### 4. 데이터베이스 연결 문제
+```bash
+# MySQL 상태 확인
+sudo systemctl status mysqld
 
-# SSL 연결 테스트
-curl -I https://invenone.it.kr
+# MySQL 재시작
+sudo systemctl restart mysqld
+
+# 연결 테스트
+mysql -u assetmanager -p assetmanager
+```
+
+## 💾 백업 및 복원
+
+### 자동 백업
+```bash
+# 백업 실행
+/home/dmanager/backup.sh
+
+# 백업 목록 확인
+ls -la /home/dmanager/backups/
+```
+
+### 수동 백업
+```bash
+# 데이터베이스 백업
+mysqldump -u assetmanager -p assetmanager > backup_$(date +%Y%m%d).sql
+
+# 애플리케이션 백업
+tar -czf app_backup_$(date +%Y%m%d).tar.gz /home/dmanager/assetmanager
+```
+
+### 복원
+```bash
+# 데이터베이스 복원
+mysql -u assetmanager -p assetmanager < backup_20250127.sql
+
+# 애플리케이션 복원
+tar -xzf app_backup_20250127.tar.gz -C /
+```
+
+## 🔒 보안 설정
+
+### SSL 인증서 설정 (선택사항)
+```bash
+# Certbot 설치
+sudo dnf install -y certbot python3-certbot-nginx
+
+# SSL 인증서 발급
+sudo certbot --nginx -d your-domain.com
+
+# 자동 갱신 설정
+echo "0 12 * * * /usr/bin/certbot renew --quiet" | sudo crontab -
+```
+
+### 방화벽 강화
+```bash
+# SSH 포트 변경 (선택사항)
+sudo sed -i 's/#Port 22/Port 2222/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# 불필요한 서비스 비활성화
+sudo systemctl disable telnet
+sudo systemctl disable rsh
+```
+
+## 📊 성능 모니터링
+
+### 시스템 리소스 확인
+```bash
+# CPU 및 메모리 사용량
+htop
+
+# 디스크 사용량
+df -h
+
+# 네트워크 사용량
+iftop
+```
+
+### 로그 분석
+```bash
+# Nginx 접속 로그 분석
+sudo tail -f /var/log/nginx/access.log | grep -v "health"
+
+# 에러 로그 모니터링
+sudo tail -f /var/log/nginx/error.log
+```
+
+## �� 업데이트
+
+### 애플리케이션 업데이트
+```bash
+cd /home/dmanager/assetmanager
+
+# 백업 생성
+/home/dmanager/backup.sh
+
+# 코드 업데이트
+git pull origin master
+
+# 백엔드 재시작
+cd backend
+npm install
+pm2 restart assetmanager-backend
+
+# 프론트엔드 재빌드
+cd ../frontend
+npm install
+npm run build:prod
+pm2 restart assetmanager-frontend
+```
+
+### 시스템 업데이트
+```bash
+sudo dnf update -y
+sudo systemctl restart nginx
+sudo systemctl restart mysqld
 ```
 
 ## 📞 지원
 
-문제가 발생하면 다음 순서로 확인해보세요:
+문제가 발생하면 다음을 확인하세요:
 
-1. `./check_deployment_rocky.sh` 실행하여 전체 상태 확인
-2. PM2 로그 확인: `pm2 logs qr-backend`
-3. Nginx 로그 확인: `sudo tail -f /var/log/nginx/invenone.it.kr-error.log`
-4. 환경 변수 확인: `./pm2_management_corrected.sh env-help`
-5. 방화벽 상태 확인: `sudo firewall-cmd --list-all`
+1. **로그 확인**: `/home/dmanager/monitor.sh`
+2. **문제 해결 도구**: `./troubleshoot.sh`
+3. **백업 확인**: `/home/dmanager/backup.sh`
 
-## 📄 라이선스
+## 📝 변경 이력
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
-
----
-
-**마지막 업데이트**: 2024-12-19
-**배포 방식**: Nginx + PM2 (Rocky Linux)
-**데이터베이스**: Supabase
-**포트 설정**: 백엔드 4000, 프론트엔드 3000
-**운영체제**: Rocky Linux (RHEL/CentOS 계열) 
+- **2025-01-27**: Rocky Linux 배포 가이드 작성
+- **2025-01-27**: 자동화 스크립트 추가
+- **2025-01-27**: 문제 해결 도구 추가 
