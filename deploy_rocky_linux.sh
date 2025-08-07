@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# QR 자산관리 시스템 Rocky Linux 배포 스크립트
+# QR 자산관리 시스템 Rocky Linux 배포 스크립트 (Supabase 기반)
 # =============================================================================
 #
 # 이 스크립트는 Rocky Linux 서버에 QR 자산관리 시스템을 배포합니다.
-# 백엔드, 프론트엔드, 데이터베이스, Nginx 설정을 포함합니다.
+# Supabase를 사용하는 Node.js 백엔드와 Nuxt.js 프론트엔드를 포함합니다.
 #
 # 작성일: 2025-01-27
 # =============================================================================
@@ -40,12 +40,8 @@ log_error() {
 PROJECT_DIR="/home/dmanager/assetmanager"
 BACKEND_DIR="$PROJECT_DIR/backend"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
-DB_NAME="assetmanager"
-DB_USER="assetmanager"
-DB_PASSWORD="assetmanager_secure_2025"
-JWT_SECRET="your_super_secret_jwt_key_2025"
 
-log_info "🚀 QR 자산관리 시스템 Rocky Linux 배포 시작"
+log_info "🚀 QR 자산관리 시스템 Rocky Linux 배포 시작 (Supabase 기반)"
 
 # =============================================================================
 # 1. 시스템 업데이트 및 필수 패키지 설치
@@ -53,7 +49,7 @@ log_info "🚀 QR 자산관리 시스템 Rocky Linux 배포 시작"
 log_info "📦 시스템 업데이트 및 필수 패키지 설치 중..."
 
 sudo dnf update -y
-sudo dnf install -y git nodejs npm nginx mysql mysql-server pm2
+sudo dnf install -y git nodejs npm nginx pm2
 
 # Node.js 최신 버전 설치 (필요시)
 if ! command -v node &> /dev/null; then
@@ -86,40 +82,46 @@ log_info "📋 프로젝트 파일 복사 중..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 sudo cp -r "$SCRIPT_DIR/backend" "$PROJECT_DIR/"
 sudo cp -r "$SCRIPT_DIR/frontend" "$PROJECT_DIR/"
-sudo cp "$SCRIPT_DIR/nginx_config_fix.conf" "$PROJECT_DIR/"
 sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 
 # =============================================================================
-# 4. 데이터베이스 설정
+# 4. Supabase 환경변수 설정
 # =============================================================================
-log_info "🗄️ 데이터베이스 설정 중..."
+log_info "🗄️ Supabase 환경변수 설정 중..."
 
-# MySQL 서비스 시작
-sudo systemctl start mysqld
-sudo systemctl enable mysqld
+# 백엔드 환경변수 파일 생성
+cat > "$BACKEND_DIR/.env" << 'EOF'
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url_here
+SUPABASE_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
-# MySQL 보안 설정
-sudo mysql_secure_installation << EOF
+# Server Configuration
+PORT=4000
+NODE_ENV=production
 
-y
-0
-$DB_PASSWORD
-$DB_PASSWORD
-y
-y
-y
-y
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_2025
+JWT_EXPIRES_IN=24h
+
+# CORS Configuration
+CORS_ORIGIN=https://your-domain.com
 EOF
 
-# 데이터베이스 및 사용자 생성
-sudo mysql -u root -p"$DB_PASSWORD" << EOF
-CREATE DATABASE IF NOT EXISTS $DB_NAME;
-CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
-GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
-FLUSH PRIVILEGES;
-EOF
+log_warning "⚠️  Supabase 환경변수를 설정해주세요!"
+log_warning "   $BACKEND_DIR/.env 파일을 편집하여 다음을 설정하세요:"
+log_warning "   - SUPABASE_URL: Supabase 프로젝트 URL"
+log_warning "   - SUPABASE_KEY: Supabase anon key"
+log_warning "   - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key"
+log_warning "   - JWT_SECRET: JWT 시크릿 키"
+log_warning "   - CORS_ORIGIN: 프론트엔드 도메인"
 
-log_success "데이터베이스 설정 완료"
+# 사용자에게 환경변수 설정 요청
+read -p "Supabase 환경변수를 설정하셨나요? (y/N): " env_configured
+if [[ $env_configured != [yY] ]]; then
+    log_error "환경변수 설정이 필요합니다. 스크립트를 중단합니다."
+    exit 1
+fi
 
 # =============================================================================
 # 5. 백엔드 설정
@@ -131,19 +133,8 @@ cd "$BACKEND_DIR"
 # 의존성 설치
 npm install
 
-# 환경변수 파일 생성
-cat > .env << EOF
-DB_HOST=localhost
-DB_USER=$DB_USER
-DB_PASSWORD=$DB_PASSWORD
-DB_NAME=$DB_NAME
-JWT_SECRET=$JWT_SECRET
-PORT=4000
-NODE_ENV=production
-EOF
-
-# 데이터베이스 마이그레이션 실행
-log_info "데이터베이스 마이그레이션 실행 중..."
+# Supabase 마이그레이션 실행
+log_info "Supabase 마이그레이션 실행 중..."
 node run-migration.js
 
 log_success "백엔드 설정 완료"
@@ -195,7 +186,7 @@ log_info "🌐 Nginx 설정 중..."
 sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
 
 # Nginx 설정 파일 생성
-sudo tee /etc/nginx/conf.d/assetmanager.conf > /dev/null << EOF
+sudo tee /etc/nginx/conf.d/assetmanager.conf > /dev/null << 'EOF'
 server {
     listen 80;
     server_name _;  # 모든 도메인 허용
@@ -211,13 +202,13 @@ server {
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
         
         # 정적 파일 캐싱
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
@@ -230,13 +221,13 @@ server {
     location /api {
         proxy_pass http://localhost:4000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
         
         # API 요청 타임아웃 설정
         proxy_connect_timeout 60s;
@@ -292,15 +283,15 @@ DATE=$(date +%Y%m%d_%H%M%S)
 # 백업 디렉토리 생성
 mkdir -p $BACKUP_DIR
 
-# 데이터베이스 백업
-mysqldump -u assetmanager -p'assetmanager_secure_2025' assetmanager > $BACKUP_DIR/db_backup_$DATE.sql
-
 # 애플리케이션 백업
 tar -czf $BACKUP_DIR/app_backup_$DATE.tar.gz /home/dmanager/assetmanager
 
+# 환경변수 백업
+cp /home/dmanager/assetmanager/backend/.env $BACKUP_DIR/env_backup_$DATE
+
 # 30일 이상 된 백업 삭제
-find $BACKUP_DIR -name "*.sql" -mtime +30 -delete
 find $BACKUP_DIR -name "*.tar.gz" -mtime +30 -delete
+find $BACKUP_DIR -name "env_backup_*" -mtime +30 -delete
 
 echo "Backup completed: $DATE"
 EOF
@@ -331,10 +322,6 @@ echo "=== Nginx 상태 ==="
 sudo systemctl status nginx --no-pager -l
 echo ""
 
-echo "=== MySQL 상태 ==="
-sudo systemctl status mysqld --no-pager -l
-echo ""
-
 echo "=== 포트 사용 현황 ==="
 sudo netstat -tlnp | grep -E ':(80|3000|4000)'
 echo ""
@@ -360,7 +347,166 @@ chmod +x /home/dmanager/monitor.sh
 log_success "모니터링 스크립트 생성 완료"
 
 # =============================================================================
-# 12. 배포 완료 확인
+# 12. 문제 해결 스크립트 생성
+# =============================================================================
+log_info "🛠️ 문제 해결 스크립트 생성 중..."
+
+cat > /home/dmanager/troubleshoot.sh << 'EOF'
+#!/bin/bash
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo "🔧 QR 자산관리 시스템 문제 해결 도구"
+echo "=================================="
+echo ""
+
+# 1. 시스템 상태 확인
+log_info "1. 시스템 상태 확인 중..."
+
+echo "=== PM2 상태 ==="
+pm2 status
+echo ""
+
+echo "=== Nginx 상태 ==="
+sudo systemctl status nginx --no-pager -l
+echo ""
+
+echo "=== 포트 사용 현황 ==="
+sudo netstat -tlnp | grep -E ':(80|3000|4000)'
+echo ""
+
+# 2. 로그 확인
+log_info "2. 로그 확인 중..."
+
+echo "=== Nginx 에러 로그 (마지막 20줄) ==="
+sudo tail -20 /var/log/nginx/error.log
+echo ""
+
+echo "=== 백엔드 로그 (마지막 20줄) ==="
+pm2 logs assetmanager-backend --lines 20
+echo ""
+
+echo "=== 프론트엔드 로그 (마지막 20줄) ==="
+pm2 logs assetmanager-frontend --lines 20
+echo ""
+
+# 3. 문제 해결 옵션
+echo "🔧 문제 해결 옵션:"
+echo "1. PM2 프로세스 재시작"
+echo "2. Nginx 재시작"
+echo "3. 방화벽 설정 확인"
+echo "4. 포트 충돌 해결"
+echo "5. 권한 문제 해결"
+echo "6. Supabase 연결 확인"
+echo "7. 전체 시스템 재시작"
+echo "8. 종료"
+echo ""
+
+read -p "선택하세요 (1-8): " choice
+
+case $choice in
+    1)
+        log_info "PM2 프로세스 재시작 중..."
+        pm2 restart all
+        pm2 save
+        log_success "PM2 재시작 완료"
+        ;;
+    2)
+        log_info "Nginx 재시작 중..."
+        sudo systemctl restart nginx
+        sudo systemctl status nginx
+        log_success "Nginx 재시작 완료"
+        ;;
+    3)
+        log_info "방화벽 설정 확인 중..."
+        sudo firewall-cmd --list-all
+        echo ""
+        echo "방화벽 포트 추가:"
+        sudo firewall-cmd --permanent --add-service=http
+        sudo firewall-cmd --permanent --add-service=https
+        sudo firewall-cmd --permanent --add-port=3000/tcp
+        sudo firewall-cmd --permanent --add-port=4000/tcp
+        sudo firewall-cmd --reload
+        log_success "방화벽 설정 완료"
+        ;;
+    4)
+        log_info "포트 충돌 해결 중..."
+        echo "포트 3000 사용 프로세스:"
+        sudo lsof -i :3000
+        echo ""
+        echo "포트 4000 사용 프로세스:"
+        sudo lsof -i :4000
+        echo ""
+        echo "포트 80 사용 프로세스:"
+        sudo lsof -i :80
+        echo ""
+        log_warning "충돌하는 프로세스를 수동으로 종료하세요"
+        ;;
+    5)
+        log_info "권한 문제 해결 중..."
+        sudo chown -R dmanager:dmanager /home/dmanager/assetmanager
+        sudo chmod -R 755 /home/dmanager/assetmanager
+        log_success "권한 설정 완료"
+        ;;
+    6)
+        log_info "Supabase 연결 확인 중..."
+        echo "환경변수 확인:"
+        cat /home/dmanager/assetmanager/backend/.env | grep SUPABASE
+        echo ""
+        echo "백엔드 연결 테스트:"
+        curl -s http://localhost:4000/api/health || echo "백엔드 연결 실패"
+        ;;
+    7)
+        log_warning "전체 시스템 재시작을 진행합니다..."
+        read -p "정말 재시작하시겠습니까? (y/N): " confirm
+        if [[ $confirm == [yY] ]]; then
+            sudo reboot
+        else
+            log_info "재시작이 취소되었습니다."
+        fi
+        ;;
+    8)
+        log_info "종료합니다."
+        exit 0
+        ;;
+    *)
+        log_error "잘못된 선택입니다."
+        exit 1
+        ;;
+esac
+
+echo ""
+log_success "문제 해결 완료!"
+echo "상태를 다시 확인하려면: /home/dmanager/monitor.sh"
+EOF
+
+chmod +x /home/dmanager/troubleshoot.sh
+
+log_success "문제 해결 스크립트 생성 완료"
+
+# =============================================================================
+# 13. 배포 완료 확인
 # =============================================================================
 log_info "🔍 배포 완료 확인 중..."
 
@@ -395,10 +541,15 @@ echo ""
 echo "=== 관리 명령어 ==="
 echo "상태 확인: /home/dmanager/monitor.sh"
 echo "백업 실행: /home/dmanager/backup.sh"
+echo "문제 해결: /home/dmanager/troubleshoot.sh"
 echo "PM2 재시작: pm2 restart all"
 echo "Nginx 재시작: sudo systemctl restart nginx"
 echo ""
 echo "=== 로그 확인 ==="
 echo "백엔드 로그: pm2 logs assetmanager-backend"
 echo "프론트엔드 로그: pm2 logs assetmanager-frontend"
-echo "Nginx 로그: sudo tail -f /var/log/nginx/access.log" 
+echo "Nginx 로그: sudo tail -f /var/log/nginx/access.log"
+echo ""
+echo "=== 중요 사항 ==="
+echo "⚠️  Supabase 환경변수가 올바르게 설정되었는지 확인하세요!"
+echo "⚠️  프론트엔드에서 API 호출이 정상적으로 작동하는지 확인하세요!" 

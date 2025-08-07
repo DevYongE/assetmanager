@@ -1,8 +1,9 @@
-# QR 자산관리 시스템 - Rocky Linux 배포 가이드
+# QR 자산관리 시스템 - Rocky Linux 배포 가이드 (Supabase 기반)
 
 ## 📋 개요
 
 이 문서는 Rocky Linux 서버에 QR 자산관리 시스템을 배포하는 방법을 설명합니다.
+**Supabase**를 데이터베이스로 사용하는 Node.js 백엔드와 Nuxt.js 프론트엔드로 구성됩니다.
 
 ## 🚀 빠른 배포
 
@@ -27,13 +28,14 @@ chmod +x deploy_rocky_linux.sh
 - **RAM**: 4GB 이상
 - **Storage**: 20GB 이상
 - **Network**: 인터넷 연결
+- **Database**: Supabase (클라우드)
 
 ## 🔧 수동 설치 (스크립트 사용 불가 시)
 
 ### 1. 시스템 업데이트
 ```bash
 sudo dnf update -y
-sudo dnf install -y git nodejs npm nginx mysql mysql-server pm2
+sudo dnf install -y git nodejs npm nginx pm2
 ```
 
 ### 2. 프로젝트 설정
@@ -43,26 +45,28 @@ git clone https://github.com/DevYongE/assetmanager.git
 cd assetmanager
 ```
 
-### 3. 데이터베이스 설정
+### 3. Supabase 환경변수 설정
 ```bash
-# MySQL 시작
-sudo systemctl start mysqld
-sudo systemctl enable mysqld
+cd backend
 
-# 보안 설정
-sudo mysql_secure_installation
+# 환경변수 파일 생성
+cat > .env << EOF
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url_here
+SUPABASE_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
-# 데이터베이스 생성
-sudo mysql -u root -p
-```
+# Server Configuration
+PORT=4000
+NODE_ENV=production
 
-MySQL 명령어:
-```sql
-CREATE DATABASE assetmanager;
-CREATE USER 'assetmanager'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON assetmanager.* TO 'assetmanager'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_2025
+JWT_EXPIRES_IN=24h
+
+# CORS Configuration
+CORS_ORIGIN=https://your-domain.com
+EOF
 ```
 
 ### 4. 백엔드 설정
@@ -70,18 +74,7 @@ EXIT;
 cd backend
 npm install
 
-# 환경변수 설정
-cat > .env << EOF
-DB_HOST=localhost
-DB_USER=assetmanager
-DB_PASSWORD=your_password
-DB_NAME=assetmanager
-JWT_SECRET=your_jwt_secret
-PORT=4000
-NODE_ENV=production
-EOF
-
-# 마이그레이션 실행
+# Supabase 마이그레이션 실행
 node run-migration.js
 ```
 
@@ -171,9 +164,6 @@ pm2 status
 
 # Nginx 상태
 sudo systemctl status nginx
-
-# MySQL 상태
-sudo systemctl status mysqld
 ```
 
 ### 로그 확인
@@ -186,7 +176,6 @@ pm2 logs assetmanager-frontend
 
 # Nginx 로그
 sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
 ```
 
 ### 서비스 재시작
@@ -196,9 +185,6 @@ pm2 restart all
 
 # Nginx 재시작
 sudo systemctl restart nginx
-
-# MySQL 재시작
-sudo systemctl restart mysqld
 ```
 
 ## 🛠️ 문제 해결
@@ -233,16 +219,13 @@ sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --reload
 ```
 
-#### 4. 데이터베이스 연결 문제
+#### 4. Supabase 연결 문제
 ```bash
-# MySQL 상태 확인
-sudo systemctl status mysqld
+# 환경변수 확인
+cat /home/dmanager/assetmanager/backend/.env | grep SUPABASE
 
-# MySQL 재시작
-sudo systemctl restart mysqld
-
-# 연결 테스트
-mysql -u assetmanager -p assetmanager
+# 백엔드 연결 테스트
+curl -s http://localhost:4000/api/health
 ```
 
 ## 💾 백업 및 복원
@@ -258,20 +241,20 @@ ls -la /home/dmanager/backups/
 
 ### 수동 백업
 ```bash
-# 데이터베이스 백업
-mysqldump -u assetmanager -p assetmanager > backup_$(date +%Y%m%d).sql
-
 # 애플리케이션 백업
 tar -czf app_backup_$(date +%Y%m%d).tar.gz /home/dmanager/assetmanager
+
+# 환경변수 백업
+cp /home/dmanager/assetmanager/backend/.env env_backup_$(date +%Y%m%d)
 ```
 
 ### 복원
 ```bash
-# 데이터베이스 복원
-mysql -u assetmanager -p assetmanager < backup_20250127.sql
-
 # 애플리케이션 복원
 tar -xzf app_backup_20250127.tar.gz -C /
+
+# 환경변수 복원
+cp env_backup_20250127 /home/dmanager/assetmanager/backend/.env
 ```
 
 ## 🔒 보안 설정
@@ -322,7 +305,7 @@ sudo tail -f /var/log/nginx/access.log | grep -v "health"
 sudo tail -f /var/log/nginx/error.log
 ```
 
-## �� 업데이트
+## 🔄 업데이트
 
 ### 애플리케이션 업데이트
 ```bash
@@ -350,7 +333,24 @@ pm2 restart assetmanager-frontend
 ```bash
 sudo dnf update -y
 sudo systemctl restart nginx
-sudo systemctl restart mysqld
+```
+
+## ⚠️ 중요 사항
+
+### Supabase 설정
+1. [Supabase](https://supabase.com)에서 프로젝트 생성
+2. Project Settings > API에서 다음 정보 확인:
+   - Project URL
+   - anon/public key
+   - service_role key
+3. 백엔드 `.env` 파일에 설정
+
+### 환경변수 필수 항목
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+JWT_SECRET=your_jwt_secret_key_2025
 ```
 
 ## 📞 지원
@@ -360,9 +360,10 @@ sudo systemctl restart mysqld
 1. **로그 확인**: `/home/dmanager/monitor.sh`
 2. **문제 해결 도구**: `./troubleshoot.sh`
 3. **백업 확인**: `/home/dmanager/backup.sh`
+4. **Supabase 연결**: 환경변수 설정 확인
 
 ## 📝 변경 이력
 
-- **2025-01-27**: Rocky Linux 배포 가이드 작성
+- **2025-01-27**: Supabase 기반 배포 가이드 작성
 - **2025-01-27**: 자동화 스크립트 추가
 - **2025-01-27**: 문제 해결 도구 추가 
