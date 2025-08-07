@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    // 2025-01-27: initializeAuth 메서드 추가
     initializeAuth() {
       if (process.client) {
         const savedToken = localStorage.getItem('auth_token')
@@ -41,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('🚀 [AUTH STORE] Starting login process...')
         console.log('📧 [AUTH STORE] Credentials:', { email: credentials.email, passwordLength: credentials.password.length })
         
-        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        // 2025-01-27: useApi composable 사용으로 변경 (환경별 자동 처리)
         const { auth } = useApi()
         const response = await auth.login(credentials)
         
@@ -74,12 +75,13 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    // 2025-01-27: register 메서드 추가
     async register(data: RegisterData) {
       this.loading = true
       this.error = null
       
       try {
-        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        // 2025-01-27: useApi composable 사용으로 변경 (환경별 자동 처리)
         const { auth } = useApi()
         const response = await auth.register(data)
         
@@ -102,7 +104,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    logout() {
+    async logout() {
       // Clear state
       this.user = null
       this.token = null
@@ -123,7 +125,7 @@ export const useAuthStore = defineStore('auth', {
       
       this.loading = true
       try {
-        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        // 2025-01-27: useApi composable 사용으로 변경 (환경별 자동 처리)
         const { auth } = useApi()
         const response = await auth.getProfile()
         this.user = response.user
@@ -148,7 +150,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        // 2025-07-27: useApi composable 사용으로 변경 (환경별 자동 처리)
+        // 2025-01-27: useApi composable 사용으로 변경 (환경별 자동 처리)
         const { auth } = useApi()
         const response = await auth.updateProfile(data)
         this.user = response.user

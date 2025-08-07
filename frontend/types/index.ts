@@ -2,8 +2,11 @@
 export interface User {
   id: string
   email: string
+  name: string
+  role: string
   company_name: string
-  created_at?: string
+  created_at: string
+  updated_at: string
 }
 
 export interface LoginCredentials {
