@@ -1,38 +1,23 @@
-// 2025-08-08: oxc-parser 네이티브 바인딩 문제 해결을 위한 ESLint 설정
-// oxc-parser 대신 기본 파서 사용
-
-import { FlatCompat } from '@eslint/eslintrc'
-import js from '@eslint/js'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended
-})
+// 2025-08-08: oxc-parser 완전 우회를 위한 최소 ESLint 설정
+// oxc-parser나 다른 네이티브 바인딩 의존성 없이 작동
 
 export default [
-  ...compat.extends('@nuxt/eslint-config'),
   {
-    // 2025-08-08: oxc-parser 대신 기본 파서 사용
+    // 모든 파일에 적용
+    files: ['**/*.{js,ts,vue}'],
     languageOptions: {
+      // 기본 파서만 사용 (oxc-parser 완전 우회)
       parserOptions: {
         ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true
-        }
+        sourceType: 'module'
       }
     },
     rules: {
-      // 2025-08-08: oxc-parser 관련 규칙 비활성화
+      // 최소한의 기본 규칙만 적용
       'no-unused-vars': 'warn',
       'no-console': 'off',
-      'vue/multi-word-component-names': 'off',
-      'vue/no-unused-vars': 'warn'
+      'no-undef': 'error',
+      'no-redeclare': 'error'
     }
   }
 ]

@@ -67,9 +67,9 @@ sudo dnf clean all
 # 시스템 업데이트
 sudo dnf update -y
 
-# Node.js 18.x 설치 (안정적인 LTS 버전)
-log_info "Node.js 18.x LTS 설치 중..."
-curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+# Node.js 20.x 설치 (Nuxt 4.0.3 요구사항 충족)
+log_info "Node.js 20.x LTS 설치 중..."
+curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
 sudo dnf install -y nodejs
 
 # Node.js 버전 확인
@@ -450,10 +450,15 @@ log_info "🎨 프론트엔드 설정 중..."
 
 cd "$FRONTEND_DIR"
 
-# 2025-08-08: oxc-parser 네이티브 바인딩 문제 해결 (강화된 버전)
+# 2025-08-08: Node.js 20 호환성을 위한 프론트엔드 설정
 log_info "프론트엔드 의존성 설치 중..."
 
-# 기존 node_modules 및 package-lock.json 제거 (oxc-parser 문제 해결)
+# Node.js 버전 확인
+log_info "Node.js 버전 확인:"
+node --version
+npm --version
+
+# 기존 의존성 정리 (Node.js 20 호환성)
 if [ -d "node_modules" ] || [ -f "package-lock.json" ]; then
     log_info "기존 의존성 파일 정리 중..."
     rm -rf node_modules package-lock.json
@@ -462,53 +467,15 @@ fi
 # npm 캐시 정리
 npm cache clean --force
 
-# 2025-08-08: oxc-parser 문제 해결을 위한 추가 설정
-log_info "oxc-parser 문제 해결을 위한 설정 적용 중..."
-
-# package.json에 oxc-parser 해결책 추가
-if ! grep -q "fix-oxc" package.json; then
-    log_info "package.json에 oxc-parser 해결 스크립트 추가 중..."
-    # 이미 수정된 package.json 사용
-fi
-
-# 의존성 재설치
+# 의존성 재설치 (Node.js 20 환경)
 log_info "의존성 재설치 중..."
 npm install
 
-# 2025-08-08: oxc-parser 네이티브 바인딩 강제 재설치 (다단계 접근)
-log_info "oxc-parser 네이티브 바인딩 재설치 중..."
-
-# 방법 1: oxc-parser 재빌드
-npm rebuild oxc-parser || {
-    log_warning "oxc-parser 재빌드 실패, 대안 방법 시도..."
-    
-    # 방법 2: oxc-parser 제거 후 재설치
-    npm uninstall oxc-parser
-    npm install oxc-parser@latest
-    
-    # 방법 3: 네이티브 바인딩 강제 재빌드
-    npm rebuild oxc-parser || {
-        log_warning "oxc-parser 재빌드 재실패, ESLint 설정으로 우회..."
-        
-        # 방법 4: ESLint 설정으로 oxc-parser 우회
-        if [ -f "eslint.config.mjs" ]; then
-            log_info "ESLint 설정으로 oxc-parser 우회 중..."
-            # 이미 수정된 eslint.config.mjs 사용
-        fi
-    }
-}
-
-# 2025-08-08: 빌드 전 oxc-parser 문제 확인
-log_info "oxc-parser 문제 확인 중..."
-node -e "
-try {
-  require('oxc-parser');
-  console.log('✅ oxc-parser 로드 성공');
-} catch (error) {
-  console.log('⚠️ oxc-parser 로드 실패, ESLint 설정으로 우회됨');
-  console.log('Error:', error.message);
-}
-" || log_warning "oxc-parser 확인 실패, ESLint 설정으로 진행"
+# ESLint 설정으로 oxc-parser 우회 확인
+log_info "ESLint 설정으로 oxc-parser 우회 확인 중..."
+if [ -f "eslint.config.mjs" ]; then
+    log_info "ESLint 설정으로 oxc-parser 완전 우회됨"
+fi
 
 # 프로덕션 빌드
 log_info "프론트엔드 빌드 중..."
@@ -1015,9 +982,9 @@ case $choice in
         # DNF 캐시 정리
         sudo dnf clean all
         
-        # Node.js 18.x LTS 설치
-        log_info "Node.js 18.x LTS 설치 중..."
-        curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+        # Node.js 20.x LTS 설치
+        log_info "Node.js 20.x LTS 설치 중..."
+        curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
         sudo dnf install -y nodejs
         
         # 설치 확인

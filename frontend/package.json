@@ -2,6 +2,10 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "NODE_ENV=development nuxt dev",
@@ -13,8 +17,7 @@
     "build:prod": "NODE_ENV=production nuxt build",
     "build:prod:win": "set NODE_ENV=production && nuxt build",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "fix-oxc": "npm rebuild oxc-parser || npm uninstall oxc-parser && npm install oxc-parser@latest"
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
@@ -42,15 +45,5 @@
     "autoprefixer": "^10.4.21",
     "tailwindcss": "^3.4.17",
     "vue-tsc": "^2.2.12"
-  },
-  "overrides": {
-    "oxc-parser": {
-      "optionalDependencies": {
-        "@oxc-parser/binding-linux-x64-gnu": "*"
-      }
-    }
-  },
-  "resolutions": {
-    "oxc-parser": "^0.5.0"
   }
 }
