@@ -67,10 +67,14 @@ npm install -g pm2
 # =============================================================================
 log_info "📁 프로젝트 디렉토리 설정 중..."
 
-# 기존 프로젝트 백업
+# 2025-08-08: 백업 타임스탬프를 변수로 고정하여 이후 참조 시 동일 값 사용
+BACKUP_TS=$(date +%Y%m%d_%H%M%S)
+BACKUP_PATH="${PROJECT_DIR}_backup_${BACKUP_TS}"
+
+# 기존 프로젝트 백업 (2025-08-08: 고정된 BACKUP_PATH 사용)
 if [ -d "$PROJECT_DIR" ]; then
-    log_warning "기존 프로젝트를 백업합니다..."
-    sudo mv "$PROJECT_DIR" "${PROJECT_DIR}_backup_$(date +%Y%m%d_%H%M%S)"
+    log_warning "기존 프로젝트를 백업합니다... (백업 경로: $BACKUP_PATH)"
+    sudo mv "$PROJECT_DIR" "$BACKUP_PATH"
 fi
 
 # 프로젝트 디렉토리 생성
@@ -93,10 +97,10 @@ sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 # =============================================================================
 log_info "🗄️ 환경변수 파일 확인 중..."
 
-# 백업에서 .env 파일 복사 시도
-if [ -f "${PROJECT_DIR}_backup_$(date +%Y%m%d_%H%M%S)/backend/.env" ]; then
-    log_info "기존 .env 파일을 복사합니다..."
-    cp "${PROJECT_DIR}_backup_$(date +%Y%m%d_%H%M%S)/backend/.env" "$BACKEND_DIR/.env"
+# 2025-08-08: 동일 타이밍의 백업 디렉토리를 참조하도록 수정 (BACKUP_PATH 재사용)
+if [ -f "$BACKUP_PATH/backend/.env" ]; then
+    log_info "기존 .env 파일을 복사합니다... (2025-08-08)"
+    cp "$BACKUP_PATH/backend/.env" "$BACKEND_DIR/.env"
     log_success "기존 .env 파일 복사 완료"
 else
     log_warning "기존 .env 파일이 없습니다. 새로 생성합니다..."
@@ -105,7 +109,8 @@ else
     cat > "$BACKEND_DIR/.env" << 'EOF'
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url_here
-SUPABASE_KEY=your_supabase_anon_key_here
+# 2025-08-08: 변수명 정규화 (백엔드 코드와 일치)
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
 # Server Configuration
@@ -123,7 +128,8 @@ EOF
     log_warning "⚠️  Supabase 환경변수를 설정해주세요!"
     log_warning "   $BACKEND_DIR/.env 파일을 편집하여 다음을 설정하세요:"
     log_warning "   - SUPABASE_URL: Supabase 프로젝트 URL"
-    log_warning "   - SUPABASE_KEY: Supabase anon key"
+    # 2025-08-08: 안내 문구 수정
+    log_warning "   - SUPABASE_ANON_KEY: Supabase anon key"
     log_warning "   - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key"
     log_warning "   - JWT_SECRET: JWT 시크릿 키"
     log_warning "   - CORS_ORIGIN: 프론트엔드 도메인"

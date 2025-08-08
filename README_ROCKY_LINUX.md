@@ -63,7 +63,8 @@ cp /path/to/backup/backend/.env backend/.env
 cat > backend/.env << EOF
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url_here
-SUPABASE_KEY=your_supabase_anon_key_here
+# 2025-08-08: 변수명 정규화 - SUPABASE_ANON_KEY 사용
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
 # Server Configuration
@@ -374,8 +375,9 @@ sudo systemctl restart nginx
 
 ### 환경변수 필수 항목
 ```env
+# 2025-08-08: 변수명 정규화 - SUPABASE_ANON_KEY 사용
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your_supabase_anon_key_here
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 JWT_SECRET=your_jwt_secret_key_2025
 ```

@@ -332,14 +332,15 @@ export const useApi = () => {
       })
     },
 
+    // 2025-08-08: 프로필 조회/수정 엔드포인트를 백엔드 라우팅(/api/auth/...)과 일치하도록 수정
     // 프로필 조회 API
     async getProfile(): Promise<{ user: User }> {
-      return apiCall<{ user: User }>('/users/profile')
+      return apiCall<{ user: User }>('/auth/profile') // 2025-08-08: 수정
     },
 
     // 프로필 업데이트 API
     async updateProfile(data: Partial<User & { current_password?: string; new_password?: string }>): Promise<{ user: User }> {
-      return apiCall<{ user: User }>('/users/profile', {
+      return apiCall<{ user: User }>('/auth/profile', { // 2025-08-08: 수정
         method: 'PUT',
         body: JSON.stringify(data)
       })
@@ -444,9 +445,10 @@ export const useApi = () => {
       return apiCallWithFormData<ExcelImportResponse>('/devices/import', formData)
     },
 
+    // 2025-08-08: 백엔드 라우트('/devices/export/excel')에 맞춰 엔드포인트 수정
     // Excel 파일 export
     async exportExcel(): Promise<Blob> {
-      return apiCallForBlob('/devices/export')
+      return apiCallForBlob('/devices/export/excel') // 2025-08-08: 수정
     }
   }
 
