@@ -203,6 +203,34 @@ sudo systemctl restart nginx
 
 ## 🛠️ 문제 해결
 
+### Node.js 의존성 충돌 해결 (2025-08-08 추가)
+
+npm과 nodejs 버전 충돌이 발생하는 경우:
+
+```bash
+# Node.js 충돌 해결 스크립트 실행
+chmod +x /home/dmanager/fix_nodejs_conflict.sh
+./fix_nodejs_conflict.sh
+```
+
+**수동 해결 방법:**
+```bash
+# 1. 기존 Node.js 패키지 제거
+sudo dnf remove -y nodejs npm nsolid*
+
+# 2. 저장소 정리
+sudo rm -f /etc/yum.repos.d/nodesource-nsolid.repo
+sudo dnf clean all
+
+# 3. Node.js 18.x LTS 재설치
+curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+sudo dnf install -y nodejs
+
+# 4. 설치 확인
+node --version
+npm --version
+```
+
 ### 문제 해결 도구 실행
 ```bash
 chmod +x troubleshoot.sh

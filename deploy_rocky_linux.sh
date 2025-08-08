@@ -48,15 +48,37 @@ log_info "🚀 QR 자산관리 시스템 Rocky Linux 배포 시작 (Supabase 기
 # =============================================================================
 log_info "📦 시스템 업데이트 및 필수 패키지 설치 중..."
 
-sudo dnf update -y
-sudo dnf install -y git nodejs npm nginx
+# 2025-08-08: Node.js 의존성 충돌 해결 (npm/nodejs 버전 충돌 방지)
+log_info "🔧 Node.js 의존성 충돌 해결 중..."
 
-# Node.js 최신 버전 설치 (필요시)
-if ! command -v node &> /dev/null; then
-    log_info "Node.js 설치 중..."
-    curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-    sudo dnf install -y nodejs
+# 기존 NodeSource 저장소 정리
+if [ -f "/etc/yum.repos.d/nodesource-nsolid.repo" ]; then
+    log_info "기존 Nsolid 저장소 비활성화..."
+    sudo sed -i 's/enabled=1/enabled=0/' /etc/yum.repos.d/nodesource-nsolid.repo
 fi
+
+# 기존 Node.js 관련 패키지 제거
+log_info "기존 Node.js 패키지 정리..."
+sudo dnf remove -y nodejs npm 2>/dev/null || true
+
+# DNF 캐시 정리
+sudo dnf clean all
+
+# 시스템 업데이트
+sudo dnf update -y
+
+# Node.js 18.x 설치 (안정적인 LTS 버전)
+log_info "Node.js 18.x LTS 설치 중..."
+curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+sudo dnf install -y nodejs
+
+# Node.js 버전 확인
+log_info "Node.js 설치 확인:"
+node --version
+npm --version
+
+# Nginx 설치
+sudo dnf install -y nginx
 
 # PM2 글로벌 설치 (sudo 없이)
 log_info "PM2 글로벌 설치 중..."
@@ -595,4 +617,149 @@ echo ""
 echo "=== 중요 사항 ==="
 echo "⚠️  Supabase 환경변수가 올바르게 설정되었는지 확인하세요!"
 echo "⚠️  프론트엔드에서 API 호출이 정상적으로 작동하는지 확인하세요!"
-echo "⚠️  PM2 startup 명령어를 실행하여 자동 시작을 설정하세요!" 
+echo "⚠️  PM2 startup 명령어를 실행하여 자동 시작을 설정하세요!"
+
+# =============================================================================
+# 14. Node.js 충돌 해결 스크립트 생성 (2025-08-08 추가)
+# =============================================================================
+log_info "🛠️ Node.js 충돌 해결 스크립트 생성 중..."
+
+cat > /home/dmanager/fix_nodejs_conflict.sh << 'EOF'
+#!/bin/bash
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo "🔧 Node.js 의존성 충돌 해결 도구"
+echo "=================================="
+echo ""
+
+# 1. 현재 Node.js 상태 확인
+log_info "1. 현재 Node.js 상태 확인 중..."
+
+echo "=== 현재 Node.js 버전 ==="
+node --version 2>/dev/null || echo "Node.js가 설치되지 않음"
+npm --version 2>/dev/null || echo "npm이 설치되지 않음"
+echo ""
+
+echo "=== 설치된 Node.js 관련 패키지 ==="
+rpm -qa | grep -i node
+echo ""
+
+echo "=== 활성화된 저장소 ==="
+sudo dnf repolist | grep -i node
+echo ""
+
+# 2. 충돌 해결 옵션
+echo "🔧 충돌 해결 옵션:"
+echo "1. 완전한 Node.js 재설치 (권장)"
+echo "2. Nsolid 저장소만 비활성화"
+echo "3. 특정 버전 강제 설치"
+echo "4. 저장소 정리만 수행"
+echo "5. 종료"
+echo ""
+
+read -p "선택하세요 (1-5): " choice
+
+case $choice in
+    1)
+        log_info "완전한 Node.js 재설치를 진행합니다..."
+        
+        # 기존 Node.js 관련 패키지 완전 제거
+        log_info "기존 패키지 제거 중..."
+        sudo dnf remove -y nodejs npm 2>/dev/null || true
+        sudo dnf remove -y nsolid* 2>/dev/null || true
+        
+        # 저장소 정리
+        log_info "저장소 정리 중..."
+        sudo rm -f /etc/yum.repos.d/nodesource-nsolid.repo
+        sudo rm -f /etc/yum.repos.d/nodesource.repo
+        
+        # DNF 캐시 정리
+        sudo dnf clean all
+        
+        # Node.js 18.x LTS 설치
+        log_info "Node.js 18.x LTS 설치 중..."
+        curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+        sudo dnf install -y nodejs
+        
+        # 설치 확인
+        log_info "설치 확인:"
+        node --version
+        npm --version
+        
+        log_success "Node.js 재설치 완료!"
+        ;;
+    2)
+        log_info "Nsolid 저장소 비활성화 중..."
+        
+        if [ -f "/etc/yum.repos.d/nodesource-nsolid.repo" ]; then
+            sudo sed -i 's/enabled=1/enabled=0/' /etc/yum.repos.d/nodesource-nsolid.repo
+            log_success "Nsolid 저장소 비활성화 완료"
+        else
+            log_warning "Nsolid 저장소 파일이 없습니다"
+        fi
+        
+        # npm 재설치
+        sudo dnf install -y npm
+        log_success "npm 재설치 완료"
+        ;;
+    3)
+        log_info "특정 버전 강제 설치 중..."
+        
+        # Node.js 16.x 설치 (npm 8.19.4와 호환)
+        curl -fsSL https://rpm.nodesource.com/setup_16.x | sudo bash -
+        sudo dnf install -y nodejs-16.x
+        
+        log_success "Node.js 16.x 설치 완료"
+        ;;
+    4)
+        log_info "저장소 정리만 수행 중..."
+        
+        # 불필요한 저장소 제거
+        sudo rm -f /etc/yum.repos.d/nodesource-nsolid.repo
+        
+        # DNF 캐시 정리
+        sudo dnf clean all
+        
+        log_success "저장소 정리 완료"
+        ;;
+    5)
+        log_info "종료합니다."
+        exit 0
+        ;;
+    *)
+        log_error "잘못된 선택입니다."
+        exit 1
+        ;;
+esac
+
+echo ""
+log_success "Node.js 충돌 해결 완료!"
+echo "재배포를 위해 다음 명령어를 실행하세요:"
+echo "cd /home/dmanager && ./deploy_rocky_linux.sh"
+EOF
+
+chmod +x /home/dmanager/fix_nodejs_conflict.sh
+
+log_success "Node.js 충돌 해결 스크립트 생성 완료" 
