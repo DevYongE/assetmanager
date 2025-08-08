@@ -19,16 +19,7 @@
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  // 2025-08-08: oxc-parser 네이티브 바인딩 문제 해결을 위한 ESLint 설정 추가
-  eslint: {
-    // oxc-parser 대신 기본 파서 사용
-    config: {
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module'
-      }
-    }
-  },
+
   
   // =============================================================================
   // 개발 서버 설정
@@ -49,9 +40,7 @@ export default defineNuxtConfig({
       }
     },
     // 2025-08-08: 정적 파일 서빙 설정 개선
-    static: {
-      maxAge: 60 * 60 * 24 * 365 // 1년
-    }
+    static: true
   },
   
   // =============================================================================
@@ -136,7 +125,7 @@ export default defineNuxtConfig({
       // =============================================================================
       // 개발 환경: localhost 사용
       // 운영 환경: 상대 경로 사용 (2025-01-27: localhost 호출 문제 해결)
-      apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:4000/api'
+      apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:4000/api',
       
       // =============================================================================
       // 환경 구분 플래그
