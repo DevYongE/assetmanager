@@ -323,6 +323,14 @@ cd /home/dmanager/assetmanager/backend
 node -e "require('dotenv').config(); console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'MISSING');"
 ```
 
+**환경변수 로드 문제 해결:**
+만약 `dotenv`가 환경변수를 로드했지만 백엔드에서 여전히 `MISSING`으로 표시되는 경우:
+```bash
+# 백엔드 디렉토리에서 직접 테스트
+cd /home/dmanager/assetmanager/backend
+node run-migration.js
+```
+
 ### 문제 해결 도구 실행
 ```bash
 chmod +x troubleshoot.sh

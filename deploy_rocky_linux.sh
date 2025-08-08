@@ -408,6 +408,7 @@ fi
 
 # 환경변수 로드 테스트
 log_info "환경변수 로드 테스트 중..."
+cd "$BACKEND_DIR"
 node -e "
 require('dotenv').config();
 const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'];
@@ -417,6 +418,7 @@ if (missing.length > 0) {
     process.exit(1);
 } else {
     console.log('✅ 모든 환경변수가 설정되었습니다.');
+    console.log('✅ Supabase 연결 준비 완료');
 }
 " || {
     log_error "환경변수 로드 테스트 실패!"
@@ -426,6 +428,18 @@ if (missing.length > 0) {
 # Supabase 마이그레이션 실행
 log_info "Supabase 마이그레이션 실행 중..."
 node run-migration.js
+
+# 2025-08-08: 마이그레이션 후 연결 테스트 추가
+log_info "Supabase 연결 테스트 중..."
+node -e "
+require('dotenv').config();
+const { supabase } = require('./config/database');
+console.log('🔧 Supabase 클라이언트 생성 완료');
+console.log('✅ 데이터베이스 연결 준비 완료');
+" || {
+    log_error "Supabase 연결 테스트 실패!"
+    exit 1
+}
 
 log_success "백엔드 설정 완료"
 

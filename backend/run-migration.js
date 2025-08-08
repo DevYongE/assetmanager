@@ -1,3 +1,6 @@
+// 2025-08-08: 환경변수 로드 추가 (dotenv 설정이 먼저 실행되도록)
+require('dotenv').config();
+
 const { supabaseAdmin } = require('./config/database');
 
 async function runMigration() {
