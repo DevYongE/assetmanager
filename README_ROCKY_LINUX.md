@@ -297,6 +297,32 @@ cp -r /path/to/frontend /home/dmanager/assetmanager/
 sudo chown -R dmanager:dmanager /home/dmanager/assetmanager
 ```
 
+### Supabase 환경변수 설정 (2025-08-08 추가)
+
+Supabase 환경변수 누락 오류가 발생하는 경우:
+
+```bash
+# Supabase 환경변수 설정 스크립트 실행
+chmod +x /home/dmanager/setup_supabase_env.sh
+./setup_supabase_env.sh
+```
+
+**수동 해결 방법:**
+```bash
+# 1. .env 파일 편집
+nano /home/dmanager/assetmanager/backend/.env
+
+# 2. 다음 값들을 실제 Supabase 값으로 변경:
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_actual_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_actual_service_role_key
+JWT_SECRET=your_random_secret_key
+
+# 3. 환경변수 테스트
+cd /home/dmanager/assetmanager/backend
+node -e "require('dotenv').config(); console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'MISSING');"
+```
+
 ### 문제 해결 도구 실행
 ```bash
 chmod +x troubleshoot.sh

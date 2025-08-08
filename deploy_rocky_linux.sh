@@ -331,8 +331,97 @@ cd "$BACKEND_DIR"
 # 의존성 설치
 npm install
 
+# 2025-08-08: 환경변수 파일 검증 및 설정
+log_info "환경변수 파일 검증 중..."
+
+# .env 파일 존재 확인
+if [ ! -f ".env" ]; then
+    log_error ".env 파일이 없습니다!"
+    log_error "환경변수 설정이 필요합니다."
+    exit 1
+fi
+
 # 환경변수 파일 권한 설정
 chmod 600 .env
+
+# 환경변수 내용 확인 (민감한 정보는 마스킹)
+log_info "환경변수 파일 내용 확인:"
+if grep -q "SUPABASE_URL" .env; then
+    SUPABASE_URL=$(grep "SUPABASE_URL" .env | cut -d'=' -f2)
+    if [ "$SUPABASE_URL" != "your_supabase_project_url_here" ]; then
+        log_success "SUPABASE_URL: 설정됨"
+    else
+        log_warning "SUPABASE_URL: 기본값 (설정 필요)"
+    fi
+else
+    log_error "SUPABASE_URL: 없음"
+fi
+
+if grep -q "SUPABASE_ANON_KEY" .env; then
+    SUPABASE_ANON_KEY=$(grep "SUPABASE_ANON_KEY" .env | cut -d'=' -f2)
+    if [ "$SUPABASE_ANON_KEY" != "your_supabase_anon_key_here" ]; then
+        log_success "SUPABASE_ANON_KEY: 설정됨"
+    else
+        log_warning "SUPABASE_ANON_KEY: 기본값 (설정 필요)"
+    fi
+else
+    log_error "SUPABASE_ANON_KEY: 없음"
+fi
+
+if grep -q "SUPABASE_SERVICE_ROLE_KEY" .env; then
+    SUPABASE_SERVICE_ROLE_KEY=$(grep "SUPABASE_SERVICE_ROLE_KEY" .env | cut -d'=' -f2)
+    if [ "$SUPABASE_SERVICE_ROLE_KEY" != "your_supabase_service_role_key_here" ]; then
+        log_success "SUPABASE_SERVICE_ROLE_KEY: 설정됨"
+    else
+        log_warning "SUPABASE_SERVICE_ROLE_KEY: 기본값 (설정 필요)"
+    fi
+else
+    log_error "SUPABASE_SERVICE_ROLE_KEY: 없음"
+fi
+
+# 환경변수 설정 확인
+if [ "$SUPABASE_URL" = "your_supabase_project_url_here" ] || [ "$SUPABASE_ANON_KEY" = "your_supabase_anon_key_here" ] || [ "$SUPABASE_SERVICE_ROLE_KEY" = "your_supabase_service_role_key_here" ]; then
+    log_error "Supabase 환경변수가 올바르게 설정되지 않았습니다!"
+    log_error "다음 단계를 따라 환경변수를 설정하세요:"
+    echo ""
+    echo "1. Supabase 프로젝트 설정 확인:"
+    echo "   - https://supabase.com 에서 프로젝트 접속"
+    echo "   - Settings > API에서 다음 정보 확인:"
+    echo "     * Project URL"
+    echo "     * anon/public key"
+    echo "     * service_role key"
+    echo ""
+    echo "2. .env 파일 편집:"
+    echo "   nano $BACKEND_DIR/.env"
+    echo ""
+    echo "3. 다음 값들을 실제 값으로 변경:"
+    echo "   SUPABASE_URL=https://your-project.supabase.co"
+    echo "   SUPABASE_ANON_KEY=your_actual_anon_key"
+    echo "   SUPABASE_SERVICE_ROLE_KEY=your_actual_service_role_key"
+    echo ""
+    read -p "환경변수를 설정하셨나요? (y/N): " env_configured
+    if [[ $env_configured != [yY] ]]; then
+        log_error "환경변수 설정이 필요합니다. 스크립트를 중단합니다."
+        exit 1
+    fi
+fi
+
+# 환경변수 로드 테스트
+log_info "환경변수 로드 테스트 중..."
+node -e "
+require('dotenv').config();
+const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'];
+const missing = required.filter(key => !process.env[key]);
+if (missing.length > 0) {
+    console.error('❌ 누락된 환경변수:', missing.join(', '));
+    process.exit(1);
+} else {
+    console.log('✅ 모든 환경변수가 설정되었습니다.');
+}
+" || {
+    log_error "환경변수 로드 테스트 실패!"
+    exit 1
+}
 
 # Supabase 마이그레이션 실행
 log_info "Supabase 마이그레이션 실행 중..."
@@ -1306,4 +1395,167 @@ EOF
 
 chmod +x /home/dmanager/fix_project_files.sh
 
-log_success "프로젝트 파일 복구 스크립트 생성 완료" 
+log_success "프로젝트 파일 복구 스크립트 생성 완료"
+
+# =============================================================================
+# 17. Supabase 환경변수 설정 스크립트 생성 (2025-08-08 추가)
+# =============================================================================
+log_info "🛠️ Supabase 환경변수 설정 스크립트 생성 중..."
+
+cat > /home/dmanager/setup_supabase_env.sh << 'EOF'
+#!/bin/bash
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo "🔧 Supabase 환경변수 설정 도구"
+echo "==============================="
+echo ""
+
+PROJECT_DIR="/home/dmanager/assetmanager"
+ENV_FILE="$PROJECT_DIR/backend/.env"
+
+# 1. 현재 상황 확인
+log_info "1. 현재 상황 확인 중..."
+
+if [ ! -d "$PROJECT_DIR" ]; then
+    log_error "프로젝트 디렉토리를 찾을 수 없습니다: $PROJECT_DIR"
+    exit 1
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+    log_warning ".env 파일이 없습니다. 새로 생성합니다..."
+    cat > "$ENV_FILE" << 'ENV_TEMPLATE'
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url_here
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+
+# Server Configuration
+PORT=4000
+NODE_ENV=production
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_2025
+JWT_EXPIRES_IN=24h
+
+# CORS Configuration
+CORS_ORIGIN=https://your-domain.com
+ENV_TEMPLATE
+    chmod 600 "$ENV_FILE"
+fi
+
+# 2. Supabase 설정 안내
+echo "📋 Supabase 설정 안내"
+echo "====================="
+echo ""
+echo "1. Supabase 프로젝트 접속:"
+echo "   https://supabase.com"
+echo ""
+echo "2. 프로젝트 선택 또는 새 프로젝트 생성"
+echo ""
+echo "3. Settings > API에서 다음 정보 확인:"
+echo "   - Project URL (예: https://your-project.supabase.co)"
+echo "   - anon/public key (eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...)"
+echo "   - service_role key (eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...)"
+echo ""
+echo "4. 아래에 정보를 입력하세요:"
+echo ""
+
+# 3. 사용자 입력 받기
+read -p "Supabase Project URL (https://your-project.supabase.co): " SUPABASE_URL
+read -p "Supabase anon key: " SUPABASE_ANON_KEY
+read -p "Supabase service role key: " SUPABASE_SERVICE_ROLE_KEY
+read -p "JWT Secret (랜덤 문자열): " JWT_SECRET
+
+# 4. 입력값 검증
+if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+    log_error "모든 필수 값이 입력되지 않았습니다."
+    exit 1
+fi
+
+# 5. .env 파일 업데이트
+log_info "환경변수 파일을 업데이트합니다..."
+
+# 임시 파일 생성
+TEMP_ENV=$(mktemp)
+
+# 기존 .env 파일에서 Supabase 관련 설정만 교체
+cat "$ENV_FILE" | while IFS= read -r line; do
+    if [[ $line == SUPABASE_URL=* ]]; then
+        echo "SUPABASE_URL=$SUPABASE_URL"
+    elif [[ $line == SUPABASE_ANON_KEY=* ]]; then
+        echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
+    elif [[ $line == SUPABASE_SERVICE_ROLE_KEY=* ]]; then
+        echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY"
+    elif [[ $line == JWT_SECRET=* ]]; then
+        echo "JWT_SECRET=$JWT_SECRET"
+    else
+        echo "$line"
+    fi
+done > "$TEMP_ENV"
+
+# 임시 파일을 원본으로 이동
+mv "$TEMP_ENV" "$ENV_FILE"
+chmod 600 "$ENV_FILE"
+
+# 6. 설정 확인
+log_info "설정 확인 중..."
+
+echo ""
+echo "=== 설정된 환경변수 ==="
+echo "SUPABASE_URL: ${SUPABASE_URL:0:50}..."
+echo "SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:0:50}..."
+echo "SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:0:50}..."
+echo "JWT_SECRET: ${JWT_SECRET:0:20}..."
+echo ""
+
+# 7. 환경변수 테스트
+log_info "환경변수 로드 테스트 중..."
+
+cd "$PROJECT_DIR/backend"
+node -e "
+require('dotenv').config();
+const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'];
+const missing = required.filter(key => !process.env[key]);
+if (missing.length > 0) {
+    console.error('❌ 누락된 환경변수:', missing.join(', '));
+    process.exit(1);
+} else {
+    console.log('✅ 모든 환경변수가 설정되었습니다.');
+}
+" && {
+    log_success "환경변수 설정 완료!"
+    echo ""
+    echo "다음 단계:"
+    echo "1. 배포 스크립트 실행: ./deploy_rocky_linux.sh"
+    echo "2. 또는 백엔드 테스트: cd $PROJECT_DIR/backend && node run-migration.js"
+} || {
+    log_error "환경변수 테스트 실패!"
+    exit 1
+}
+EOF
+
+chmod +x /home/dmanager/setup_supabase_env.sh
+
+log_success "Supabase 환경변수 설정 스크립트 생성 완료" 
