@@ -450,8 +450,24 @@ log_info "🎨 프론트엔드 설정 중..."
 
 cd "$FRONTEND_DIR"
 
-# 의존성 설치
+# 2025-08-08: oxc-parser 네이티브 바인딩 문제 해결
+log_info "프론트엔드 의존성 설치 중..."
+
+# 기존 node_modules 및 package-lock.json 제거 (oxc-parser 문제 해결)
+if [ -d "node_modules" ] || [ -f "package-lock.json" ]; then
+    log_info "기존 의존성 파일 정리 중..."
+    rm -rf node_modules package-lock.json
+fi
+
+# npm 캐시 정리
+npm cache clean --force
+
+# 의존성 재설치
 npm install
+
+# 2025-08-08: oxc-parser 네이티브 바인딩 강제 재설치
+log_info "oxc-parser 네이티브 바인딩 재설치 중..."
+npm rebuild oxc-parser
 
 # 프로덕션 빌드
 log_info "프론트엔드 빌드 중..."
@@ -1572,4 +1588,166 @@ EOF
 
 chmod +x /home/dmanager/setup_supabase_env.sh
 
-log_success "Supabase 환경변수 설정 스크립트 생성 완료" 
+log_success "Supabase 환경변수 설정 스크립트 생성 완료"
+
+# =============================================================================
+# 18. oxc-parser 네이티브 바인딩 문제 해결 스크립트 생성 (2025-08-08 추가)
+# =============================================================================
+log_info "🛠️ oxc-parser 네이티브 바인딩 문제 해결 스크립트 생성 중..."
+
+cat > /home/dmanager/fix_oxc_parser.sh << 'EOF'
+#!/bin/bash
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo "🔧 oxc-parser 네이티브 바인딩 문제 해결 도구"
+echo "============================================="
+echo ""
+
+PROJECT_DIR="/home/dmanager/assetmanager"
+FRONTEND_DIR="$PROJECT_DIR/frontend"
+
+# 1. 현재 상황 확인
+log_info "1. 현재 상황 확인 중..."
+
+if [ ! -d "$FRONTEND_DIR" ]; then
+    log_error "프론트엔드 디렉토리를 찾을 수 없습니다: $FRONTEND_DIR"
+    exit 1
+fi
+
+cd "$FRONTEND_DIR"
+
+echo "=== 현재 디렉토리 ==="
+pwd
+echo ""
+
+echo "=== Node.js 버전 ==="
+node --version
+echo ""
+
+echo "=== npm 버전 ==="
+npm --version
+echo ""
+
+# 2. 문제 해결 옵션
+echo "🔧 문제 해결 옵션:"
+echo "1. 완전한 의존성 재설치 (권장)"
+echo "2. oxc-parser만 재설치"
+echo "3. npm 캐시 정리 후 재설치"
+echo "4. 강제 네이티브 바인딩 재빌드"
+echo "5. 종료"
+echo ""
+
+read -p "선택하세요 (1-5): " choice
+
+case $choice in
+    1)
+        log_info "완전한 의존성 재설치를 진행합니다..."
+        
+        # 기존 파일들 제거
+        log_info "기존 의존성 파일 제거 중..."
+        rm -rf node_modules package-lock.json
+        
+        # npm 캐시 정리
+        log_info "npm 캐시 정리 중..."
+        npm cache clean --force
+        
+        # 의존성 재설치
+        log_info "의존성 재설치 중..."
+        npm install
+        
+        # oxc-parser 강제 재빌드
+        log_info "oxc-parser 네이티브 바인딩 재빌드 중..."
+        npm rebuild oxc-parser
+        
+        log_success "완전한 재설치 완료!"
+        ;;
+    2)
+        log_info "oxc-parser만 재설치합니다..."
+        
+        # oxc-parser 제거
+        npm uninstall oxc-parser
+        
+        # oxc-parser 재설치
+        npm install oxc-parser
+        
+        # 네이티브 바인딩 재빌드
+        npm rebuild oxc-parser
+        
+        log_success "oxc-parser 재설치 완료!"
+        ;;
+    3)
+        log_info "npm 캐시 정리 후 재설치합니다..."
+        
+        # npm 캐시 정리
+        npm cache clean --force
+        
+        # 의존성 재설치
+        npm install
+        
+        log_success "캐시 정리 후 재설치 완료!"
+        ;;
+    4)
+        log_info "강제 네이티브 바인딩 재빌드를 진행합니다..."
+        
+        # 모든 네이티브 모듈 재빌드
+        npm rebuild
+        
+        # oxc-parser 특별 처리
+        npm rebuild oxc-parser
+        
+        log_success "네이티브 바인딩 재빌드 완료!"
+        ;;
+    5)
+        log_info "종료합니다."
+        exit 0
+        ;;
+    *)
+        log_error "잘못된 선택입니다."
+        exit 1
+        ;;
+esac
+
+# 3. 테스트
+log_info "빌드 테스트 중..."
+npm run build:prod && {
+    log_success "빌드 테스트 성공!"
+    echo ""
+    echo "다음 단계:"
+    echo "1. 배포 스크립트 실행: cd $PROJECT_DIR && ./deploy_rocky_linux.sh"
+    echo "2. 또는 프론트엔드 테스트: npm run dev"
+} || {
+    log_error "빌드 테스트 실패!"
+    echo ""
+    echo "추가 해결 방법:"
+    echo "1. Node.js 버전 확인 (18.x 권장)"
+    echo "2. 시스템 패키지 업데이트: sudo dnf update"
+    echo "3. 개발 도구 설치: sudo dnf groupinstall 'Development Tools'"
+    exit 1
+}
+EOF
+
+chmod +x /home/dmanager/fix_oxc_parser.sh
+
+log_success "oxc-parser 네이티브 바인딩 문제 해결 스크립트 생성 완료" 

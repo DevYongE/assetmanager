@@ -331,6 +331,37 @@ cd /home/dmanager/assetmanager/backend
 node run-migration.js
 ```
 
+### oxc-parser 네이티브 바인딩 문제 해결 (2025-08-08 추가)
+
+프론트엔드 빌드 시 `Cannot find native binding` 오류가 발생하는 경우:
+
+```bash
+# oxc-parser 문제 해결 스크립트 실행
+chmod +x /home/dmanager/fix_oxc_parser.sh
+./fix_oxc_parser.sh
+```
+
+**수동 해결 방법:**
+```bash
+# 1. 프론트엔드 디렉토리로 이동
+cd /home/dmanager/assetmanager/frontend
+
+# 2. 기존 의존성 제거
+rm -rf node_modules package-lock.json
+
+# 3. npm 캐시 정리
+npm cache clean --force
+
+# 4. 의존성 재설치
+npm install
+
+# 5. oxc-parser 강제 재빌드
+npm rebuild oxc-parser
+
+# 6. 빌드 테스트
+npm run build:prod
+```
+
 ### 문제 해결 도구 실행
 ```bash
 chmod +x troubleshoot.sh
