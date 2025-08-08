@@ -258,6 +258,35 @@ npm install -g pm2
 sudo npm install -g pm2
 ```
 
+### 프로젝트 파일 복구 (2025-08-08 추가)
+
+프로젝트 파일 복사 실패 시 `cp: cannot stat` 오류가 발생하는 경우:
+
+```bash
+# 프로젝트 파일 복구 스크립트 실행
+chmod +x /home/dmanager/fix_project_files.sh
+./fix_project_files.sh
+```
+
+**수동 해결 방법:**
+```bash
+# 1. 현재 디렉토리 확인
+pwd
+ls -la
+
+# 2. 프로젝트 파일 위치 찾기
+find /home/dmanager -name "backend" -type d 2>/dev/null
+find /home/dmanager -name "frontend" -type d 2>/dev/null
+
+# 3. 수동으로 파일 복사
+mkdir -p /home/dmanager/assetmanager
+cp -r /path/to/backend /home/dmanager/assetmanager/
+cp -r /path/to/frontend /home/dmanager/assetmanager/
+
+# 4. 권한 설정
+sudo chown -R dmanager:dmanager /home/dmanager/assetmanager
+```
+
 ### 문제 해결 도구 실행
 ```bash
 chmod +x troubleshoot.sh

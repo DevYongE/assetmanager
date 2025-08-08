@@ -122,10 +122,53 @@ sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 # =============================================================================
 log_info "📋 프로젝트 파일 복사 중..."
 
+# 2025-08-08: 프로젝트 파일 복사 로직 개선 (경로 오류 해결)
 # 현재 스크립트가 있는 디렉토리에서 파일 복사
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-sudo cp -r "$SCRIPT_DIR/backend" "$PROJECT_DIR/"
-sudo cp -r "$SCRIPT_DIR/frontend" "$PROJECT_DIR/"
+log_info "스크립트 디렉토리: $SCRIPT_DIR"
+
+# 프로젝트 파일 존재 여부 확인
+if [ ! -d "$SCRIPT_DIR/backend" ]; then
+    log_error "백엔드 디렉토리를 찾을 수 없습니다: $SCRIPT_DIR/backend"
+    log_error "현재 디렉토리 내용:"
+    ls -la "$SCRIPT_DIR"
+    exit 1
+fi
+
+if [ ! -d "$SCRIPT_DIR/frontend" ]; then
+    log_error "프론트엔드 디렉토리를 찾을 수 없습니다: $SCRIPT_DIR/frontend"
+    log_error "현재 디렉토리 내용:"
+    ls -la "$SCRIPT_DIR"
+    exit 1
+fi
+
+log_info "백엔드 파일 복사 중..."
+cp -r "$SCRIPT_DIR/backend" "$PROJECT_DIR/" || {
+    log_error "백엔드 파일 복사 실패"
+    exit 1
+}
+
+log_info "프론트엔드 파일 복사 중..."
+cp -r "$SCRIPT_DIR/frontend" "$PROJECT_DIR/" || {
+    log_error "프론트엔드 파일 복사 실패"
+    exit 1
+}
+
+# 2025-08-08: 추가 파일들 복사 (배포에 필요한 파일들)
+if [ -f "$SCRIPT_DIR/nginx_config_fix.conf" ]; then
+    log_info "Nginx 설정 파일 복사 중..."
+    cp "$SCRIPT_DIR/nginx_config_fix.conf" "$PROJECT_DIR/"
+fi
+
+if [ -f "$SCRIPT_DIR/README_ROCKY_LINUX.md" ]; then
+    log_info "문서 파일 복사 중..."
+    cp "$SCRIPT_DIR/README_ROCKY_LINUX.md" "$PROJECT_DIR/"
+fi
+
+# 파일 복사 확인
+log_info "복사된 파일 확인:"
+ls -la "$PROJECT_DIR"
+
 sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 
 # =============================================================================
@@ -947,4 +990,220 @@ EOF
 
 chmod +x /home/dmanager/fix_pm2_permissions.sh
 
-log_success "PM2 권한 문제 해결 스크립트 생성 완료" 
+log_success "PM2 권한 문제 해결 스크립트 생성 완료"
+
+# =============================================================================
+# 16. 프로젝트 파일 복구 스크립트 생성 (2025-08-08 추가)
+# =============================================================================
+log_info "🛠️ 프로젝트 파일 복구 스크립트 생성 중..."
+
+cat > /home/dmanager/fix_project_files.sh << 'EOF'
+#!/bin/bash
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo "🔧 프로젝트 파일 복구 도구"
+echo "=========================="
+echo ""
+
+# 1. 현재 상황 확인
+log_info "1. 현재 상황 확인 중..."
+
+PROJECT_DIR="/home/dmanager/assetmanager"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "=== 현재 디렉토리 ==="
+pwd
+echo ""
+
+echo "=== 스크립트 디렉토리 ==="
+echo "$SCRIPT_DIR"
+echo ""
+
+echo "=== 스크립트 디렉토리 내용 ==="
+ls -la "$SCRIPT_DIR"
+echo ""
+
+echo "=== 프로젝트 디렉토리 상태 ==="
+if [ -d "$PROJECT_DIR" ]; then
+    echo "프로젝트 디렉토리 존재: $PROJECT_DIR"
+    ls -la "$PROJECT_DIR"
+else
+    echo "프로젝트 디렉토리 없음: $PROJECT_DIR"
+fi
+echo ""
+
+# 2. 프로젝트 파일 검색
+log_info "2. 프로젝트 파일 검색 중..."
+
+# 백엔드 파일 검색
+BACKEND_FOUND=""
+for dir in "$SCRIPT_DIR" "$(dirname "$SCRIPT_DIR")" "/home/dmanager" "/tmp"; do
+    if [ -d "$dir/backend" ]; then
+        BACKEND_FOUND="$dir/backend"
+        log_info "백엔드 발견: $BACKEND_FOUND"
+        break
+    fi
+done
+
+# 프론트엔드 파일 검색
+FRONTEND_FOUND=""
+for dir in "$SCRIPT_DIR" "$(dirname "$SCRIPT_DIR")" "/home/dmanager" "/tmp"; do
+    if [ -d "$dir/frontend" ]; then
+        FRONTEND_FOUND="$dir/frontend"
+        log_info "프론트엔드 발견: $FRONTEND_FOUND"
+        break
+    fi
+done
+
+# 3. 복구 옵션
+echo "🔧 복구 옵션:"
+if [ -n "$BACKEND_FOUND" ] && [ -n "$FRONTEND_FOUND" ]; then
+    echo "1. 발견된 파일로 프로젝트 복구 (권장)"
+    echo "2. 수동으로 파일 경로 지정"
+    echo "3. Git에서 프로젝트 다시 다운로드"
+    echo "4. 백업에서 복구"
+    echo "5. 종료"
+    echo ""
+    
+    read -p "선택하세요 (1-5): " choice
+    
+    case $choice in
+        1)
+            log_info "발견된 파일로 프로젝트 복구를 진행합니다..."
+            
+            # 프로젝트 디렉토리 생성
+            mkdir -p "$PROJECT_DIR"
+            
+            # 백엔드 복사
+            log_info "백엔드 복사 중..."
+            cp -r "$BACKEND_FOUND" "$PROJECT_DIR/" || {
+                log_error "백엔드 복사 실패"
+                exit 1
+            }
+            
+            # 프론트엔드 복사
+            log_info "프론트엔드 복사 중..."
+            cp -r "$FRONTEND_FOUND" "$PROJECT_DIR/" || {
+                log_error "프론트엔드 복사 실패"
+                exit 1
+            }
+            
+            # 추가 파일들 복사
+            if [ -f "$SCRIPT_DIR/nginx_config_fix.conf" ]; then
+                cp "$SCRIPT_DIR/nginx_config_fix.conf" "$PROJECT_DIR/"
+            fi
+            
+            if [ -f "$SCRIPT_DIR/README_ROCKY_LINUX.md" ]; then
+                cp "$SCRIPT_DIR/README_ROCKY_LINUX.md" "$PROJECT_DIR/"
+            fi
+            
+            # 권한 설정
+            sudo chown -R dmanager:dmanager "$PROJECT_DIR"
+            
+            log_success "프로젝트 복구 완료!"
+            ;;
+        2)
+            log_info "수동으로 파일 경로를 지정하세요..."
+            read -p "백엔드 디렉토리 경로: " BACKEND_PATH
+            read -p "프론트엔드 디렉토리 경로: " FRONTEND_PATH
+            
+            if [ -d "$BACKEND_PATH" ] && [ -d "$FRONTEND_PATH" ]; then
+                mkdir -p "$PROJECT_DIR"
+                cp -r "$BACKEND_PATH" "$PROJECT_DIR/"
+                cp -r "$FRONTEND_PATH" "$PROJECT_DIR/"
+                sudo chown -R dmanager:dmanager "$PROJECT_DIR"
+                log_success "수동 복구 완료!"
+            else
+                log_error "지정된 경로가 유효하지 않습니다"
+                exit 1
+            fi
+            ;;
+        3)
+            log_info "Git에서 프로젝트를 다시 다운로드합니다..."
+            
+            # 기존 프로젝트 백업
+            if [ -d "$PROJECT_DIR" ]; then
+                mv "$PROJECT_DIR" "${PROJECT_DIR}_backup_$(date +%Y%m%d_%H%M%S)"
+            fi
+            
+            # Git 클론 (예시 - 실제 저장소 URL로 변경 필요)
+            cd /home/dmanager
+            git clone https://github.com/DevYongE/assetmanager.git || {
+                log_error "Git 클론 실패. 저장소 URL을 확인하세요"
+                exit 1
+            }
+            
+            log_success "Git에서 프로젝트 다운로드 완료!"
+            ;;
+        4)
+            log_info "백업에서 복구를 진행합니다..."
+            
+            # 백업 디렉토리 찾기
+            BACKUP_DIR=""
+            for backup in /home/dmanager/assetmanager_backup_*; do
+                if [ -d "$backup" ]; then
+                    BACKUP_DIR="$backup"
+                    log_info "백업 발견: $BACKUP_DIR"
+                    break
+                fi
+            done
+            
+            if [ -n "$BACKUP_DIR" ]; then
+                mkdir -p "$PROJECT_DIR"
+                cp -r "$BACKUP_DIR"/* "$PROJECT_DIR/"
+                sudo chown -R dmanager:dmanager "$PROJECT_DIR"
+                log_success "백업에서 복구 완료!"
+            else
+                log_error "백업을 찾을 수 없습니다"
+                exit 1
+            fi
+            ;;
+        5)
+            log_info "종료합니다."
+            exit 0
+            ;;
+        *)
+            log_error "잘못된 선택입니다."
+            exit 1
+            ;;
+    esac
+else
+    log_error "프로젝트 파일을 찾을 수 없습니다"
+    echo "백엔드: $([ -n "$BACKEND_FOUND" ] && echo "발견됨" || echo "없음")"
+    echo "프론트엔드: $([ -n "$FRONTEND_FOUND" ] && echo "발견됨" || echo "없음")"
+    echo ""
+    echo "수동으로 파일을 준비한 후 다시 시도하세요"
+    exit 1
+fi
+
+echo ""
+log_success "프로젝트 파일 복구 완료!"
+echo "재배포를 위해 다음 명령어를 실행하세요:"
+echo "cd /home/dmanager && ./deploy_rocky_linux.sh"
+EOF
+
+chmod +x /home/dmanager/fix_project_files.sh
+
+log_success "프로젝트 파일 복구 스크립트 생성 완료" 
