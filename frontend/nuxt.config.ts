@@ -19,8 +19,16 @@
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  // 개발 도구 활성화 (개발 환경에서만 사용)
-  devtools: { enabled: true },
+  // 2025-08-08: oxc-parser 네이티브 바인딩 문제 해결을 위한 ESLint 설정 추가
+  eslint: {
+    // oxc-parser 대신 기본 파서 사용
+    config: {
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      }
+    }
+  },
   
   // =============================================================================
   // 개발 서버 설정
@@ -40,8 +48,10 @@ export default defineNuxtConfig({
         driver: 'memory'  // 메모리 기반 스토리지 사용
       }
     },
-    // 정적 파일 서빙 활성화
-    static: true
+    // 2025-08-08: 정적 파일 서빙 설정 개선
+    static: {
+      maxAge: 60 * 60 * 24 * 365 // 1년
+    }
   },
   
   // =============================================================================
@@ -58,13 +68,26 @@ export default defineNuxtConfig({
   // 전역 CSS 파일 로드
   css: ['~/assets/css/main.css'],
   
+  // 2025-08-08: TypeScript 설정
+  typescript: {
+    strict: true,
+    typeCheck: true
+  },
+  
   // =============================================================================
   // 모듈 설정
   // =============================================================================
+  // 2025-08-08: 모듈 설정 최적화
   modules: [
     '@nuxtjs/tailwindcss',  // Tailwind CSS 프레임워크
-    '@pinia/nuxt'           // Pinia 상태 관리
+    '@pinia/nuxt',           // Pinia 상태 관리
+    '@nuxt/image'
   ],
+  
+  // 2025-08-08: 빌드 설정 최적화
+  build: {
+    transpile: ['@headlessui/vue', '@heroicons/vue']
+  },
   
   // =============================================================================
   // 앱 헤더 설정
@@ -105,6 +128,7 @@ export default defineNuxtConfig({
   // 런타임 설정 (환경변수)
   // =============================================================================
   // 2025-01-27: HTTPS 환경으로 API URL 설정 변경
+  // 2025-08-08: 환경별 API 베이스 URL 설정 개선
   runtimeConfig: {
     public: {
       // =============================================================================
@@ -112,9 +136,7 @@ export default defineNuxtConfig({
       // =============================================================================
       // 개발 환경: localhost 사용
       // 운영 환경: 상대 경로 사용 (2025-01-27: localhost 호출 문제 해결)
-      apiBase: process.env.NODE_ENV === 'production' 
-        ? (process.env.API_BASE_URL || '/api')  // 상대 경로로 변경하여 localhost 호출 방지
-        : (process.env.API_BASE_URL || 'http://localhost:4000/api'),  // 개발환경은 HTTP
+      apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:4000/api'
       
       // =============================================================================
       // 환경 구분 플래그

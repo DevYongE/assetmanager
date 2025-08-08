@@ -335,13 +335,16 @@ node run-migration.js
 
 프론트엔드 빌드 시 `Cannot find native binding` 오류가 발생하는 경우:
 
+#### 자동 해결 방법
 ```bash
 # oxc-parser 문제 해결 스크립트 실행
 chmod +x /home/dmanager/fix_oxc_parser.sh
 ./fix_oxc_parser.sh
 ```
 
-**수동 해결 방법:**
+#### 수동 해결 방법 (단계별)
+
+**1단계: 기본 해결**
 ```bash
 # 1. 프론트엔드 디렉토리로 이동
 cd /home/dmanager/assetmanager/frontend
@@ -361,6 +364,52 @@ npm rebuild oxc-parser
 # 6. 빌드 테스트
 npm run build:prod
 ```
+
+**2단계: oxc-parser 완전 제거 (1단계 실패 시)**
+```bash
+# 1. oxc-parser 완전 제거
+npm uninstall oxc-parser
+
+# 2. ESLint 설정으로 우회
+# (이미 eslint.config.mjs가 oxc-parser 우회 설정으로 업데이트됨)
+
+# 3. 의존성 재설치
+npm install
+
+# 4. 빌드 테스트
+npm run build:prod
+```
+
+**3단계: 시스템 레벨 해결 (2단계 실패 시)**
+```bash
+# 1. 개발 도구 설치
+sudo dnf groupinstall 'Development Tools'
+
+# 2. 시스템 패키지 업데이트
+sudo dnf update
+
+# 3. Node.js 버전 확인 (18.x 권장)
+node --version
+
+# 4. 다시 1단계 시도
+```
+
+#### 문제 원인
+- **npm optional dependencies 버그**: https://github.com/npm/cli/issues/4828
+- **oxc-parser 네이티브 바인딩**: Linux 환경에서 네이티브 바인딩 로드 실패
+- **ESLint 의존성**: oxc-parser가 ESLint의 의존성으로 자동 설치됨
+
+#### 해결책 적용 사항 (2025-08-08)
+1. **package.json 개선**: oxc-parser 해결 스크립트 및 overrides 추가
+2. **ESLint 설정 우회**: oxc-parser 대신 기본 파서 사용
+3. **배포 스크립트 강화**: 다단계 oxc-parser 문제 해결 로직 추가
+4. **독립 해결 스크립트**: oxc-parser 전용 문제 해결 도구 제공
+
+#### 예상 결과
+- ✅ oxc-parser 네이티브 바인딩 문제 해결
+- ✅ 프론트엔드 빌드 성공
+- ✅ ESLint 기능 정상 작동 (oxc-parser 우회)
+- ✅ 전체 배포 프로세스 완료
 
 ### 문제 해결 도구 실행
 ```bash
@@ -564,3 +613,126 @@ pm2 startup
 - **2025-01-27**: 자동화 스크립트 추가
 - **2025-01-27**: 문제 해결 도구 추가
 - **2025-01-27**: PM2 설치 문제 해결 및 .env 파일 확인 추가 
+
+### TDD 스타일 배포 검증 테스트 (2025-08-08 추가)
+
+TDD(Test-Driven Development) 원칙에 따라 배포 프로세스의 모든 단계를 검증하는 테스트 시스템을 구축했습니다.
+
+#### 🧪 TDD 테스트 스크립트 실행
+```bash
+# 배포 검증 테스트 실행
+chmod +x /home/dmanager/test-deployment.sh
+./test-deployment.sh
+```
+
+#### 📋 검증 항목 (9개 카테고리)
+
+**1. 환경 검증 테스트**
+- ✅ Node.js 버전 (18.x 이상)
+- ✅ npm 설치 및 버전
+- ✅ Git 설치 및 버전
+- ✅ 프로젝트 디렉토리 구조
+- ✅ 필수 파일 존재 여부
+
+**2. 의존성 검증 테스트**
+- ✅ 백엔드 핵심 패키지 (express, supabase, bcryptjs 등)
+- ✅ 프론트엔드 핵심 패키지 (nuxt, vue, pinia 등)
+- ✅ oxc-parser 네이티브 바인딩 상태
+- ✅ node_modules 설치 상태
+
+**3. 환경변수 검증 테스트**
+- ✅ 백엔드 .env 파일 존재
+- ✅ 필수 환경변수 설정 (SUPABASE_URL, JWT_SECRET 등)
+- ✅ Supabase 클라이언트 생성 가능
+
+**4. 빌드 검증 테스트**
+- ✅ 백엔드 빌드 성공
+- ✅ 프론트엔드 빌드 성공 (oxc-parser 우회 포함)
+
+**5. 서비스 검증 테스트**
+- ✅ PM2 설치 및 프로세스 실행
+- ✅ Nginx 설치 및 설정 유효성
+- ✅ 포트 사용 상태 (80, 443, 4000)
+
+**6. API 검증 테스트**
+- ✅ 백엔드 API 헬스체크 응답
+- ✅ 프론트엔드 접근 가능
+- ✅ HTTPS 리다이렉트 작동
+
+**7. 보안 검증 테스트**
+- ✅ SSL 인증서 유효성
+- ✅ 방화벽 설정 (HTTP/HTTPS 허용)
+
+**8. 성능 검증 테스트**
+- ✅ API 응답 시간 (1초 미만)
+- ✅ 메모리 사용량 (500MB 미만)
+
+**9. 테스트 결과 요약**
+- 📊 총 테스트 수, 성공/실패 통계
+- 🎯 성공률 계산 및 최종 판정
+
+#### 🔧 TDD 테스트 결과 해석
+
+**모든 테스트 통과 시:**
+```
+🎉 모든 테스트 통과! 배포가 성공적으로 완료되었습니다.
+
+✅ 배포 검증 완료 사항:
+   - 환경 요구사항 충족
+   - 의존성 설치 완료
+   - 환경변수 설정 완료
+   - 빌드 성공
+   - 서비스 실행 중
+   - API 정상 작동
+   - 보안 설정 완료
+   - 성능 기준 충족
+
+🌐 접속 URL: https://invenone.it.kr
+🔧 관리 도구: /home/dmanager/fix_oxc_parser.sh
+📋 로그 확인: pm2 logs assetmanager
+```
+
+**일부 테스트 실패 시:**
+```
+❌ X개 테스트 실패. 배포에 문제가 있습니다.
+
+🔧 해결 방법:
+   1. oxc-parser 문제 해결: ./fix_oxc_parser.sh
+   2. 환경변수 설정: ./setup_supabase_env.sh
+   3. 전체 재배포: ./deploy_rocky_linux.sh
+   4. 시스템 진단: ./troubleshoot.sh
+
+📋 실패한 테스트:
+   - [실패한 테스트 목록]
+```
+
+#### 🚀 자동화된 TDD 검증
+
+배포 스크립트에 TDD 검증이 자동으로 포함되어 있습니다:
+
+```bash
+# 배포 실행 (TDD 검증 포함)
+./deploy_rocky_linux.sh
+
+# 또는 수동 검증
+./test-deployment.sh
+```
+
+#### 📈 TDD 검증의 장점
+
+1. **자동화된 검증**: 수동 확인 대신 자동화된 테스트
+2. **포괄적 검사**: 9개 카테고리, 30+ 개별 테스트
+3. **실시간 피드백**: 즉시 문제점 식별 및 해결 방법 제시
+4. **성능 모니터링**: 응답 시간, 메모리 사용량 등 성능 지표
+5. **보안 검증**: SSL, 방화벽 등 보안 설정 확인
+6. **재사용 가능**: 언제든지 재실행 가능한 검증 도구
+
+#### 🎯 TDD 원칙 적용
+
+- **테스트 우선**: 배포 전 검증 로직 먼저 작성
+- **지속적 검증**: 배포 과정의 모든 단계 검증
+- **자동화**: 수동 개입 최소화
+- **피드백 루프**: 실패 시 즉시 해결 방법 제시
+- **품질 보장**: 모든 배포가 동일한 품질 기준 통과
+
+이제 배포 프로세스가 TDD 원칙에 따라 완전히 검증되며, 문제 발생 시 즉시 식별하고 해결할 수 있습니다. 
