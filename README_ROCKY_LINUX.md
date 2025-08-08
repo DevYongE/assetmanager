@@ -27,7 +27,9 @@ chmod +x deploy_rocky_linux.sh
 ./deploy_rocky_linux.sh
 ```
 
-**중요**: 스크립트는 `backend`와 `frontend` 폴더가 있는 프로젝트 루트 디렉토리에서 실행해야 합니다.
+**중요**: 
+- 스크립트는 `backend`와 `frontend` 폴더가 있는 프로젝트 루트 디렉토리에서 실행해야 합니다.
+- 만약 이미 `/home/dmanager/assetmanager` 디렉토리에서 실행한다면, 기존 프로젝트를 유지하는 옵션을 선택하세요.
 
 ## 📦 시스템 요구사항
 

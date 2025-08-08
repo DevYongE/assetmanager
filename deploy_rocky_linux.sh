@@ -119,6 +119,7 @@ if [ -d "$PROJECT_DIR" ]; then
         1)
             log_info "기존 프로젝트를 유지하고 업데이트합니다..."
             # 기존 프로젝트 유지, 파일만 업데이트
+            # 이미 프로젝트 디렉토리가 존재하므로 추가 작업 불필요
             ;;
         2)
             log_info "기존 프로젝트를 백업합니다..."
@@ -160,50 +161,56 @@ log_info "📋 프로젝트 파일 복사 중..."
 CURRENT_DIR=$(pwd)
 log_info "현재 작업 디렉토리: $CURRENT_DIR"
 
-# 프로젝트 파일 존재 여부 확인
-if [ ! -d "$CURRENT_DIR/backend" ]; then
-    log_error "백엔드 디렉토리를 찾을 수 없습니다: $CURRENT_DIR/backend"
-    log_error "현재 디렉토리 내용:"
-    ls -la "$CURRENT_DIR"
-    log_error "프로젝트 루트 디렉토리에서 스크립트를 실행하세요."
-    exit 1
-fi
+# 2025-08-08: 현재 디렉토리가 타겟 디렉토리와 같은 경우 처리
+if [ "$CURRENT_DIR" = "$PROJECT_DIR" ]; then
+    log_info "현재 디렉토리가 프로젝트 디렉토리와 같습니다. 파일 업데이트를 건너뜁니다."
+    log_info "기존 파일을 그대로 사용합니다."
+else
+    # 프로젝트 파일 존재 여부 확인
+    if [ ! -d "$CURRENT_DIR/backend" ]; then
+        log_error "백엔드 디렉토리를 찾을 수 없습니다: $CURRENT_DIR/backend"
+        log_error "현재 디렉토리 내용:"
+        ls -la "$CURRENT_DIR"
+        log_error "프로젝트 루트 디렉토리에서 스크립트를 실행하세요."
+        exit 1
+    fi
 
-if [ ! -d "$CURRENT_DIR/frontend" ]; then
-    log_error "프론트엔드 디렉토리를 찾을 수 없습니다: $CURRENT_DIR/frontend"
-    log_error "현재 디렉토리 내용:"
-    ls -la "$CURRENT_DIR"
-    log_error "프로젝트 루트 디렉토리에서 스크립트를 실행하세요."
-    exit 1
-fi
+    if [ ! -d "$CURRENT_DIR/frontend" ]; then
+        log_error "프론트엔드 디렉토리를 찾을 수 없습니다: $CURRENT_DIR/frontend"
+        log_error "현재 디렉토리 내용:"
+        ls -la "$CURRENT_DIR"
+        log_error "프로젝트 루트 디렉토리에서 스크립트를 실행하세요."
+        exit 1
+    fi
 
-# 백엔드 복사
-log_info "백엔드 파일 복사 중..."
-cp -r "$CURRENT_DIR/backend" "$PROJECT_DIR/" || {
-    log_error "백엔드 파일 복사 실패"
-    exit 1
-}
+    # 백엔드 복사
+    log_info "백엔드 파일 복사 중..."
+    cp -r "$CURRENT_DIR/backend" "$PROJECT_DIR/" || {
+        log_error "백엔드 파일 복사 실패"
+        exit 1
+    }
 
-# 프론트엔드 복사
-log_info "프론트엔드 파일 복사 중..."
-cp -r "$CURRENT_DIR/frontend" "$PROJECT_DIR/" || {
-    log_error "프론트엔드 파일 복사 실패"
-    exit 1
-}
+    # 프론트엔드 복사
+    log_info "프론트엔드 파일 복사 중..."
+    cp -r "$CURRENT_DIR/frontend" "$PROJECT_DIR/" || {
+        log_error "프론트엔드 파일 복사 실패"
+        exit 1
+    }
 
-# 추가 파일들 복사 (선택적)
-if [ -f "$CURRENT_DIR/nginx_config_fix.conf" ]; then
-    log_info "Nginx 설정 파일 복사 중..."
-    cp "$CURRENT_DIR/nginx_config_fix.conf" "$PROJECT_DIR/"
-fi
+    # 추가 파일들 복사 (선택적)
+    if [ -f "$CURRENT_DIR/nginx_config_fix.conf" ]; then
+        log_info "Nginx 설정 파일 복사 중..."
+        cp "$CURRENT_DIR/nginx_config_fix.conf" "$PROJECT_DIR/"
+    fi
 
-if [ -f "$CURRENT_DIR/README_ROCKY_LINUX.md" ]; then
-    log_info "문서 파일 복사 중..."
-    cp "$CURRENT_DIR/README_ROCKY_LINUX.md" "$PROJECT_DIR/"
+    if [ -f "$CURRENT_DIR/README_ROCKY_LINUX.md" ]; then
+        log_info "문서 파일 복사 중..."
+        cp "$CURRENT_DIR/README_ROCKY_LINUX.md" "$PROJECT_DIR/"
+    fi
 fi
 
 # 파일 복사 확인
-log_info "복사된 파일 확인:"
+log_info "프로젝트 디렉토리 내용 확인:"
 ls -la "$PROJECT_DIR"
 
 # 권한 설정 (이미 설정되어 있지만 확실히 하기 위해)
