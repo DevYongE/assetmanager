@@ -231,6 +231,33 @@ node --version
 npm --version
 ```
 
+### PM2 권한 문제 해결 (2025-08-08 추가)
+
+PM2 글로벌 설치 시 `EACCES` 권한 오류가 발생하는 경우:
+
+```bash
+# PM2 권한 문제 해결 스크립트 실행
+chmod +x /home/dmanager/fix_pm2_permissions.sh
+./fix_pm2_permissions.sh
+```
+
+**수동 해결 방법:**
+```bash
+# 방법 1: 사용자 홈 디렉토리에 설치 (권장)
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+npm install -g pm2
+
+# 방법 2: npm 글로벌 디렉토리 권한 수정
+sudo chown -R $(whoami):$(whoami) $(npm config get prefix)
+npm install -g pm2
+
+# 방법 3: sudo 사용 (임시 해결책)
+sudo npm install -g pm2
+```
+
 ### 문제 해결 도구 실행
 ```bash
 chmod +x troubleshoot.sh

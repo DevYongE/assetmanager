@@ -80,9 +80,23 @@ npm --version
 # Nginx 설치
 sudo dnf install -y nginx
 
-# PM2 글로벌 설치 (sudo 없이)
+# PM2 글로벌 설치 (권한 문제 해결)
 log_info "PM2 글로벌 설치 중..."
+# 2025-08-08: npm 글로벌 패키지 권한 문제 해결 (sudo 없이 안전한 설치)
+# 방법 1: npm 글로벌 디렉토리를 사용자 홈으로 변경
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+
+# PATH에 npm 글로벌 디렉토리 추가
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+# PM2 설치 (사용자 홈 디렉토리에 설치)
 npm install -g pm2
+
+# 설치 확인
+log_info "PM2 설치 확인:"
+pm2 --version
 
 # =============================================================================
 # 2. 프로젝트 디렉토리 설정
@@ -762,4 +776,175 @@ EOF
 
 chmod +x /home/dmanager/fix_nodejs_conflict.sh
 
-log_success "Node.js 충돌 해결 스크립트 생성 완료" 
+log_success "Node.js 충돌 해결 스크립트 생성 완료"
+
+# =============================================================================
+# 15. PM2 권한 문제 해결 스크립트 생성 (2025-08-08 추가)
+# =============================================================================
+log_info "🛠️ PM2 권한 문제 해결 스크립트 생성 중..."
+
+cat > /home/dmanager/fix_pm2_permissions.sh << 'EOF'
+#!/bin/bash
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo "🔧 PM2 권한 문제 해결 도구"
+echo "============================"
+echo ""
+
+# 1. 현재 PM2 상태 확인
+log_info "1. 현재 PM2 상태 확인 중..."
+
+echo "=== PM2 설치 상태 ==="
+which pm2 2>/dev/null && echo "PM2 경로: $(which pm2)" || echo "PM2가 설치되지 않음"
+pm2 --version 2>/dev/null || echo "PM2 버전 확인 실패"
+echo ""
+
+echo "=== npm 글로벌 디렉토리 ==="
+npm config get prefix
+echo ""
+
+echo "=== 현재 사용자 ==="
+whoami
+echo ""
+
+echo "=== npm 글로벌 디렉토리 권한 ==="
+ls -la $(npm config get prefix) 2>/dev/null || echo "npm 글로벌 디렉토리 확인 실패"
+echo ""
+
+# 2. 권한 문제 해결 옵션
+echo "🔧 권한 문제 해결 옵션:"
+echo "1. 사용자 홈 디렉토리에 PM2 설치 (권장)"
+echo "2. npm 글로벌 디렉토리 권한 수정"
+echo "3. sudo로 PM2 설치 (임시 해결책)"
+echo "4. PM2 완전 제거 후 재설치"
+echo "5. 종료"
+echo ""
+
+read -p "선택하세요 (1-5): " choice
+
+case $choice in
+    1)
+        log_info "사용자 홈 디렉토리에 PM2 설치를 진행합니다..."
+        
+        # npm 글로벌 디렉토리를 사용자 홈으로 변경
+        log_info "npm 글로벌 디렉토리 설정 중..."
+        mkdir -p ~/.npm-global
+        npm config set prefix '~/.npm-global'
+        
+        # PATH에 npm 글로벌 디렉토리 추가
+        log_info "PATH 설정 중..."
+        echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+        source ~/.bashrc
+        
+        # 기존 PM2 제거 (있다면)
+        log_info "기존 PM2 제거 중..."
+        npm uninstall -g pm2 2>/dev/null || true
+        
+        # PM2 설치
+        log_info "PM2 설치 중..."
+        npm install -g pm2
+        
+        # 설치 확인
+        log_info "설치 확인:"
+        pm2 --version
+        
+        log_success "PM2 설치 완료!"
+        ;;
+    2)
+        log_info "npm 글로벌 디렉토리 권한 수정 중..."
+        
+        # npm 글로벌 디렉토리 소유권 변경
+        NPM_PREFIX=$(npm config get prefix)
+        log_info "npm 글로벌 디렉토리: $NPM_PREFIX"
+        
+        if [ -d "$NPM_PREFIX" ]; then
+            sudo chown -R $(whoami):$(whoami) "$NPM_PREFIX"
+            log_success "권한 수정 완료"
+            
+            # PM2 재설치
+            npm install -g pm2
+            log_success "PM2 재설치 완료"
+        else
+            log_error "npm 글로벌 디렉토리를 찾을 수 없습니다"
+        fi
+        ;;
+    3)
+        log_warning "sudo로 PM2 설치 (임시 해결책)..."
+        
+        # sudo로 PM2 설치
+        sudo npm install -g pm2
+        
+        log_success "PM2 설치 완료 (sudo 사용)"
+        log_warning "⚠️  보안상 권장하지 않습니다. 나중에 권한 문제를 해결하세요."
+        ;;
+    4)
+        log_info "PM2 완전 제거 후 재설치 중..."
+        
+        # PM2 완전 제거
+        log_info "기존 PM2 제거 중..."
+        sudo npm uninstall -g pm2 2>/dev/null || true
+        npm uninstall -g pm2 2>/dev/null || true
+        
+        # PM2 관련 파일 정리
+        rm -rf ~/.pm2 2>/dev/null || true
+        sudo rm -rf /root/.pm2 2>/dev/null || true
+        
+        # npm 글로벌 디렉토리 정리
+        log_info "npm 글로벌 디렉토리 정리 중..."
+        mkdir -p ~/.npm-global
+        npm config set prefix '~/.npm-global'
+        
+        # PATH 설정
+        echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+        source ~/.bashrc
+        
+        # PM2 재설치
+        log_info "PM2 재설치 중..."
+        npm install -g pm2
+        
+        # 설치 확인
+        pm2 --version
+        
+        log_success "PM2 완전 재설치 완료!"
+        ;;
+    5)
+        log_info "종료합니다."
+        exit 0
+        ;;
+    *)
+        log_error "잘못된 선택입니다."
+        exit 1
+        ;;
+esac
+
+echo ""
+log_success "PM2 권한 문제 해결 완료!"
+echo "재배포를 위해 다음 명령어를 실행하세요:"
+echo "cd /home/dmanager && ./deploy_rocky_linux.sh"
+EOF
+
+chmod +x /home/dmanager/fix_pm2_permissions.sh
+
+log_success "PM2 권한 문제 해결 스크립트 생성 완료" 
