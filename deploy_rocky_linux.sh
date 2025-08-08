@@ -103,72 +103,110 @@ pm2 --version
 # =============================================================================
 log_info "📁 프로젝트 디렉토리 설정 중..."
 
-# 2025-08-08: 백업 타임스탬프를 변수로 고정하여 이후 참조 시 동일 값 사용
-BACKUP_TS=$(date +%Y%m%d_%H%M%S)
-BACKUP_PATH="${PROJECT_DIR}_backup_${BACKUP_TS}"
-
-# 기존 프로젝트 백업 (2025-08-08: 고정된 BACKUP_PATH 사용)
+# 2025-08-08: 불필요한 백업 로직 제거, 간단하고 안전한 배포로 변경
+# 기존 프로젝트가 있으면 사용자에게 확인 후 처리
 if [ -d "$PROJECT_DIR" ]; then
-    log_warning "기존 프로젝트를 백업합니다... (백업 경로: $BACKUP_PATH)"
-    sudo mv "$PROJECT_DIR" "$BACKUP_PATH"
+    log_warning "기존 프로젝트가 발견되었습니다: $PROJECT_DIR"
+    echo "기존 프로젝트를 어떻게 처리하시겠습니까?"
+    echo "1. 기존 프로젝트 유지 (권장 - 안전함)"
+    echo "2. 기존 프로젝트 백업 후 새로 설치"
+    echo "3. 기존 프로젝트 삭제 후 새로 설치"
+    echo "4. 배포 중단"
+    echo ""
+    read -p "선택하세요 (1-4): " choice
+    
+    case $choice in
+        1)
+            log_info "기존 프로젝트를 유지하고 업데이트합니다..."
+            # 기존 프로젝트 유지, 파일만 업데이트
+            ;;
+        2)
+            log_info "기존 프로젝트를 백업합니다..."
+            BACKUP_PATH="${PROJECT_DIR}_backup_$(date +%Y%m%d_%H%M%S)"
+            sudo mv "$PROJECT_DIR" "$BACKUP_PATH"
+            sudo mkdir -p "$PROJECT_DIR"
+            sudo chown -R dmanager:dmanager "$PROJECT_DIR"
+            log_success "백업 완료: $BACKUP_PATH"
+            ;;
+        3)
+            log_warning "기존 프로젝트를 삭제합니다..."
+            sudo rm -rf "$PROJECT_DIR"
+            sudo mkdir -p "$PROJECT_DIR"
+            sudo chown -R dmanager:dmanager "$PROJECT_DIR"
+            ;;
+        4)
+            log_info "배포를 중단합니다."
+            exit 0
+            ;;
+        *)
+            log_error "잘못된 선택입니다. 배포를 중단합니다."
+            exit 1
+            ;;
+    esac
+else
+    # 프로젝트 디렉토리가 없으면 새로 생성
+    log_info "새 프로젝트 디렉토리를 생성합니다..."
+    sudo mkdir -p "$PROJECT_DIR"
+    sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 fi
-
-# 프로젝트 디렉토리 생성
-sudo mkdir -p "$PROJECT_DIR"
-sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 
 # =============================================================================
 # 3. 프로젝트 파일 복사
 # =============================================================================
 log_info "📋 프로젝트 파일 복사 중..."
 
-# 2025-08-08: 프로젝트 파일 복사 로직 개선 (경로 오류 해결)
-# 현재 스크립트가 있는 디렉토리에서 파일 복사
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-log_info "스크립트 디렉토리: $SCRIPT_DIR"
+# 2025-08-08: 간단하고 안전한 파일 복사 로직
+# 현재 작업 디렉토리에서 파일 복사 (스크립트 위치가 아닌)
+CURRENT_DIR=$(pwd)
+log_info "현재 작업 디렉토리: $CURRENT_DIR"
 
 # 프로젝트 파일 존재 여부 확인
-if [ ! -d "$SCRIPT_DIR/backend" ]; then
-    log_error "백엔드 디렉토리를 찾을 수 없습니다: $SCRIPT_DIR/backend"
+if [ ! -d "$CURRENT_DIR/backend" ]; then
+    log_error "백엔드 디렉토리를 찾을 수 없습니다: $CURRENT_DIR/backend"
     log_error "현재 디렉토리 내용:"
-    ls -la "$SCRIPT_DIR"
+    ls -la "$CURRENT_DIR"
+    log_error "프로젝트 루트 디렉토리에서 스크립트를 실행하세요."
     exit 1
 fi
 
-if [ ! -d "$SCRIPT_DIR/frontend" ]; then
-    log_error "프론트엔드 디렉토리를 찾을 수 없습니다: $SCRIPT_DIR/frontend"
+if [ ! -d "$CURRENT_DIR/frontend" ]; then
+    log_error "프론트엔드 디렉토리를 찾을 수 없습니다: $CURRENT_DIR/frontend"
     log_error "현재 디렉토리 내용:"
-    ls -la "$SCRIPT_DIR"
+    ls -la "$CURRENT_DIR"
+    log_error "프로젝트 루트 디렉토리에서 스크립트를 실행하세요."
     exit 1
 fi
 
+# 백엔드 복사
 log_info "백엔드 파일 복사 중..."
-cp -r "$SCRIPT_DIR/backend" "$PROJECT_DIR/" || {
+cp -r "$CURRENT_DIR/backend" "$PROJECT_DIR/" || {
     log_error "백엔드 파일 복사 실패"
     exit 1
 }
 
+# 프론트엔드 복사
 log_info "프론트엔드 파일 복사 중..."
-cp -r "$SCRIPT_DIR/frontend" "$PROJECT_DIR/" || {
+cp -r "$CURRENT_DIR/frontend" "$PROJECT_DIR/" || {
     log_error "프론트엔드 파일 복사 실패"
     exit 1
 }
 
-# 2025-08-08: 추가 파일들 복사 (배포에 필요한 파일들)
-if [ -f "$SCRIPT_DIR/nginx_config_fix.conf" ]; then
+# 추가 파일들 복사 (선택적)
+if [ -f "$CURRENT_DIR/nginx_config_fix.conf" ]; then
     log_info "Nginx 설정 파일 복사 중..."
-    cp "$SCRIPT_DIR/nginx_config_fix.conf" "$PROJECT_DIR/"
+    cp "$CURRENT_DIR/nginx_config_fix.conf" "$PROJECT_DIR/"
 fi
 
-if [ -f "$SCRIPT_DIR/README_ROCKY_LINUX.md" ]; then
+if [ -f "$CURRENT_DIR/README_ROCKY_LINUX.md" ]; then
     log_info "문서 파일 복사 중..."
-    cp "$SCRIPT_DIR/README_ROCKY_LINUX.md" "$PROJECT_DIR/"
+    cp "$CURRENT_DIR/README_ROCKY_LINUX.md" "$PROJECT_DIR/"
 fi
 
 # 파일 복사 확인
 log_info "복사된 파일 확인:"
 ls -la "$PROJECT_DIR"
 
+# 권한 설정 (이미 설정되어 있지만 확실히 하기 위해)
 sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 
 # =============================================================================
@@ -176,19 +214,75 @@ sudo chown -R dmanager:dmanager "$PROJECT_DIR"
 # =============================================================================
 log_info "🗄️ 환경변수 파일 확인 중..."
 
-# 2025-08-08: 동일 타이밍의 백업 디렉토리를 참조하도록 수정 (BACKUP_PATH 재사용)
-if [ -f "$BACKUP_PATH/backend/.env" ]; then
-    log_info "기존 .env 파일을 복사합니다... (2025-08-08)"
-    cp "$BACKUP_PATH/backend/.env" "$BACKEND_DIR/.env"
-    log_success "기존 .env 파일 복사 완료"
-else
-    log_warning "기존 .env 파일이 없습니다. 새로 생성합니다..."
+# 2025-08-08: 간단하고 안전한 .env 파일 처리
+ENV_FILE="$BACKEND_DIR/.env"
+
+if [ -f "$ENV_FILE" ]; then
+    log_info "기존 .env 파일이 발견되었습니다."
+    echo "기존 .env 파일을 어떻게 처리하시겠습니까?"
+    echo "1. 기존 .env 파일 유지 (권장 - 설정 유지)"
+    echo "2. 기존 .env 파일 백업 후 새로 생성"
+    echo "3. 기존 .env 파일 덮어쓰기"
+    echo ""
+    read -p "선택하세요 (1-3): " env_choice
     
-    # 백엔드 환경변수 파일 생성
-    cat > "$BACKEND_DIR/.env" << 'EOF'
+    case $env_choice in
+        1)
+            log_info "기존 .env 파일을 유지합니다."
+            ;;
+        2)
+            log_info "기존 .env 파일을 백업합니다..."
+            cp "$ENV_FILE" "${ENV_FILE}_backup_$(date +%Y%m%d_%H%M%S)"
+            # 새 .env 파일 생성
+            cat > "$ENV_FILE" << 'EOF'
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url_here
-# 2025-08-08: 변수명 정규화 (백엔드 코드와 일치)
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+
+# Server Configuration
+PORT=4000
+NODE_ENV=production
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_2025
+JWT_EXPIRES_IN=24h
+
+# CORS Configuration
+CORS_ORIGIN=https://your-domain.com
+EOF
+            log_warning "⚠️  Supabase 환경변수를 설정해주세요!"
+            ;;
+        3)
+            log_warning "기존 .env 파일을 덮어씁니다..."
+            cat > "$ENV_FILE" << 'EOF'
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url_here
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+
+# Server Configuration
+PORT=4000
+NODE_ENV=production
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_2025
+JWT_EXPIRES_IN=24h
+
+# CORS Configuration
+CORS_ORIGIN=https://your-domain.com
+EOF
+            log_warning "⚠️  Supabase 환경변수를 설정해주세요!"
+            ;;
+        *)
+            log_error "잘못된 선택입니다. 기존 .env 파일을 유지합니다."
+            ;;
+    esac
+else
+    log_info "새 .env 파일을 생성합니다..."
+    cat > "$ENV_FILE" << 'EOF'
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url_here
 SUPABASE_ANON_KEY=your_supabase_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
@@ -205,9 +299,8 @@ CORS_ORIGIN=https://your-domain.com
 EOF
 
     log_warning "⚠️  Supabase 환경변수를 설정해주세요!"
-    log_warning "   $BACKEND_DIR/.env 파일을 편집하여 다음을 설정하세요:"
+    log_warning "   $ENV_FILE 파일을 편집하여 다음을 설정하세요:"
     log_warning "   - SUPABASE_URL: Supabase 프로젝트 URL"
-    # 2025-08-08: 안내 문구 수정
     log_warning "   - SUPABASE_ANON_KEY: Supabase anon key"
     log_warning "   - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key"
     log_warning "   - JWT_SECRET: JWT 시크릿 키"
