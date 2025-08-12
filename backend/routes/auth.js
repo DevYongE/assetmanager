@@ -33,8 +33,8 @@ router.post('/register', async (req, res) => {
     // Create user
     const { data: user, error } = await supabase
       .from('users')
-      .insert([{ email, password_hash }])
-      .select('id, email')
+      .insert([{ email, password_hash, company_name }])
+      .select('id, email, company_name')
       .single();
 
     if (error) {
