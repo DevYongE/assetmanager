@@ -5,7 +5,7 @@
       <div class="hero-content">
         <div class="welcome-message">
           <h1 class="hero-title">
-            안녕하세요, <span class="gradient-text">{{ user?.name }}</span>님! 👋
+            안녕하세요, <span class="gradient-text">{{ user?.company_name || '사용자' }}</span>님! 👋
           </h1>
                 <p class="hero-subtitle">
         <span class="company-name" v-if="user?.company_name">{{ user.company_name }}</span><span v-else>귀하의</span> 효율적인 자산 관리를 시작해보세요

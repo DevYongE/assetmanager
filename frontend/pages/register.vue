@@ -224,7 +224,7 @@ const isFormValid = computed(() => {
          formData.password.length >= 6
 })
 
-const validateForm = () => {
+const validateRegistrationForm = () => {
   // Reset errors
   Object.keys(formErrors).forEach(key => {
     formErrors[key as keyof typeof formErrors] = ''
@@ -269,7 +269,7 @@ const validateForm = () => {
 }
 
 const handleRegister = async () => {
-  if (!validateForm()) {
+  if (!validateRegistrationForm()) {
     return
   }
 
