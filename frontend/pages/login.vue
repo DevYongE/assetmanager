@@ -1,157 +1,191 @@
 <template>
-  <div class="login-container">
+  <div class="login-page">
     <!-- 배경 애니메이션 -->
     <div class="background-animation">
-      <div class="floating-shape shape-1"></div>
-      <div class="floating-shape shape-2"></div>
-      <div class="floating-shape shape-3"></div>
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
+      </div>
     </div>
-    
-    <!-- 메인 로그인 카드 -->
-    <div class="login-card animate-fade-in-up">
-      <!-- 로고 영역 -->
+
+    <!-- 메인 컨테이너 -->
+    <div class="login-container">
+      <!-- 로고 섹션 -->
       <div class="logo-section">
         <div class="logo-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 17L12 22L22 17" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <defs>
-              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#667eea"/>
-                <stop offset="100%" style="stop-color:#764ba2"/>
-              </linearGradient>
-            </defs>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9h6v12H3z"/>
+            <path d="M9 3h12v18H9z"/>
+            <path d="M15 9h6"/>
+            <path d="M15 15h6"/>
+            <path d="M9 9h6"/>
+            <path d="M9 15h6"/>
           </svg>
         </div>
-        <h1 class="login-title">QR 자산관리</h1>
-        <p class="login-subtitle">스마트한 자산 관리의 시작</p>
+                 <h1 class="logo-title">
+           <span class="gradient-text">QR Asset</span>
+         </h1>
+         <p class="logo-subtitle">스마트한 자산 관리 솔루션</p>
       </div>
-      
+
       <!-- 로그인 폼 -->
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div class="form-group">
-          <label for="email" class="form-label">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            이메일 주소
-          </label>
-          <input
-            id="email"
-            v-model="formData.email"
-            type="email"
-            required
-            :disabled="loading"
-            class="input-modern"
-            placeholder="your@email.com"
-          />
+      <div class="login-form-container">
+        <div class="form-header">
+          <h2 class="form-title">로그인</h2>
+          <p class="form-subtitle">계정에 로그인하여 시작하세요</p>
         </div>
 
-        <div class="form-group">
-          <label for="password" class="form-label">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
-              <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="2"/>
-              <path d="M7 11V7C7 5.9 7.9 5 9 5H15C16.1 5 17 5.9 17 7V11" stroke="currentColor" stroke-width="2"/>
-            </svg>
-            비밀번호
-          </label>
-          <input
-            id="password"
-            v-model="formData.password"
-            type="password"
-            required
-            :disabled="loading"
-            class="input-modern"
-            placeholder="••••••••"
-            autocomplete="current-password"
-          />
-        </div>
+        <form @submit.prevent="handleLogin" class="login-form">
+          <!-- 이메일 입력 -->
+          <div class="input-group">
+            <label class="input-label">이메일</label>
+            <div class="input-wrapper">
+              <div class="input-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </div>
+              <input
+                v-model="form.email"
+                type="email"
+                class="form-input"
+                placeholder="이메일을 입력하세요"
+                required
+                :disabled="loading"
+              />
+            </div>
+          </div>
 
-        <!-- 에러 메시지 -->
-        <div v-if="error" class="error-message animate-fade-in-up">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
-            <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          {{ error }}
-        </div>
+          <!-- 비밀번호 입력 -->
+          <div class="input-group">
+            <label class="input-label">비밀번호</label>
+            <div class="input-wrapper">
+              <div class="input-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <circle cx="12" cy="16" r="1"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <input
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-input"
+                placeholder="비밀번호를 입력하세요"
+                required
+                :disabled="loading"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                @click="showPassword = !showPassword"
+                :disabled="loading"
+              >
+                <svg v-if="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
 
-        <!-- 로그인 버튼 -->
-        <button
-          type="submit"
-          :disabled="loading"
-          class="btn-gradient login-btn"
-        >
-          <span v-if="!loading" class="btn-content">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline points="10,17 15,12 10,7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="15" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            로그인
-          </span>
-          <span v-else class="btn-content">
-            <div class="loading-spinner"></div>
-            로그인 중...
-          </span>
-        </button>
+          <!-- 에러 메시지 -->
+          <div v-if="error" class="error-message">
+            <div class="error-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- 로그인 버튼 -->
+          <button
+            type="submit"
+            class="login-button"
+            :disabled="loading || !form.email || !form.password"
+          >
+            <div v-if="loading" class="loading-spinner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                  <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                  <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                </circle>
+              </svg>
+            </div>
+            <span v-else>로그인</span>
+          </button>
+        </form>
+
+        <!-- 구분선 -->
+        <div class="divider">
+          <span class="divider-text">또는</span>
+        </div>
 
         <!-- 회원가입 링크 -->
-        <div class="register-link">
-          <p>아직 계정이 없으신가요?</p>
-          <NuxtLink to="/register" class="register-btn">
-            회원가입
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="7" y1="17" x2="17" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline points="7,7 17,7 17,17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </NuxtLink>
+        <div class="signup-section">
+          <p class="signup-text">
+            계정이 없으신가요?
+            <NuxtLink to="/register" class="signup-link">회원가입</NuxtLink>
+          </p>
         </div>
-      </form>
+      </div>
+
+      
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+// 2024-12-19: 트렌디한 UI 디자인으로 로그인 페이지 완전 재설계
+
+import { ref, reactive } from 'vue'
+
+// 페이지 메타
 definePageMeta({
   layout: 'simple'
 })
 
-// 2025-01-27: 배포 환경에서 useAuthStore 오류 해결을 위해 명시적 import 추가
-import { useAuthStore } from '~/stores/auth'
-
-// Use auth store for login
-const authStore = useAuthStore()
+// 상태 관리
 const loading = ref(false)
 const error = ref('')
+const showPassword = ref(false)
 
-const formData = reactive({
+const form = reactive({
   email: '',
   password: ''
 })
 
+// 로그인 처리
 const handleLogin = async () => {
+  if (!form.email || !form.password) return
+
   loading.value = true
   error.value = ''
-  
+
   try {
-    console.log('🔍 [FRONTEND] Login attempt started')
-    console.log('📧 Email:', formData.email)
-    console.log('🔑 Password length:', formData.password.length)
+    const authStore = useAuthStore()
+    // 2024-12-19: LoginCredentials 객체 형태로 수정 - TypeError 해결
+    await authStore.login({
+      email: form.email,
+      password: form.password
+    })
     
-    await authStore.login(formData)
-    console.log('✅ [FRONTEND] Login successful')
-    
-    // Redirect to dashboard
+    // 로그인 성공 시 대시보드로 이동
     await navigateTo('/dashboard')
   } catch (err: any) {
-    console.error('❌ [FRONTEND] Login failed!')
-    console.error('► Error details:', err)
-    error.value = err.message || '로그인에 실패했습니다. 다시 시도해주세요.'
+    console.error('로그인 실패:', err)
+    error.value = err.message || '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.'
   } finally {
     loading.value = false
   }
@@ -159,227 +193,445 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-container {
+/* 트렌디한 로그인 페이지 스타일 */
+.login-page {
   min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 2rem;
   position: relative;
   overflow: hidden;
 }
 
+/* 배경 애니메이션 */
 .background-animation {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
   z-index: 0;
 }
 
-.floating-shape {
+.floating-shapes {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.shape {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
   animation: float 6s ease-in-out infinite;
 }
 
 .shape-1 {
-  width: 200px;
-  height: 200px;
+  width: 80px;
+  height: 80px;
   top: 10%;
   left: 10%;
   animation-delay: 0s;
 }
 
 .shape-2 {
-  width: 150px;
-  height: 150px;
-  top: 60%;
-  right: 10%;
-  animation-delay: 2s;
+  width: 120px;
+  height: 120px;
+  top: 20%;
+  right: 15%;
+  animation-delay: 1s;
 }
 
 .shape-3 {
-  width: 100px;
-  height: 100px;
+  width: 60px;
+  height: 60px;
   bottom: 20%;
   left: 20%;
+  animation-delay: 2s;
+}
+
+.shape-4 {
+  width: 100px;
+  height: 100px;
+  bottom: 10%;
+  right: 10%;
+  animation-delay: 3s;
+}
+
+.shape-5 {
+  width: 40px;
+  height: 40px;
+  top: 50%;
+  left: 50%;
   animation-delay: 4s;
 }
 
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(180deg);
-  }
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
 }
 
-.login-card {
+/* 메인 컨테이너 */
+.login-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  max-width: 1200px;
+  width: 100%;
   position: relative;
   z-index: 1;
-  max-width: 420px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(30px);
-  border-radius: 24px;
-  padding: 48px 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* 로고 섹션 */
 .logo-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align: center;
-  margin-bottom: 40px;
 }
 
 .logo-icon {
-  margin-bottom: 16px;
-}
-
-.login-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.login-subtitle {
-  color: #6b7280;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  color: #374151;
-  font-size: 14px;
-}
-
-.form-label svg {
-  color: #667eea;
-}
-
-.input-modern {
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px solid rgba(102, 126, 234, 0.1);
-  border-radius: 16px;
-  padding: 16px 20px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-  color: #1f2937;
-}
-
-.input-modern:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  transform: translateY(-2px);
-}
-
-.input-modern::placeholder {
-  color: #9ca3af;
-}
-
-.error-message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  color: #dc2626;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.login-btn {
-  width: 100%;
-  padding: 16px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  margin-top: 8px;
-}
-
-.btn-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  border-radius: 24px;
+  margin-bottom: 2rem;
+  color: white;
+  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3);
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.register-link {
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3), 0 0 30px rgba(139, 92, 246, 0.5); }
+}
+
+.logo-title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.logo-subtitle {
+  font-size: 1.125rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* 로그인 폼 컨테이너 */
+.login-form-container {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.form-header {
   text-align: center;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
 
-.register-link p {
-  color: #6b7280;
-  font-size: 14px;
-  margin-bottom: 8px;
+.form-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
 }
 
-.register-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #667eea;
-  text-decoration: none;
+.form-subtitle {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* 로그인 폼 */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-label {
   font-weight: 600;
-  font-size: 14px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  background: rgba(102, 126, 234, 0.1);
+  color: #1e293b;
+  font-size: 0.875rem;
 }
 
-.register-btn:hover {
-  background: rgba(102, 126, 234, 0.2);
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  z-index: 10;
+}
+
+.form-input {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #a855f7;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
   transform: translateY(-1px);
 }
 
-/* 반응형 디자인 */
+.form-input::placeholder {
+  color: #94a3b8;
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: #a855f7;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.password-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 에러 메시지 */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
+.error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #dc2626;
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* 로그인 버튼 */
+.login-button {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.login-button:hover::before {
+  left: 100%;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-button:disabled::before {
+  display: none;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 구분선 */
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.divider-text {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0 1rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* 회원가입 섹션 */
+.signup-section {
+  text-align: center;
+}
+
+.signup-text {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.signup-link {
+  color: #a855f7;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.signup-link:hover {
+  color: #7c3aed;
+  text-decoration: underline;
+}
+
+
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  .login-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 500px;
+  }
+  
+  .logo-section {
+    order: 2;
+  }
+  
+  .login-form-container {
+    order: 1;
+  }
+  
+
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    padding: 1rem;
+  }
+  
+  .login-form-container {
+    padding: 2rem;
+  }
+  
+  .logo-title {
+    font-size: 2rem;
+  }
+  
+  .form-title {
+    font-size: 1.5rem;
+  }
+  
+
+}
+
 @media (max-width: 480px) {
-  .login-card {
-    padding: 32px 24px;
-    margin: 16px;
+  .login-form-container {
+    padding: 1.5rem;
   }
   
-  .login-title {
-    font-size: 24px;
+  .logo-icon {
+    width: 60px;
+    height: 60px;
   }
   
-  .input-modern {
-    padding: 14px 16px;
-  }
-  
-  .login-btn {
-    padding: 14px 20px;
+  .logo-title {
+    font-size: 1.75rem;
   }
 }
 </style> 

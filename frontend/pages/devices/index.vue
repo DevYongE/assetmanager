@@ -1,25 +1,49 @@
 <template>
   <div class="devices-container">
-    <!-- 헤더 섹션 -->
-    <div class="page-header animate-fade-in-up">
+    <!-- 2024-12-19: 현대적인 헤더 섹션으로 재설계 -->
+    <div class="page-header">
       <div class="header-content">
         <div class="header-info">
-          <h1 class="page-title">장비 관리</h1>
+          <div class="title-section">
+            <h1 class="page-title">장비 관리</h1>
+            <div class="title-badge">
+              <span class="badge-count">{{ devices.length }}</span>
+              <span class="badge-text">개 장비</span>
+            </div>
+          </div>
           <p class="page-subtitle">직원별 장비를 관리하고 QR 코드를 생성하세요</p>
         </div>
+        
         <div class="header-actions">
-          <!-- 할당 상태 필터 -->
-          <div class="assignment-filter">
-            <select 
-              v-model="assignmentFilter" 
-              @change="loadDevices"
-              class="filter-select"
-            >
-              <option value="">전체</option>
-              <option value="assigned">할당됨</option>
-              <option value="unassigned">미할당</option>
-            </select>
+          <!-- 검색 및 필터 -->
+          <div class="search-filter-section">
+            <div class="search-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="장비명, 직원명으로 검색..."
+                class="search-input"
+                @input="handleSearch"
+              />
+            </div>
+            
+            <div class="filter-group">
+              <select 
+                v-model="assignmentFilter" 
+                @change="loadDevices"
+                class="filter-select"
+              >
+                <option value="">전체 상태</option>
+                <option value="assigned">할당됨</option>
+                <option value="unassigned">미할당</option>
+              </select>
+            </div>
           </div>
+
           <!-- 뷰 전환 버튼 -->
           <div class="view-toggle">
             <button 
@@ -27,11 +51,11 @@
               :class="['view-btn', { active: viewMode === 'card' }]"
               title="카드 뷰"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="2"/>
-                <rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="2"/>
-                <rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="2"/>
-                <rect x="14" y="14" width="7" height="7" stroke="currentColor" stroke-width="2"/>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
               </svg>
             </button>
             <button 
@@ -39,62 +63,62 @@
               :class="['view-btn', { active: viewMode === 'list' }]"
               title="리스트 뷰"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <line x1="8" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
-                <line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2"/>
-                <line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2"/>
-                <line x1="3" y1="6" x2="3.01" y2="6" stroke="currentColor" stroke-width="2"/>
-                <line x1="3" y1="12" x2="3.01" y2="12" stroke="currentColor" stroke-width="2"/>
-                <line x1="3" y1="18" x2="3.01" y2="18" stroke="currentColor" stroke-width="2"/>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
               </svg>
             </button>
           </div>
-          <button 
-            @click="exportExcel"
-            :disabled="devices.length === 0"
-            class="btn-secondary export-btn"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 10V16M12 10L9 13M12 10L15 13M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Excel 내보내기
-          </button>
-          <button 
-            @click="downloadExcelTemplate"
-            class="btn-secondary import-btn"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Excel 템플릿 다운로드
-          </button>
-          <!-- Excel 가져오기 -->
-          <div class="flex items-center space-x-2">
-            <input
-              type="file"
-              ref="fileInput"
-              @change="importExcel"
-              accept=".xlsx,.xls,.csv"
-              class="hidden"
+
+          <!-- 액션 버튼들 -->
+          <div class="action-buttons">
+            <BaseButton
+              label="Excel 내보내기"
+              variant="secondary"
+              size="md"
+              :disabled="devices.length === 0"
+              icon="M12 10V16M12 10L9 13M12 10L15 13M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+              @click="exportExcel"
             />
-            <button
-              @click="() => (fileInput as HTMLInputElement)?.click()"
-              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Excel 가져오기
-            </button>
+
+            <BaseButton
+              label="템플릿 다운로드"
+              variant="secondary"
+              size="md"
+              icon="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+              @click="downloadExcelTemplate"
+            />
+
+            <!-- Excel 가져오기 -->
+            <div class="file-upload-wrapper">
+              <input
+                type="file"
+                ref="fileInput"
+                @change="importExcel"
+                accept=".xlsx,.xls,.csv"
+                class="hidden"
+              />
+              <BaseButton
+                label="Excel 가져오기"
+                variant="secondary"
+                size="md"
+                icon="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                @click="() => (fileInput as HTMLInputElement)?.click()"
+              />
+            </div>
+
+            <BaseButton
+              label="장비 추가"
+              variant="primary"
+              size="md"
+              icon="M12 5V19M5 12H19"
+              @click="showAddModal = true"
+            />
           </div>
-          <button 
-            @click="showAddModal = true"
-            class="btn-gradient add-btn"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            장비 추가
-          </button>
         </div>
       </div>
     </div>
@@ -412,6 +436,9 @@ definePageMeta({
   middleware: 'auth'
 })
 
+// Import BaseButton component
+const BaseButton = defineAsyncComponent(() => import('~/components/BaseButton.vue'))
+
 const { devices: devicesApi, employees: employeesApi } = useApi()
 
 // Reactive data
@@ -497,6 +524,12 @@ const filteredDevices = computed(() => {
 })
 
 // Methods
+// Search handler
+const handleSearch = () => {
+  // 검색은 computed property에서 자동으로 처리됨
+  // 필요시 추가 로직 구현
+}
+
 // Load devices
 const loadDevices = async () => {
   try {
@@ -714,6 +747,7 @@ onMounted(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* 2024-12-19: 현대적인 페이지 헤더 스타일 */
 .page-header {
   margin-bottom: 32px;
 }
@@ -721,7 +755,8 @@ onMounted(() => {
 .header-content {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 32px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 24px;
@@ -730,75 +765,235 @@ onMounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.header-info {
+  flex: 1;
+}
+
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
 .page-title {
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 800;
   color: #1f2937;
-  margin-bottom: 8px;
+  margin: 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+.title-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.badge-count {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.badge-text {
+  font-size: 12px;
+}
+
 .page-subtitle {
   color: #6b7280;
   font-size: 16px;
   font-weight: 500;
+  margin: 0;
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 300px;
 }
 
-.assignment-filter {
+/* 검색 및 필터 섹션 */
+.search-filter-section {
   display: flex;
+  gap: 12px;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px solid rgba(102, 126, 234, 0.1);
-  border-radius: 16px;
-  padding: 16px 20px;
-  font-size: 16px;
-  color: #1f2937;
-  transition: all 0.3s ease;
 }
 
-.assignment-filter:focus {
+.search-box {
+  position: relative;
+  flex: 1;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px 12px 48px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  color: #1f2937;
+}
+
+.search-input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.filter-group {
+  position: relative;
+}
+
+.filter-select {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #1f2937;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 뷰 전환 버튼 */
 .view-toggle {
   display: flex;
-  gap: 8px;
   background: rgba(255, 255, 255, 0.8);
-  border: 2px solid rgba(102, 126, 234, 0.1);
-  border-radius: 16px;
-  padding: 8px 12px;
-  align-items: center;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  align-self: flex-start;
 }
 
 .view-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+.view-btn:hover {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
 }
 
 .view-btn.active {
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 액션 버튼들 */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.file-upload-wrapper {
+  position: relative;
+}
+
+/* 기존 필터 스타일 제거 - 새로운 스타일로 대체됨 */
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+  }
+  
+  .header-actions {
+    min-width: auto;
+  }
+  
+  .search-filter-section {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .devices-container {
+    padding: 16px;
+  }
+  
+  .page-header {
+    margin-bottom: 24px;
+  }
+  
+  .header-content {
+    padding: 24px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .search-filter-section {
+    gap: 12px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .view-toggle {
+    align-self: center;
+  }
 }
 
 .btn-secondary {
@@ -822,23 +1017,38 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-.export-btn, .import-btn {
-  background: rgba(79, 172, 254, 0.1);
-  border-color: rgba(79, 172, 254, 0.2);
-  color: #4facfe;
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.export-btn:hover, .import-btn:hover {
-  background: rgba(79, 172, 254, 0.2);
-  border-color: #4facfe;
-}
-
-.add-btn {
+.btn-gradient {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-gradient:active {
+  transform: translateY(0);
+}
+
+/* 2025-08-08: 기존 중복 스타일 제거 - 통일된 버튼 스타일 사용 */
 
 .loading-state {
   display: flex;

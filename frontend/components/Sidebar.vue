@@ -1,162 +1,681 @@
 <template>
-  <aside class="fixed inset-y-0 left-0 z-[9999] w-64 bg-white shadow-2xl border-r-2 border-gray-300" style="position: fixed !important; z-index: 9999 !important; display: block !important;">
-    <!-- Sidebar Header -->
-    <div class="flex flex-col items-center py-6 border-b border-gray-200 bg-blue-50">
-      <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-3">
-        <span class="text-white font-bold text-xl">{{ authStore.user?.email.charAt(0).toUpperCase() }}</span>
+  <!-- 모바일 오버레이 -->
+  <div 
+    v-if="isMobile && isMobileOpen" 
+    class="mobile-overlay"
+    @click="closeMobileSidebar"
+  ></div>
+  
+  <aside class="sidebar" :class="{ 
+    'sidebar-collapsed': isCollapsed && !isMobile,
+    'mobile-open': isMobileOpen
+  }">
+    <!-- 사이드바 헤더 -->
+    <div class="sidebar-header">
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9h6v12H3z"/>
+            <path d="M9 3h12v18H9z"/>
+            <path d="M15 9h6"/>
+            <path d="M15 15h6"/>
+            <path d="M9 9h6"/>
+            <path d="M9 15h6"/>
+          </svg>
+        </div>
+        <div v-if="!isCollapsed" class="logo-text">
+          <h1 class="logo-title">QR Asset</h1>
+          <p class="logo-subtitle">자산 관리</p>
+        </div>
       </div>
-      <div class="text-center">
-        <p class="text-sm font-medium text-gray-900">{{ authStore.user?.email }}</p>
-        <p class="text-xs text-gray-500">UTC+9</p>
-      </div>
+      
+      <!-- 토글 버튼 -->
+      <button class="toggle-button" @click="toggleSidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline v-if="!isCollapsed" points="18,15 12,9 6,15"/>
+          <polyline v-else points="6,9 12,15 18,9"/>
+        </svg>
+      </button>
     </div>
 
-    <!-- Sidebar Navigation -->
-    <nav class="flex-1 px-4 py-6 space-y-2">
-      <NuxtLink 
-        to="/dashboard" 
-        class="flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200"
-        :class="{ 'bg-blue-50 text-blue-700': $route.path === '/dashboard' }"
-      >
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"/>
-          </svg>
-          <span class="font-medium">대시보드</span>
-        </div>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </NuxtLink>
-
-      <NuxtLink 
-        to="/employees" 
-        class="flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200"
-        :class="{ 'bg-blue-50 text-blue-700': $route.path.startsWith('/employees') }"
-      >
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-          </svg>
-          <span class="font-medium">직원 관리</span>
-        </div>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </NuxtLink>
-
-      <NuxtLink 
-        to="/devices" 
-        class="flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200"
-        :class="{ 'bg-blue-50 text-blue-700': $route.path.startsWith('/devices') }"
-      >
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-          <span class="font-medium">장비 관리</span>
-        </div>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </NuxtLink>
-
-      <NuxtLink 
-        to="/qr-generator" 
-        class="flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200"
-        :class="{ 'bg-blue-50 text-blue-700': $route.path.startsWith('/qr-generator') }"
-      >
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"/>
-          </svg>
-          <span class="font-medium">QR 생성</span>
-        </div>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </NuxtLink>
-
-      <NuxtLink 
-        to="/qr-scanner" 
-        class="flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200"
-        :class="{ 'bg-blue-50 text-blue-700': $route.path.startsWith('/qr-scanner') }"
-      >
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-          <span class="font-medium">QR 스캐너</span>
-        </div>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </NuxtLink>
-
-      <NuxtLink 
-        to="/profile" 
-        class="flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200"
-        :class="{ 'bg-blue-50 text-blue-700': $route.path.startsWith('/profile') }"
-      >
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-          </svg>
-          <span class="font-medium">프로필 설정</span>
-        </div>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </NuxtLink>
+    <!-- 네비게이션 메뉴 -->
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li v-for="item in menuItems" :key="item.path" class="nav-item">
+          <NuxtLink
+            :to="item.path"
+            class="nav-link"
+            :class="{ 'nav-link-active': isActive(item.path) }"
+            @click="handleNavClick"
+          >
+            <div class="nav-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path :d="item.icon" />
+              </svg>
+            </div>
+            <span v-if="!isCollapsed" class="nav-text">{{ item.label }}</span>
+            <div v-if="!isCollapsed && item.badge" class="nav-badge">
+              {{ item.badge }}
+            </div>
+          </NuxtLink>
+        </li>
+      </ul>
     </nav>
 
-    <!-- Sidebar Footer -->
-    <div class="px-4 py-4 border-t border-gray-200 bg-gray-50">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-            <span class="text-white font-medium text-sm">{{ authStore.user?.email.charAt(0).toUpperCase() }}</span>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-900">{{ authStore.user?.email }}</p>
-          </div>
+    <!-- 사용자 프로필 -->
+    <div class="sidebar-footer">
+      <div class="user-profile" @click="navigateTo('/profile')">
+        <div class="user-avatar">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
         </div>
-        <button 
-          @click="handleLogout"
-          class="text-gray-400 hover:text-red-500 transition-colors duration-200"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        <div v-if="!isCollapsed" class="user-info">
+          <h4 class="user-name">{{ user?.name || '사용자' }}</h4>
+          <p class="user-role">{{ user?.role || '관리자' }}</p>
+        </div>
+        <button v-if="!isCollapsed" class="logout-button" @click="handleLogout">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16,17 21,12 16,7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
         </button>
       </div>
+    </div>
+
+    <!-- 툴팁 (접힌 상태일 때) -->
+    <div v-if="isCollapsed" class="sidebar-tooltip" :style="tooltipStyle">
+      <span class="tooltip-text">{{ tooltipText }}</span>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-// 2025-01-27: 배포 환경에서 useAuthStore 오류 해결을 위해 명시적 import 추가
-import { useAuthStore } from '~/stores/auth'
+// 2024-12-19: 트렌디한 UI 디자인으로 사이드바 컴포넌트 완전 재설계
 
-const authStore = useAuthStore()
-const router = useRouter()
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-// Handle logout
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
+// Props
+interface Props {
+  collapsed?: boolean
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  collapsed: false
+})
+
+// Emits
+const emit = defineEmits<{
+  'update:collapsed': [value: boolean]
+}>()
+
+// 상태 관리
+const isCollapsed = ref(props.collapsed)
+const isMobile = ref(false)
+const isMobileOpen = ref(false)
+const tooltipText = ref('')
+const tooltipStyle = ref({
+  top: '0px',
+  left: '0px',
+  opacity: '0'
+})
+
+// 사용자 정보
+const user = ref<any>(null)
+
+// 메뉴 아이템
+const menuItems = [
+  {
+    path: '/dashboard',
+    label: '대시보드',
+    icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+    badge: null
+  },
+  {
+    path: '/qr-generator',
+    label: 'QR 생성',
+    icon: 'M3 9h6v12H3z M9 3h12v18H9z M15 9h6 M15 15h6 M9 9h6 M9 15h6',
+    badge: null
+  },
+  {
+    path: '/qr-scanner',
+    label: 'QR 스캔',
+    icon: 'M3 9h6v12H3z M9 3h12v18H9z M15 9h6 M15 15h6 M9 9h6 M9 15h6',
+    badge: null
+  },
+  {
+    path: '/devices',
+    label: '장비 관리',
+    icon: 'M3 9h6v12H3z M9 3h12v18H9z M15 9h6 M15 15h6 M9 9h6 M9 15h6',
+    badge: null
+  },
+  {
+    path: '/employees',
+    label: '직원 관리',
+    icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+    badge: null
+  }
+]
+
+// 사이드바 토글
+const toggleSidebar = () => {
+  isCollapsed.value = !isCollapsed.value
+  emit('update:collapsed', isCollapsed.value)
+}
+
+// 활성 메뉴 확인
+const isActive = (path: string) => {
+  const route = useRoute()
+  return route.path === path || route.path.startsWith(path + '/')
+}
+
+// 모바일 감지
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+  if (isMobile.value) {
+    isCollapsed.value = false
+    isMobileOpen.value = false
+  }
+}
+
+// 모바일 사이드바 토글
+const toggleMobileSidebar = () => {
+  if (isMobile.value) {
+    isMobileOpen.value = !isMobileOpen.value
+  }
+}
+
+// 모바일 사이드바 닫기
+const closeMobileSidebar = () => {
+  if (isMobile.value) {
+    isMobileOpen.value = false
+  }
+}
+
+// 네비게이션 클릭 처리
+const handleNavClick = () => {
+  // 모바일에서 메뉴 클릭 시 사이드바 닫기
+  if (isMobile.value) {
+    isMobileOpen.value = false
+  }
+}
+
+// 로그아웃 처리
+const handleLogout = async () => {
+  try {
+    const authStore = useAuthStore()
+    await authStore.logout()
+  } catch (error) {
+    console.error('로그아웃 실패:', error)
+  }
+}
+
+// 툴팁 표시
+const showTooltip = (event: MouseEvent, text: string) => {
+  if (!isCollapsed.value) return
+  
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  
+  tooltipText.value = text
+  tooltipStyle.value = {
+    top: `${rect.top + rect.height / 2 - 20}px`,
+    left: `${rect.right + 10}px`,
+    opacity: '1'
+  }
+}
+
+// 툴팁 숨기기
+const hideTooltip = () => {
+  tooltipStyle.value.opacity = '0'
+}
+
+// 사용자 정보 로드
+const loadUserInfo = () => {
+  const authStore = useAuthStore()
+  user.value = authStore.user
+}
+
+// 마우스 이벤트 리스너
+const handleMouseEnter = (event: MouseEvent, text: string) => {
+  showTooltip(event, text)
+}
+
+const handleMouseLeave = () => {
+  hideTooltip()
+}
+
+onMounted(() => {
+  loadUserInfo()
+  checkMobile()
+  
+  // 2024-12-19: 모바일 반응형 개선 - 리사이즈 이벤트 리스너 추가
+  window.addEventListener('resize', checkMobile)
+  
+  // 메뉴 아이템에 마우스 이벤트 추가
+  const navLinks = document.querySelectorAll('.nav-link')
+  navLinks.forEach((link, index) => {
+    // 2024-12-19: TypeScript 안전성 개선 - 배열 인덱스 범위 체크 추가
+    const menuItem = menuItems[index]
+    if (menuItem) {
+      link.addEventListener('mouseenter', (e) => handleMouseEnter(e as MouseEvent, menuItem.label))
+      link.addEventListener('mouseleave', handleMouseLeave)
+    }
+  })
+})
+
+onUnmounted(() => {
+  // 2024-12-19: 모바일 반응형 개선 - 리사이즈 이벤트 리스너 제거
+  window.removeEventListener('resize', checkMobile)
+  
+  // 이벤트 리스너 제거
+  const navLinks = document.querySelectorAll('.nav-link')
+  navLinks.forEach((link) => {
+    link.removeEventListener('mouseenter', handleMouseEnter as any)
+    link.removeEventListener('mouseleave', handleMouseLeave)
+  })
+})
 </script>
 
 <style scoped>
-/* 강제로 사이드바가 보이도록 스타일 추가 */
-aside {
-  position: fixed !important;
-  z-index: 9999 !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+/* 트렌디한 사이드바 스타일 */
+.sidebar {
+  width: 240px; /* 2024-12-19: UX 개선을 위해 너비 축소 */
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.sidebar-collapsed {
+  width: 70px; /* 2024-12-19: UX 개선을 위해 접힌 상태 너비도 축소 */
+}
+
+/* 사이드바 헤더 */
+.sidebar-header {
+  padding: 1.25rem; /* 2024-12-19: UX 개선을 위해 패딩 축소 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; /* 2024-12-19: UX 개선을 위해 크기 축소 */
+  height: 36px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  border-radius: 10px;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.3);
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin: 0;
+}
+
+.logo-subtitle {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-button:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #a855f7;
+  transform: scale(1.05);
+}
+
+/* 네비게이션 */
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0;
+  overflow-y: auto;
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-item {
+  margin: 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem; /* 2024-12-19: UX 개선을 위해 간격 축소 */
+  padding: 0.75rem 1.25rem; /* 2024-12-19: UX 개선을 위해 패딩 축소 */
+  color: #64748b;
+  text-decoration: none;
+  border-radius: 12px;
+  margin: 0 0.5rem; /* 2024-12-19: UX 개선을 위해 마진 축소 */
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.nav-link:hover::before {
+  opacity: 1;
+}
+
+.nav-link:hover {
+  color: #a855f7;
+  transform: translateX(4px);
+}
+
+.nav-link-active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  color: #a855f7;
+  font-weight: 600;
+}
+
+.nav-link-active::before {
+  opacity: 1;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.nav-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* 사이드바 푸터 */
+.sidebar-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.user-profile:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+  border-radius: 10px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.05);
+}
+
+/* 툴팁 */
+.sidebar-tooltip {
+  position: fixed;
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.tooltip-text {
+  display: block;
+}
+
+/* 접힌 상태 스타일 */
+.sidebar-collapsed .logo-text,
+.sidebar-collapsed .nav-text,
+.sidebar-collapsed .user-info,
+.sidebar-collapsed .logout-button {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar-header {
+  justify-content: center;
+  padding: 1rem;
+}
+
+.sidebar-collapsed .toggle-button {
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  color: white;
+  border: 2px solid white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-collapsed .nav-link {
+  justify-content: center;
+  padding: 0.75rem;
+  margin: 0 0.5rem;
+}
+
+.sidebar-collapsed .user-profile {
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+/* 스크롤바 스타일 */
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px; /* 모바일에서는 전체 너비로 */
+    transform: translateX(-100%);
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  /* 모바일에서 접힌 상태 스타일 무시 */
+  .sidebar-collapsed {
+    width: 280px;
+  }
+  
+  .sidebar-collapsed .logo-text,
+  .sidebar-collapsed .nav-text,
+  .sidebar-collapsed .user-info,
+  .sidebar-collapsed .logout-button {
+    display: block;
+  }
+  
+  .sidebar-collapsed .sidebar-header {
+    justify-content: space-between;
+    padding: 1.25rem;
+  }
+  
+  .sidebar-collapsed .toggle-button {
+    position: static;
+    transform: none;
+  }
+  
+  .sidebar-collapsed .nav-link {
+    justify-content: flex-start;
+    padding: 0.75rem 1.25rem;
+    margin: 0 0.5rem;
+  }
+  
+  .sidebar-collapsed .user-profile {
+    justify-content: flex-start;
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  .sidebar-collapsed {
+    width: 100%;
+    max-width: 320px;
+  }
 }
 </style> 

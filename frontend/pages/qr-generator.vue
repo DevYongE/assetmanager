@@ -1,458 +1,237 @@
 <template>
-  <div class="container py-8">
-    <!-- Header with improved design -->
-    <div class="mb-8 text-center">
-      <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-        </svg>
-      </div>
-      <h1 class="text-4xl font-bold text-gray-900 mb-3">QR 코드 생성기</h1>
-      <p class="text-lg text-gray-600 max-w-2xl mx-auto">직원 및 장비별 QR 코드를 생성하고 관리하세요</p>
-    </div>
-
-    <!-- QR Type Selection with improved cards -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 mb-8">
-      <h2 class="text-2xl font-semibold mb-6 text-gray-900">QR 코드 유형 선택</h2>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <button 
-          @click="selectedType = 'device'"
-          :class="[
-            'group relative p-6 border-2 rounded-xl text-left transition-all duration-300 hover:shadow-lg',
-            selectedType === 'device' 
-              ? 'border-blue-500 bg-blue-50 shadow-md' 
-              : 'border-gray-200 hover:border-blue-300 bg-white'
-          ]"
-        >
-          <div class="flex items-start space-x-4">
-            <div :class="[
-              'flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-colors',
-              selectedType === 'device' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100'
-            ]">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">장비 QR 코드</h3>
-              <p class="text-gray-600 mb-4">개별 장비의 상세 정보가 포함된 QR 코드</p>
-              <div class="space-y-2">
-                <div class="flex items-center text-sm text-gray-500">
-                  <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  자산 번호, 모델명, 시리얼 번호
-                </div>
-                <div class="flex items-center text-sm text-gray-500">
-                  <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  담당자 정보
-                </div>
-                <div class="flex items-center text-sm text-gray-500">
-                  <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  장비 사양
-                </div>
-              </div>
-            </div>
-          </div>
-        </button>
-
-        <button 
-          @click="selectedType = 'employee'"
-          :class="[
-            'group relative p-6 border-2 rounded-xl text-left transition-all duration-300 hover:shadow-lg',
-            selectedType === 'employee' 
-              ? 'border-blue-500 bg-blue-50 shadow-md' 
-              : 'border-gray-200 hover:border-blue-300 bg-white'
-          ]"
-        >
-          <div class="flex items-start space-x-4">
-            <div :class="[
-              'flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-colors',
-              selectedType === 'employee' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100'
-            ]">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">직원 QR 코드</h3>
-              <p class="text-gray-600 mb-4">직원 정보와 할당된 장비 목록이 포함된 QR 코드</p>
-              <div class="space-y-2">
-                <div class="flex items-center text-sm text-gray-500">
-                  <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  직원명, 부서, 직급
-                </div>
-                <div class="flex items-center text-sm text-gray-500">
-                  <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  할당된 모든 장비 목록
-                </div>
-                <div class="flex items-center text-sm text-gray-500">
-                  <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  연락처 정보
-                </div>
-              </div>
-            </div>
-          </div>
-        </button>
-      </div>
-    </div>
-
-    <!-- Device QR Generation with improved layout -->
-    <div v-if="selectedType === 'device'" class="space-y-8">
-      <!-- Device Selection with improved search -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-        <div class="flex items-center mb-6">
-          <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-          </div>
-          <h3 class="text-2xl font-semibold text-gray-900">장비 선택</h3>
+  <div class="qr-generator-page">
+    <!-- 헤더 섹션 -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="hero-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9h6v12H3z"/>
+            <path d="M9 3h12v18H9z"/>
+            <path d="M15 9h6"/>
+            <path d="M15 15h6"/>
+            <path d="M9 9h6"/>
+            <path d="M9 15h6"/>
+          </svg>
         </div>
+        <h1 class="hero-title">
+          <span class="gradient-text">QR 코드 생성기</span>
+        </h1>
+        <p class="hero-subtitle">
+          장비와 직원을 위한 고품질 QR 코드를 생성하세요
+        </p>
         
-        <!-- Enhanced Search -->
-        <div class="mb-6">
-          <div class="relative">
-            <input
-              v-model="deviceSearchQuery"
-              type="text"
-              placeholder="자산번호, 제조사, 모델명으로 검색..."
-              class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
-            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        <!-- 전체 장비 액션 버튼 -->
+        <div class="hero-actions">
+          <BaseButton
+            label="전체 장비 다운로드"
+            variant="success"
+            size="md"
+            :loading="downloadingAll"
+            :icon="'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3'"
+            @click="downloadAllDevices"
+          />
+          <BaseButton
+            label="전체 장비 프린트"
+            variant="primary"
+            size="md"
+            :loading="printingAll"
+            :icon="'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM9 17v2M15 17v2M9 9h6M9 13h6'"
+            @click="printAllDevices"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="main-content">
+      <!-- QR 타입 선택 -->
+      <div class="section-card">
+        <h2 class="section-title">QR 코드 타입 선택</h2>
+        <div class="qr-type-grid">
+          <div 
+            class="qr-type-card"
+            :class="{ active: qrType === 'device' }"
+            @click="qrType = 'device'"
+          >
+            <div class="qr-type-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <h3 class="qr-type-title">장비 QR 코드</h3>
+            <p class="qr-type-description">장비 정보가 포함된 QR 코드</p>
+          </div>
+          
+          <div 
+            class="qr-type-card"
+            :class="{ active: qrType === 'employee' }"
+            @click="qrType = 'employee'"
+          >
+            <div class="qr-type-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h3 class="qr-type-title">직원 QR 코드</h3>
+            <p class="qr-type-description">직원 정보가 포함된 QR 코드</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 장비 선택 (장비 QR 코드일 때만 표시) -->
+      <div v-if="qrType === 'device'" class="section-card">
+        <h2 class="section-title">장비 선택</h2>
+        
+        <!-- 검색 필터 -->
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
             </svg>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="장비명, 제조사, 모델명으로 검색..."
+              class="search-input"
+            />
           </div>
         </div>
 
-        <!-- Device List with improved cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- 장비 목록 -->
+        <div class="device-grid">
           <div
             v-for="device in filteredDevices"
             :key="device.id"
-            @click="selectedDevice = device"
-            :class="[
-              'p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md',
-              selectedDevice?.id === device.id 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 hover:border-blue-300'
-            ]"
+            class="device-card"
+            :class="{ selected: selectedDevice?.id === device.id }"
+            @click="selectDevice(device)"
           >
-            <div class="flex items-start space-x-3">
-              <div class="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <h4 class="font-semibold text-gray-900 truncate">{{ device.asset_number }}</h4>
-                <p class="text-sm text-gray-600 truncate">{{ device.manufacturer }} {{ device.model_name }}</p>
-                <p class="text-xs text-gray-500 mt-1">담당: {{ device.employees?.name }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="filteredDevices.length === 0" class="text-center py-8">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-          <p class="text-gray-500 mt-2">검색 결과가 없습니다</p>
-        </div>
-      </div>
-
-      <!-- Generate Device QR with improved layout -->
-      <div v-if="selectedDevice" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-        <div class="flex items-center mb-6">
-          <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-            </svg>
-          </div>
-          <h3 class="text-2xl font-semibold text-gray-900">QR 코드 생성</h3>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- QR Options with improved form -->
-          <div class="space-y-6">
-            <div class="bg-gray-50 rounded-lg p-4">
-              <h4 class="font-semibold text-gray-900 mb-3">선택된 장비</h4>
-              <div class="space-y-2">
-                <p class="text-sm"><span class="font-medium">자산번호:</span> {{ selectedDevice.asset_number }}</p>
-                <p class="text-sm"><span class="font-medium">제조사:</span> {{ selectedDevice.manufacturer }}</p>
-                <p class="text-sm"><span class="font-medium">모델명:</span> {{ selectedDevice.model_name }}</p>
-                <p class="text-sm"><span class="font-medium">담당자:</span> {{ selectedDevice.employees?.name }}</p>
-              </div>
-            </div>
-            
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">QR 코드 형식</label>
-                <select v-model="deviceQRFormat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="png">PNG 이미지</option>
-                  <option value="svg">SVG 벡터</option>
-                </select>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">크기</label>
-                <select v-model="deviceQRSize" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="200">작음 (200px)</option>
-                  <option value="300">중간 (300px)</option>
-                  <option value="400">큼 (400px)</option>
-                </select>
-              </div>
-
-              <button 
-                @click="generateDeviceQR"
-                :disabled="deviceQRLoading"
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
-              >
-                <svg v-if="deviceQRLoading" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                </svg>
-                {{ deviceQRLoading ? '생성 중...' : 'QR 코드 생성' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- QR Preview with improved design -->
-          <div class="flex flex-col items-center">
-            <h4 class="font-semibold text-gray-900 mb-4">QR 코드 미리보기</h4>
-            <div v-if="deviceQRUrl" class="text-center">
-              <div class="inline-block p-6 bg-white border-2 border-gray-200 rounded-xl shadow-sm">
-                <img :src="deviceQRUrl" alt="Device QR Code" class="max-w-full" />
-              </div>
-              <div class="mt-6 space-x-3">
-                <button @click="downloadDeviceQR" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                  </svg>
-                  다운로드
-                </button>
-                <button @click="printDeviceQR" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                  </svg>
-                  인쇄
-                </button>
-              </div>
-            </div>
-            <div v-else class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 w-full">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+            <div class="device-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
-              <p class="text-gray-500 mt-2">QR 코드가 여기에 표시됩니다</p>
+            </div>
+            <div class="device-info">
+              <h4 class="device-name">{{ device.manufacturer }} {{ device.model_name }}</h4>
+              <p class="device-number">자산번호: {{ device.asset_number }}</p>
+              <p class="device-status" :class="device.status">
+                {{ getStatusText(device.status) }}
+              </p>
+            </div>
+            <div class="device-check">
+              <svg v-if="selectedDevice?.id === device.id" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20,6 9,17 4,12"/>
+              </svg>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Employee QR Generation with similar improvements -->
-    <div v-if="selectedType === 'employee'" class="space-y-8">
-      <!-- Employee Selection -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-        <div class="flex items-center mb-6">
-          <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
-          </div>
-          <h3 class="text-2xl font-semibold text-gray-900">직원 선택</h3>
-        </div>
+      <!-- QR 생성 섹션 -->
+      <div v-if="selectedDevice || qrType === 'employee'" class="section-card">
+        <h2 class="section-title">QR 코드 생성</h2>
         
-        <!-- Enhanced Search -->
-        <div class="mb-6">
-          <div class="relative">
-            <input
-              v-model="employeeSearchQuery"
-              type="text"
-              placeholder="직원명, 부서, 직급으로 검색..."
-              class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+        <!-- 선택된 장비 정보 -->
+        <div v-if="selectedDevice" class="selected-device-info">
+          <div class="device-preview">
+            <div class="device-preview-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div class="device-preview-info">
+              <h3 class="device-preview-name">{{ selectedDevice.manufacturer }} {{ selectedDevice.model_name }}</h3>
+              <p class="device-preview-number">{{ selectedDevice.asset_number }}</p>
+              <p class="device-preview-employee" v-if="selectedDevice.employees">
+                담당자: {{ selectedDevice.employees.name }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR 설정 -->
+        <div class="qr-settings">
+          <div class="setting-group">
+            <label class="setting-label">QR 코드 형식</label>
+            <div class="setting-options">
+              <label class="radio-option">
+                <input type="radio" v-model="qrFormat" value="png" />
+                <span class="radio-custom"></span>
+                PNG
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="qrFormat" value="svg" />
+                <span class="radio-custom"></span>
+                SVG
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="qrFormat" value="json" />
+                <span class="radio-custom"></span>
+                JSON
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">QR 코드 크기</label>
+            <div class="size-slider">
+              <input
+                v-model="qrSize"
+                type="range"
+                min="128"
+                max="512"
+                step="32"
+                class="size-range"
+              />
+              <span class="size-value">{{ qrSize }}px</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="action-buttons">
+          <BaseButton
+            label="QR 코드 생성"
+            variant="accent"
+            size="lg"
+            :loading="generating"
+            :icon="'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'"
+            @click="generateQR"
+          />
+        </div>
+      </div>
+
+      <!-- QR 결과 섹션 -->
+      <div v-if="deviceQRUrl" class="section-card result-section">
+        <h2 class="section-title">생성된 QR 코드</h2>
+        
+        <div class="qr-result">
+          <div class="qr-display">
+            <img :src="deviceQRUrl" :alt="`QR Code for ${selectedDevice?.asset_number}`" class="qr-image" />
+          </div>
+          
+          <div class="qr-actions">
+            <BaseButton
+              label="다운로드"
+              variant="success"
+              :icon="'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3'"
+              @click="downloadQR"
             />
-            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
+            <BaseButton
+              label="인쇄"
+              variant="primary"
+              :icon="'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM9 17v2M15 17v2M9 9h6M9 13h6'"
+              @click="printDeviceQR"
+            />
           </div>
-        </div>
-
-        <!-- Employee List with improved cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="employee in filteredEmployees"
-            :key="employee.id"
-            @click="selectedEmployee = employee"
-            :class="[
-              'p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md',
-              selectedEmployee?.id === employee.id 
-                ? 'border-purple-500 bg-purple-50' 
-                : 'border-gray-200 hover:border-purple-300'
-            ]"
-          >
-            <div class="flex items-start space-x-3">
-              <div class="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <h4 class="font-semibold text-gray-900 truncate">{{ employee.name }}</h4>
-                <p class="text-sm text-gray-600 truncate">{{ employee.department }}</p>
-                <p class="text-xs text-gray-500 mt-1">{{ employee.position }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="filteredEmployees.length === 0" class="text-center py-8">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-          </svg>
-          <p class="text-gray-500 mt-2">검색 결과가 없습니다</p>
-        </div>
-      </div>
-
-      <!-- Generate Employee QR -->
-      <div v-if="selectedEmployee" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-        <div class="flex items-center mb-6">
-          <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-            </svg>
-          </div>
-          <h3 class="text-2xl font-semibold text-gray-900">QR 코드 생성</h3>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- QR Options -->
-          <div class="space-y-6">
-            <div class="bg-gray-50 rounded-lg p-4">
-              <h4 class="font-semibold text-gray-900 mb-3">선택된 직원</h4>
-              <div class="space-y-2">
-                <p class="text-sm"><span class="font-medium">이름:</span> {{ selectedEmployee.name }}</p>
-                <p class="text-sm"><span class="font-medium">부서:</span> {{ selectedEmployee.department }}</p>
-                <p class="text-sm"><span class="font-medium">직급:</span> {{ selectedEmployee.position }}</p>
-              </div>
-            </div>
-            
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">QR 코드 형식</label>
-                <select v-model="employeeQRFormat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="png">PNG 이미지</option>
-                  <option value="svg">SVG 벡터</option>
-                </select>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">크기</label>
-                <select v-model="employeeQRSize" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="200">작음 (200px)</option>
-                  <option value="300">중간 (300px)</option>
-                  <option value="400">큼 (400px)</option>
-                </select>
-              </div>
-
-              <button 
-                @click="generateEmployeeQR"
-                :disabled="employeeQRLoading"
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
-              >
-                <svg v-if="employeeQRLoading" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                </svg>
-                {{ employeeQRLoading ? '생성 중...' : 'QR 코드 생성' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- QR Preview -->
-          <div class="flex flex-col items-center">
-            <h4 class="font-semibold text-gray-900 mb-4">QR 코드 미리보기</h4>
-            <div v-if="employeeQRUrl" class="text-center">
-              <div class="inline-block p-6 bg-white border-2 border-gray-200 rounded-xl shadow-sm">
-                <img :src="employeeQRUrl" alt="Employee QR Code" class="max-w-full" />
-              </div>
-              <div class="mt-6 space-x-3">
-                <button @click="downloadEmployeeQR" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                  </svg>
-                  다운로드
-                </button>
-                <button @click="printEmployeeQR" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-                  <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                  </svg>
-                  인쇄
-                </button>
-              </div>
-            </div>
-            <div v-else class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 w-full">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-              </svg>
-              <p class="text-gray-500 mt-2">QR 코드가 여기에 표시됩니다</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bulk QR Generation with improved design -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-      <div class="flex items-center mb-6">
-        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-          <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-          </svg>
-        </div>
-        <h3 class="text-2xl font-semibold text-gray-900">일괄 QR 코드 생성</h3>
-      </div>
-      <p class="text-gray-600 mb-6">여러 장비의 QR 코드를 한 번에 생성할 수 있습니다.</p>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">생성할 장비 수</label>
-          <select v-model="bulkDeviceCount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="5">최근 5개</option>
-            <option value="10">최근 10개</option>
-            <option value="20">최근 20개</option>
-            <option value="all">모든 장비</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">형식</label>
-          <select v-model="bulkQRFormat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="png">PNG 이미지</option>
-            <option value="json">JSON 데이터</option>
-          </select>
-        </div>
-        <div class="flex items-end">
-          <button 
-            @click="generateBulkQR"
-            :disabled="bulkQRLoading"
-            class="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
-          >
-            <svg v-if="bulkQRLoading" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-            </svg>
-            {{ bulkQRLoading ? '생성 중...' : '일괄 생성' }}
-          </button>
         </div>
       </div>
     </div>
@@ -460,151 +239,153 @@
 </template>
 
 <script setup lang="ts">
-import type { Device, Employee } from '~/types'
+// 2024-12-19: 트렌디한 UI 디자인으로 QR 생성 페이지 완전 재설계
+// 2024-12-19: TypeScript 오류 수정 - useApi composable 사용으로 변경
 
-definePageMeta({
-  layout: 'default',
-  middleware: 'auth'
-})
+import { ref, computed, onMounted } from 'vue'
+import { defineAsyncComponent } from 'vue'
 
-const api = useApi()
+const BaseButton = defineAsyncComponent(() => import('~/components/BaseButton.vue'))
 
-// State
-const selectedType = ref<'device' | 'employee'>('device')
-const devices = ref<Device[]>([])
-const employees = ref<Employee[]>([])
-const loading = ref(true)
+// API composable 사용
+const { devices: devicesApi, qr: qrApi } = useApi()
 
-// Device QR state
-const selectedDevice = ref<Device | null>(null)
-const deviceSearchQuery = ref('')
-const deviceQRFormat = ref<'png' | 'svg'>('png')
-const deviceQRSize = ref('300')
-const deviceQRUrl = ref<string | null>(null)
-const deviceQRLoading = ref(false)
+// 상태 관리
+const qrType = ref<'device' | 'employee'>('device')
+const searchQuery = ref('')
+const selectedDevice = ref<any>(null)
+const qrFormat = ref<'png' | 'svg' | 'json'>('png') // 2024-12-19: 'json' 타입 추가
+const qrSize = ref(256)
+const generating = ref(false)
+const deviceQRUrl = ref('')
+const downloadingAll = ref(false)
+const printingAll = ref(false)
 
-// Employee QR state
-const selectedEmployee = ref<Employee | null>(null)
-const employeeSearchQuery = ref('')
-const employeeQRFormat = ref<'png' | 'svg'>('png')
-const employeeQRSize = ref('300')
-const employeeQRUrl = ref<string | null>(null)
-const employeeQRLoading = ref(false)
+// 장비 데이터
+const devices = ref<any[]>([])
 
-// Bulk QR state
-const bulkDeviceCount = ref('10')
-const bulkQRFormat = ref<'png' | 'json'>('png')
-const bulkQRLoading = ref(false)
-
-// Computed
+// 필터된 장비 목록
 const filteredDevices = computed(() => {
-  if (!deviceSearchQuery.value) return devices.value
+  if (!searchQuery.value) return devices.value
   
-  const query = deviceSearchQuery.value.toLowerCase()
-  return devices.value.filter(device =>
-    device.asset_number.toLowerCase().includes(query) ||
+  const query = searchQuery.value.toLowerCase()
+  return devices.value.filter(device => 
     device.manufacturer?.toLowerCase().includes(query) ||
-    device.model_name?.toLowerCase().includes(query)
+    device.model_name?.toLowerCase().includes(query) ||
+    device.asset_number?.toLowerCase().includes(query)
   )
 })
 
-const filteredEmployees = computed(() => {
-  if (!employeeSearchQuery.value) return employees.value
-  
-  const query = employeeSearchQuery.value.toLowerCase()
-  return employees.value.filter(employee =>
-    employee.name.toLowerCase().includes(query) ||
-    employee.department.toLowerCase().includes(query) ||
-    employee.position.toLowerCase().includes(query)
-  )
-})
-
-// Methods
-const loadData = async () => {
-  try {
-    loading.value = true
-    const [devicesResponse, employeesResponse] = await Promise.all([
-      api.devices.getAll(),
-      api.employees.getAll()
-    ])
-    devices.value = devicesResponse.devices
-    employees.value = employeesResponse.employees
-  } catch (error) {
-    console.error('Failed to load data:', error)
-  } finally {
-    loading.value = false
+// 상태 텍스트 변환
+const getStatusText = (status: string) => {
+  const statusMap: Record<string, string> = {
+    active: '사용 중',
+    inactive: '미사용',
+    maintenance: '정비 중',
+    retired: '폐기'
   }
+  return statusMap[status] || status
 }
 
-const generateDeviceQR = async () => {
+// 장비 선택
+const selectDevice = (device: any) => {
+  selectedDevice.value = device
+  deviceQRUrl.value = ''
+}
+
+// QR 코드 생성
+const generateQR = async () => {
   if (!selectedDevice.value) return
   
+  generating.value = true
   try {
-    deviceQRLoading.value = true
-    const blob = await api.qr.getDeviceQR(
-      selectedDevice.value.id, 
-      deviceQRFormat.value
-    ) as Blob
+    // 2024-12-19: useApi composable 사용으로 변경하여 TypeScript 오류 해결
+    const response = await qrApi.getDeviceQR(selectedDevice.value.id, qrFormat.value)
     
-    deviceQRUrl.value = URL.createObjectURL(blob)
+    if (qrFormat.value === 'json') {
+      // JSON 응답인 경우
+      const qrResponse = response as any
+      deviceQRUrl.value = qrResponse.qrUrl || qrResponse.data?.qrUrl
+    } else {
+      // Blob 응답인 경우 (PNG/SVG)
+      const blob = response as Blob
+      deviceQRUrl.value = URL.createObjectURL(blob)
+    }
   } catch (error) {
-    console.error('Failed to generate device QR:', error)
+    console.error('QR 생성 실패:', error)
   } finally {
-    deviceQRLoading.value = false
+    generating.value = false
   }
 }
 
-const generateEmployeeQR = async () => {
-  if (!selectedEmployee.value) return
+// QR 다운로드
+const downloadQR = () => {
+  if (!deviceQRUrl.value) return
   
-  try {
-    employeeQRLoading.value = true
-    const blob = await api.qr.getEmployeeQR(
-      selectedEmployee.value.id, 
-      employeeQRFormat.value
-    ) as Blob
-    
-    employeeQRUrl.value = URL.createObjectURL(blob)
-  } catch (error) {
-    console.error('Failed to generate employee QR:', error)
-  } finally {
-    employeeQRLoading.value = false
-  }
+  const link = document.createElement('a')
+  link.href = deviceQRUrl.value
+  link.download = `qr-${selectedDevice.value?.asset_number}.${qrFormat.value}`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
-const downloadDeviceQR = () => {
-  if (deviceQRUrl.value && selectedDevice.value) {
-    const a = document.createElement('a')
-    a.href = deviceQRUrl.value
-    a.download = `qr_device_${selectedDevice.value.asset_number}.${deviceQRFormat.value}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-  }
-}
-
-const downloadEmployeeQR = () => {
-  if (employeeQRUrl.value && selectedEmployee.value) {
-    const a = document.createElement('a')
-    a.href = employeeQRUrl.value
-    a.download = `qr_employee_${selectedEmployee.value.name}.${employeeQRFormat.value}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-  }
-}
-
+// QR 인쇄
 const printDeviceQR = () => {
   if (deviceQRUrl.value) {
-    const printWindow = window.open('', '', 'width=400,height=400')
+    const printWindow = window.open('', '', 'width=400,height=500')
     if (printWindow) {
       printWindow.document.write(`
         <html>
-          <head><title>QR Code - ${selectedDevice.value?.asset_number}</title></head>
-          <body style="text-align: center; padding: 20px;">
-            <h3>${selectedDevice.value?.asset_number}</h3>
-            <img src="${deviceQRUrl.value}" style="max-width: 100%;" />
-            <p>담당자: ${selectedDevice.value?.employees?.name}</p>
+          <head>
+            <title>QR Code - ${selectedDevice.value?.asset_number}</title>
+            <style>
+              body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                text-align: center;
+                padding: 20px;
+                margin: 0;
+                background: white;
+              }
+              .qr-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 400px;
+              }
+              .qr-code {
+                margin-bottom: 20px;
+              }
+              .product-number {
+                border: 2px solid #333;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: bold;
+                background: #f8f9fa;
+                color: #333;
+              }
+              .device-info {
+                margin-top: 15px;
+                font-size: 14px;
+                color: #666;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="qr-container">
+              <div class="qr-code">
+                <img src="${deviceQRUrl.value}" style="max-width: 300px; height: auto;" />
+              </div>
+              <div class="product-number">
+                ${selectedDevice.value?.asset_number}
+              </div>
+              <div class="device-info">
+                <p>${selectedDevice.value?.manufacturer} ${selectedDevice.value?.model_name}</p>
+                <p>담당자: ${selectedDevice.value?.employees?.name}</p>
+              </div>
+            </div>
           </body>
         </html>
       `)
@@ -614,83 +395,725 @@ const printDeviceQR = () => {
   }
 }
 
-const printEmployeeQR = () => {
-  if (employeeQRUrl.value) {
-    const printWindow = window.open('', '', 'width=400,height=400')
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head><title>QR Code - ${selectedEmployee.value?.name}</title></head>
-          <body style="text-align: center; padding: 20px;">
-            <h3>${selectedEmployee.value?.name}</h3>
-            <img src="${employeeQRUrl.value}" style="max-width: 100%;" />
-            <p>${selectedEmployee.value?.department} - ${selectedEmployee.value?.position}</p>
-          </body>
-        </html>
-      `)
-      printWindow.document.close()
-      printWindow.print()
-    }
+// 전체 장비 다운로드
+const downloadAllDevices = async () => {
+  if (devices.value.length === 0) {
+    alert('다운로드할 장비가 없습니다.')
+    return
   }
-}
-
-const generateBulkQR = async () => {
+  
+  downloadingAll.value = true
   try {
-    bulkQRLoading.value = true
-    
-    // Validate device data
-    if (!devices.value || devices.value.length === 0) {
-      throw new Error('장비 데이터를 불러올 수 없습니다.')
+    // 각 장비의 QR 코드를 개별적으로 다운로드
+    for (const device of devices.value) {
+      try {
+        const qrResponse = await qrApi.getDeviceQR(device.id, 'png')
+        if (qrResponse instanceof Blob) {
+          const url = URL.createObjectURL(qrResponse)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `qr-${device.asset_number}.png`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          
+          // 다운로드 간격을 두어 브라우저가 처리할 시간을 줍니다
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      } catch (error) {
+        console.error(`장비 ${device.asset_number} QR 다운로드 실패:`, error)
+      }
     }
     
-    let deviceIds: string[]
-    if (bulkDeviceCount.value === 'all') {
-      deviceIds = devices.value.map(d => d.id)
-    } else {
-      const count = parseInt(bulkDeviceCount.value)
-      deviceIds = devices.value.slice(0, count).map(d => d.id)
-    }
-    
-    console.log('🔍 [BULK QR] Generating QR codes for devices:', deviceIds)
-    
-    // Use test mode in development
-    const useTestMode = process.env.NODE_ENV === 'development'
-    const result = await api.qr.bulkDeviceQR(deviceIds, bulkQRFormat.value, useTestMode)
-    
-    console.log('🔍 [BULK QR] Generated result:', result)
-    
-    // Download as JSON file
-    const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `bulk_qr_codes_${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
-    // Show success message
-    alert(`일괄 QR 코드 생성 완료!\n총 ${result.total_generated || deviceIds.length}개의 QR 코드가 생성되었습니다.`)
-    
-  } catch (error: any) {
-    console.error('Failed to generate bulk QR:', error)
-    alert(`일괄 QR 코드 생성 실패: ${error.message || '알 수 없는 오류가 발생했습니다.'}`)
+    alert('전체 장비 QR 코드가 성공적으로 다운로드되었습니다.')
+  } catch (error) {
+    console.error('전체 장비 다운로드 실패:', error)
+    alert('전체 장비 다운로드에 실패했습니다.')
   } finally {
-    bulkQRLoading.value = false
+    downloadingAll.value = false
   }
 }
 
-// Load data on mount
-onMounted(() => {
-  loadData()
-})
+// 전체 장비 프린트
+const printAllDevices = async () => {
+  if (devices.value.length === 0) {
+    alert('프린트할 장비가 없습니다.')
+    return
+  }
+  
+  printingAll.value = true
+  try {
+    // 모든 장비의 QR 코드를 생성하고 프린트 페이지 열기
+    const printWindow = window.open('', '', 'width=800,height=600')
+    if (printWindow) {
+      let printContent = `
+        <html>
+          <head>
+            <title>전체 장비 QR 코드</title>
+            <style>
+              body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: white;
+              }
+              .qr-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                max-width: 100%;
+              }
+              .qr-item {
+                text-align: center;
+                padding: 15px;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                page-break-inside: avoid;
+              }
+              .qr-code {
+                margin-bottom: 10px;
+              }
+              .qr-code img {
+                max-width: 150px;
+                height: auto;
+              }
+              .device-number {
+                font-weight: bold;
+                font-size: 14px;
+                margin-bottom: 5px;
+                color: #333;
+              }
+              .device-info {
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 5px;
+              }
+              .employee-info {
+                font-size: 11px;
+                color: #888;
+              }
+              @media print {
+                .qr-item {
+                  border: 1px solid #ccc;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <h1 style="text-align: center; margin-bottom: 30px;">전체 장비 QR 코드</h1>
+            <div class="qr-grid">
+      `
+      
+      // 각 장비의 QR 코드를 생성하여 HTML에 추가
+      for (const device of devices.value) {
+        try {
+          const qrResponse = await qrApi.getDeviceQR(device.id, 'png')
+          let qrUrl = ''
+          
+          if (typeof qrResponse === 'object' && 'qrUrl' in qrResponse) {
+            qrUrl = (qrResponse as any).qrUrl
+          } else {
+            const blob = qrResponse as Blob
+            qrUrl = URL.createObjectURL(blob)
+          }
+          
+          printContent += `
+            <div class="qr-item">
+              <div class="qr-code">
+                <img src="${qrUrl}" alt="QR Code for ${device.asset_number}" />
+              </div>
+              <div class="device-number">${device.asset_number}</div>
+              <div class="device-info">${device.manufacturer} ${device.model_name}</div>
+              <div class="employee-info">담당자: ${device.employees?.name || '미배정'}</div>
+            </div>
+          `
+        } catch (error) {
+          console.error(`장비 ${device.asset_number} QR 생성 실패:`, error)
+          printContent += `
+            <div class="qr-item">
+              <div class="device-number">${device.asset_number}</div>
+              <div class="device-info">QR 생성 실패</div>
+            </div>
+          `
+        }
+      }
+      
+      printContent += `
+            </div>
+          </body>
+        </html>
+      `
+      
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      
+      // 프린트 다이얼로그 열기
+      setTimeout(() => {
+        printWindow.print()
+      }, 1000)
+    }
+  } catch (error) {
+    console.error('전체 장비 프린트 실패:', error)
+    alert('전체 장비 프린트에 실패했습니다.')
+  } finally {
+    printingAll.value = false
+  }
+}
 
-// Reset selection when type changes
-watch(selectedType, () => {
-  selectedDevice.value = null
-  selectedEmployee.value = null
-  deviceQRUrl.value = null
-  employeeQRUrl.value = null
+// 장비 데이터 로드
+const loadDevices = async () => {
+  try {
+    // 2024-12-19: useApi composable 사용으로 변경하여 TypeScript 오류 해결
+    const response = await devicesApi.getAll()
+    devices.value = response.devices
+  } catch (error) {
+    console.error('장비 데이터 로드 실패:', error)
+  }
+}
+
+onMounted(() => {
+  loadDevices()
 })
-</script> 
+</script>
+
+<style scoped>
+/* 트렌디한 QR 생성 페이지 스타일 */
+.qr-generator-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 2rem 0;
+}
+
+/* 히어로 섹션 */
+.hero-section {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 0 2rem;
+}
+
+.hero-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  border-radius: 24px;
+  margin-bottom: 1.5rem;
+  color: white;
+  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3);
+  animation: float 3s ease-in-out infinite;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 메인 컨텐츠 */
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* 섹션 카드 */
+.section-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  transition: all 0.3s ease;
+}
+
+.section-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+}
+
+/* QR 타입 그리드 */
+.qr-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.qr-type-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.qr-type-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.qr-type-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.2);
+}
+
+.qr-type-card.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-color: #a855f7;
+  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3);
+}
+
+.qr-type-card.active::before {
+  opacity: 1;
+}
+
+.qr-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  border-radius: 16px;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.qr-type-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.qr-type-description {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* 검색 컨테이너 */
+.search-container {
+  margin-bottom: 2rem;
+}
+
+.search-input-wrapper {
+  position: relative;
+  max-width: 500px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  z-index: 10;
+}
+
+.search-input {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #a855f7;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* 장비 그리드 */
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.device-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.device-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.device-card.selected {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-color: #a855f7;
+  box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.2);
+}
+
+.device-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+  border-radius: 12px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.device-info {
+  flex: 1;
+}
+
+.device-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #1e293b;
+}
+
+.device-number {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.device-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.device-status.active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.device-status.inactive {
+  background: rgba(100, 116, 139, 0.1);
+  color: #475569;
+}
+
+.device-status.maintenance {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.device-status.retired {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.device-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  border-radius: 8px;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.device-card.selected .device-check {
+  opacity: 1;
+}
+
+/* 선택된 장비 정보 */
+.selected-device-info {
+  margin-bottom: 2rem;
+}
+
+.device-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.device-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  border-radius: 16px;
+  color: white;
+}
+
+.device-preview-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #1e293b;
+}
+
+.device-preview-number {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.device-preview-employee {
+  font-size: 0.875rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
+/* QR 설정 */
+.qr-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.setting-label {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.875rem;
+}
+
+.setting-options {
+  display: flex;
+  gap: 1rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.radio-option input[type="radio"] {
+  display: none;
+}
+
+.radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.radio-option input[type="radio"]:checked + .radio-custom {
+  border-color: #a855f7;
+  background: #a855f7;
+}
+
+.radio-option input[type="radio"]:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+}
+
+.size-slider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.size-range {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.size-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #a855f7;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.size-value {
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* 액션 버튼 */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* QR 결과 섹션 */
+.result-section {
+  text-align: center;
+}
+
+.qr-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.qr-display {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.qr-image {
+  max-width: 300px;
+  height: auto;
+  border-radius: 12px;
+}
+
+.qr-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* 애니메이션 */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-icon {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+  
+  .section-card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .qr-type-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .device-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .qr-settings {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .qr-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .main-content {
+    padding: 0 1rem;
+  }
+  
+  .hero-section {
+    padding: 0 1rem;
+  }
+}
+</style> 

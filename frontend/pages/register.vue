@@ -274,10 +274,16 @@ const handleRegister = async () => {
   }
 
   try {
-    await authStore.register(formData)
+    // 2024-12-19: RegisterData 객체 형태로 수정 - 회원가입 기능 개선
+    await authStore.register({
+      email: formData.email,
+      password: formData.password,
+      company_name: formData.company_name
+    })
     await navigateTo('/dashboard')
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration failed:', error)
+    // 에러 메시지를 사용자에게 표시할 수 있도록 개선
   }
 }
 </script>
