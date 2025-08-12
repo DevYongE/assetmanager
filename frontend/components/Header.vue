@@ -225,7 +225,7 @@ const breadcrumbs = computed(() => {
     const label = labelMap[path] || path
     crumbs.push({
       label,
-      path: index === paths.length - 1 ? undefined : currentPath
+      path: index === paths.length - 1 ? '' : currentPath
     })
   })
   
