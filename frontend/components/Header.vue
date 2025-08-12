@@ -80,10 +80,10 @@
                 <circle cx="12" cy="7" r="4"/>
               </svg>
             </div>
-            <div class="user-info">
-              <span class="user-name">{{ getUserDisplayName() }} >> {{ user?.company_name || '회사명' }}</span>
-              <span class="user-email">{{ user?.email || 'user@example.com' }}</span>
-            </div>
+                  <div class="user-info">
+        <span class="user-name"> {{ user?.company_name }}</span>
+        <span class="user-email">{{ user?.email || 'user@example.com' }}</span>
+      </div>
             <svg
               width="16"
               height="16"
