@@ -72,7 +72,7 @@
           </svg>
         </div>
         <div v-if="!isCollapsed" class="user-info">
-          <h4 class="user-name">{{ user?.name || '사용자' }}</h4>
+          <h4 class="user-name">{{ getUserDisplayName() }} >> {{ user?.company_name || '회사명' }}</h4>
           <p class="user-role">{{ user?.role || '관리자' }}</p>
         </div>
         <button v-if="!isCollapsed" class="logout-button" @click="handleLogout">
@@ -236,6 +236,15 @@ const hideTooltip = () => {
 const loadUserInfo = () => {
   const authStore = useAuthStore()
   user.value = authStore.user
+}
+
+// 사용자 표시 이름 생성
+const getUserDisplayName = () => {
+  if (!user.value?.email) return '사용자'
+  
+  // 이메일에서 @ 앞부분을 이름으로 사용
+  const emailName = user.value.email.split('@')[0]
+  return emailName.charAt(0).toUpperCase() + emailName.slice(1)
 }
 
 // 마우스 이벤트 리스너

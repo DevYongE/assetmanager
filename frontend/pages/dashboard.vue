@@ -7,9 +7,9 @@
           <h1 class="hero-title">
             안녕하세요, <span class="gradient-text">{{ user?.name }}</span>님! 👋
           </h1>
-          <p class="hero-subtitle">
-            오늘도 효율적인 자산 관리를 시작해보세요
-          </p>
+                <p class="hero-subtitle">
+        <span class="company-name" v-if="user?.company_name">{{ user.company_name }}</span><span v-else>귀하의</span> 효율적인 자산 관리를 시작해보세요
+      </p>
         </div>
         <div class="hero-stats">
           <div class="stat-card">
@@ -451,6 +451,11 @@ onMounted(() => {
   font-size: 1.25rem;
   color: #64748b;
   line-height: 1.6;
+}
+
+.company-name {
+  color: #8b5cf6;
+  font-weight: 600;
 }
 
 .hero-stats {

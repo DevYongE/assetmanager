@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
     // Find user
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, password_hash')
+      .select('id, email, password_hash, company_name')
       .eq('email', email)
       .single();
 
@@ -122,7 +122,8 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       user: {
         id: user.id,
-        email: user.email
+        email: user.email,
+        company_name: user.company_name
       },
       token
     });
@@ -135,11 +136,22 @@ router.post('/login', async (req, res) => {
 // Get current user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
+    // Get user data from database to include company_name
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, company_name')
+      .eq('id', req.user.id)
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to get user profile' });
+    }
+
     res.json({
       user: {
-        id: req.user.id,
-        email: req.user.email,
-        company_name: req.user.company_name
+        id: user.id,
+        email: user.email,
+        company_name: user.company_name
       }
     });
   } catch (error) {

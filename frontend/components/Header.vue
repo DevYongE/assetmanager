@@ -81,7 +81,7 @@
               </svg>
             </div>
             <div class="user-info">
-              <span class="user-name">{{ user?.name || '사용자' }}</span>
+              <span class="user-name">{{ getUserDisplayName() }} >> {{ user?.company_name || '회사명' }}</span>
               <span class="user-email">{{ user?.email || 'user@example.com' }}</span>
             </div>
             <svg
@@ -289,6 +289,15 @@ const handleLogout = async () => {
 const loadUserInfo = () => {
   const authStore = useAuthStore()
   user.value = authStore.user
+}
+
+// 사용자 표시 이름 생성
+const getUserDisplayName = () => {
+  if (!user.value?.email) return '사용자'
+  
+  // 이메일에서 @ 앞부분을 이름으로 사용
+  const emailName = user.value.email.split('@')[0]
+  return emailName.charAt(0).toUpperCase() + emailName.slice(1)
 }
 
 // 외부 클릭 감지
@@ -542,8 +551,10 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: 150px;
 }
+
+
 
 .user-email {
   font-size: 0.75rem;

@@ -208,6 +208,10 @@
             
             <div class="account-info">
               <div class="info-item">
+                <span class="info-label">회사명</span>
+                <span class="info-value company-name">{{ user?.company_name || '정보 없음' }}</span>
+              </div>
+              <div class="info-item">
                 <span class="info-label">가입일</span>
                 <span class="info-value">{{ formatDate(user?.created_at) }}</span>
               </div>
@@ -556,6 +560,11 @@ watch(user, (newUser) => {
   color: #1f2937;
   font-size: 14px;
   font-weight: 600;
+}
+
+.company-name {
+  color: #667eea;
+  font-weight: 700;
 }
 
 .status-badge {
