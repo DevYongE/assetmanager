@@ -626,6 +626,7 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
           console.log(`✅ [DEBUG] Found employee ID: ${employeeId}`)
         }
 
+        // 2025-01-27: UPSERT 로직 구현 - 자산번호 중복 시 UPDATE 처리
         // Check if asset number already exists
         console.log(`🔍 [DEBUG] Checking if asset number exists: "${row.자산번호}"`)
         const { data: existingDevice } = await supabase
@@ -633,13 +634,6 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
           .select('id')
           .eq('asset_number', row.자산번호.toString().trim())
           .single();
-
-        if (existingDevice) {
-          const error = `Row ${i + 2}: Asset number '${row.자산번호}' already exists`;
-          console.log('❌ [DEBUG]', error);
-          errors.push(error);
-          continue;
-        }
 
         // Create device with all new fields
         const deviceData = {
@@ -660,20 +654,48 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
           os: row.OS ? row.OS.toString().trim() : null
         };
         
-        console.log(`🚀 [DEBUG] Creating device with data:`, deviceData);
-        
-        const { data: device, error } = await supabase
-          .from('personal_devices')
-          .insert([deviceData])
-          .select('*')
-          .single();
+        let device;
+        let error;
+
+        if (existingDevice) {
+          // 2025-01-27: 기존 장비가 있으면 UPDATE
+          console.log(`🔄 [DEBUG] Updating existing device ID: ${existingDevice.id}`);
+          const { data: updatedDevice, error: updateError } = await supabase
+            .from('personal_devices')
+            .update(deviceData)
+            .eq('id', existingDevice.id)
+            .select('*')
+            .single();
+          
+          device = updatedDevice;
+          error = updateError;
+          
+          if (!error) {
+            console.log(`✅ [DEBUG] Device updated successfully: ${device.id}`);
+          }
+        } else {
+          // 2025-01-27: 새 장비이면 INSERT
+          console.log(`🚀 [DEBUG] Creating new device with data:`, deviceData);
+          const { data: newDevice, error: insertError } = await supabase
+            .from('personal_devices')
+            .insert([deviceData])
+            .select('*')
+            .single();
+          
+          device = newDevice;
+          error = insertError;
+          
+          if (!error) {
+            console.log(`✅ [DEBUG] Device created successfully: ${device.id}`);
+          }
+        }
 
         if (error) {
-          const errorMsg = `Row ${i + 2}: Failed to create device - ${error.message}`;
+          const errorMsg = `Row ${i + 2}: Failed to ${existingDevice ? 'update' : 'create'} device - ${error.message}`;
           console.log('❌ [DEBUG]', errorMsg);
           errors.push(errorMsg);
         } else {
-          console.log(`✅ [DEBUG] Device created successfully: ${device.id}`)
+          console.log(`✅ [DEBUG] Device ${existingDevice ? 'updated' : 'created'} successfully: ${device.id}`)
           successDevices.push(device);
         }
       } catch (error) {
@@ -702,7 +724,7 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
   }
 });
 
-// Export devices to Excel
+// 2025-01-27: Export devices to Excel
 router.get('/export/excel', authenticateToken, async (req, res) => {
   try {
     const { data: devices, error } = await supabase
@@ -768,4 +790,4 @@ router.get('/export/excel', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

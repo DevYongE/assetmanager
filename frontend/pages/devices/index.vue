@@ -678,7 +678,8 @@ const importExcel = async (event: Event) => {
     console.log('✅ [DEBUG] Import response received:', response)
     
     if (response.success_count > 0) {
-      alert(`Excel 가져오기 완료!\n성공: ${response.success_count}개\n실패: ${response.error_count}개`)
+      // 2025-01-27: UPSERT 동작을 반영한 메시지 개선
+      alert(`Excel 가져오기 완료!\n처리된 장비: ${response.success_count}개\n실패: ${response.error_count}개\n\n※ 자산번호가 중복된 경우 기존 데이터가 업데이트됩니다.`)
       if (response.errors && response.errors.length > 0) {
         console.log('❌ [DEBUG] Import errors:', response.errors)
         alert(`일부 오류가 발생했습니다:\n${response.errors.slice(0, 5).join('\n')}`)
