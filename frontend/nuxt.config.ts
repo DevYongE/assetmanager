@@ -83,6 +83,13 @@ export default defineNuxtConfig({
   // =============================================================================
   app: {
     head: {
+      // 2025-01-27: 앱 제목을 InvenOne으로 변경
+      title: 'InvenOne - 인벤토리 관리 시스템',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: '효율적인 인벤토리 관리를 위한 QR 기반 자산 관리 시스템' }
+      ],
       // 외부 리소스 (폰트 등) 사전 로드
       link: [
         {

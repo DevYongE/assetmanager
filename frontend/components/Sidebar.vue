@@ -23,9 +23,9 @@
             <path d="M9 15h6"/>
           </svg>
         </div>
-        <div v-if="!isCollapsed" class="logo-text">
-          <h1 class="logo-title">QR Asset</h1>
-          <p class="logo-subtitle">자산 관리</p>
+        <div v-if="!isCollapsed || isMobile" class="logo-text">
+          <h1 class="logo-title">InvenOne</h1>
+          <p class="logo-subtitle">인벤토리 관리</p>
         </div>
       </div>
       
@@ -53,8 +53,8 @@
                 <path :d="item.icon" />
               </svg>
             </div>
-            <span v-if="!isCollapsed" class="nav-text">{{ item.label }}</span>
-            <div v-if="!isCollapsed && item.badge" class="nav-badge">
+            <span v-if="!isCollapsed || isMobile" class="nav-text">{{ item.label }}</span>
+            <div v-if="(!isCollapsed || isMobile) && item.badge" class="nav-badge">
               {{ item.badge }}
             </div>
           </NuxtLink>
@@ -71,11 +71,11 @@
             <circle cx="12" cy="7" r="4"/>
           </svg>
         </div>
-              <div v-if="!isCollapsed" class="user-info">
+              <div v-if="!isCollapsed || isMobile" class="user-info">
         <h4 class="user-name"> {{ user?.company_name }}</h4>
         <p class="user-role">{{ user?.role || '관리자' }}</p>
       </div>
-        <button v-if="!isCollapsed" class="logout-button" @click="handleLogout">
+        <button v-if="!isCollapsed || isMobile" class="logout-button" @click="handleLogout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16,17 21,12 16,7"/>
@@ -94,8 +94,9 @@
 
 <script setup lang="ts">
 // 2024-12-19: 트렌디한 UI 디자인으로 사이드바 컴포넌트 완전 재설계
+// 2025-01-27: 반응형 동작 개선 및 모바일 토글 기능 수정
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 // Props
 interface Props {
@@ -109,6 +110,8 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   'update:collapsed': [value: boolean]
+  'mobile-toggle': [value: boolean]
+  'mobile-state': [value: boolean] // 2025-01-27: 모바일 상태 전달 추가
 }>()
 
 // 상태 관리
@@ -161,8 +164,15 @@ const menuItems = [
 
 // 사이드바 토글
 const toggleSidebar = () => {
-  isCollapsed.value = !isCollapsed.value
-  emit('update:collapsed', isCollapsed.value)
+  if (isMobile.value) {
+    // 모바일에서는 모바일 사이드바 토글
+    isMobileOpen.value = !isMobileOpen.value
+    emit('mobile-toggle', isMobileOpen.value)
+  } else {
+    // 데스크톱에서는 접기/펼치기 토글
+    isCollapsed.value = !isCollapsed.value
+    emit('update:collapsed', isCollapsed.value)
+  }
 }
 
 // 활성 메뉴 확인
@@ -173,17 +183,32 @@ const isActive = (path: string) => {
 
 // 모바일 감지
 const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768
-  if (isMobile.value) {
-    isCollapsed.value = false
-    isMobileOpen.value = false
+  const wasMobile = isMobile.value
+  // 2025-01-27: 모바일 감지 기준을 1024px로 상향 조정하여 태블릿 환경 개선
+  isMobile.value = window.innerWidth < 1024
+  
+  // 2025-01-27: 모바일 상태를 레이아웃에 전달
+  emit('mobile-state', isMobile.value)
+  
+  // 모바일 상태가 변경되었을 때 처리
+  if (wasMobile !== isMobile.value) {
+    if (isMobile.value) {
+      // 데스크톱에서 모바일로 변경
+      isMobileOpen.value = false
+      emit('mobile-toggle', false)
+    } else {
+      // 모바일에서 데스크톱으로 변경
+      isMobileOpen.value = false
+      emit('mobile-toggle', false)
+    }
   }
 }
 
-// 모바일 사이드바 토글
+// 모바일 사이드바 토글 (외부에서 호출)
 const toggleMobileSidebar = () => {
   if (isMobile.value) {
     isMobileOpen.value = !isMobileOpen.value
+    emit('mobile-toggle', isMobileOpen.value)
   }
 }
 
@@ -191,6 +216,7 @@ const toggleMobileSidebar = () => {
 const closeMobileSidebar = () => {
   if (isMobile.value) {
     isMobileOpen.value = false
+    emit('mobile-toggle', false)
   }
 }
 
@@ -199,6 +225,7 @@ const handleNavClick = () => {
   // 모바일에서 메뉴 클릭 시 사이드바 닫기
   if (isMobile.value) {
     isMobileOpen.value = false
+    emit('mobile-toggle', false)
   }
 }
 
@@ -214,7 +241,7 @@ const handleLogout = async () => {
 
 // 툴팁 표시
 const showTooltip = (event: MouseEvent, text: string) => {
-  if (!isCollapsed.value) return
+  if (!isCollapsed.value || isMobile.value) return
   
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
@@ -256,17 +283,30 @@ const handleMouseLeave = () => {
   hideTooltip()
 }
 
+// props 변경 감지
+watch(() => props.collapsed, (newValue) => {
+  if (!isMobile.value) {
+    isCollapsed.value = newValue
+  }
+})
+
+// 외부에서 모바일 토글 호출 가능하도록 expose
+defineExpose({
+  toggleMobileSidebar,
+  closeMobileSidebar
+})
+
 onMounted(() => {
   loadUserInfo()
   checkMobile()
   
-  // 2024-12-19: 모바일 반응형 개선 - 리사이즈 이벤트 리스너 추가
+  // 2025-01-27: 모바일 반응형 개선 - 리사이즈 이벤트 리스너 추가
   window.addEventListener('resize', checkMobile)
   
   // 메뉴 아이템에 마우스 이벤트 추가
   const navLinks = document.querySelectorAll('.nav-link')
   navLinks.forEach((link, index) => {
-    // 2024-12-19: TypeScript 안전성 개선 - 배열 인덱스 범위 체크 추가
+    // 2025-01-27: TypeScript 안전성 개선 - 배열 인덱스 범위 체크 추가
     const menuItem = menuItems[index]
     if (menuItem) {
       link.addEventListener('mouseenter', (e) => handleMouseEnter(e as MouseEvent, menuItem.label))
@@ -276,7 +316,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // 2024-12-19: 모바일 반응형 개선 - 리사이즈 이벤트 리스너 제거
+  // 2025-01-27: 모바일 반응형 개선 - 리사이즈 이벤트 리스너 제거
   window.removeEventListener('resize', checkMobile)
   
   // 이벤트 리스너 제거
@@ -594,6 +634,13 @@ onUnmounted(() => {
   color: white;
   border: 2px solid white;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 60; /* 2025-01-27: z-index 추가로 다른 요소 위에 표시 */
+}
+
+.sidebar-collapsed .toggle-button:hover {
+  background: linear-gradient(135deg, #9333ea 0%, #6d28d9 100%);
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-collapsed .nav-link {
@@ -627,7 +674,7 @@ onUnmounted(() => {
 }
 
 /* 반응형 */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar {
     position: fixed;
     left: 0;
@@ -642,16 +689,17 @@ onUnmounted(() => {
     transform: translateX(0);
   }
   
-  /* 모바일에서 접힌 상태 스타일 무시 */
+  /* 2025-01-27: 모바일에서 접힌 상태 스타일 무시 및 텍스트 표시 개선 */
   .sidebar-collapsed {
     width: 280px;
   }
   
+  /* 모바일에서는 항상 텍스트 표시 */
   .sidebar-collapsed .logo-text,
   .sidebar-collapsed .nav-text,
   .sidebar-collapsed .user-info,
   .sidebar-collapsed .logout-button {
-    display: block;
+    display: block !important;
   }
   
   .sidebar-collapsed .sidebar-header {
@@ -674,6 +722,21 @@ onUnmounted(() => {
     justify-content: flex-start;
     padding: 0.75rem;
   }
+  
+  /* 2025-01-27: 모바일 오버레이 스타일 개선 */
+  .mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    cursor: pointer;
+    /* 2025-01-27: 터치 이벤트 개선 */
+    touch-action: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -682,9 +745,18 @@ onUnmounted(() => {
     max-width: 320px;
   }
   
+  /* 2025-01-27: 작은 화면에서도 일관된 동작 보장 */
   .sidebar-collapsed {
     width: 100%;
     max-width: 320px;
+  }
+  
+  /* 작은 화면에서도 텍스트 표시 */
+  .sidebar-collapsed .logo-text,
+  .sidebar-collapsed .nav-text,
+  .sidebar-collapsed .user-info,
+  .sidebar-collapsed .logout-button {
+    display: block !important;
   }
 }
 </style> 

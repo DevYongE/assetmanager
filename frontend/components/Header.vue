@@ -168,6 +168,7 @@
 
 <script setup lang="ts">
 // 2024-12-19: 트렌디한 UI 디자인으로 헤더 컴포넌트 완전 재설계
+// 2025-01-27: 모바일 메뉴 토글 기능 개선 및 사이드바 연동 수정
 
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
@@ -203,7 +204,8 @@ const breadcrumbs = computed(() => {
   
   if (paths.length === 0) return []
   
-  const crumbs = [{ label: '홈', path: '/' }]
+  // 2025-01-27: 브랜드명을 InvenOne으로 변경
+  const crumbs = [{ label: 'InvenOne', path: '/' }]
   
   let currentPath = ''
   paths.forEach((path, index) => {
@@ -234,16 +236,7 @@ const breadcrumbs = computed(() => {
 
 // 모바일 메뉴 토글
 const toggleMobileMenu = () => {
-  // 2024-12-19: 모바일 사이드바 토글 기능 추가
-  const sidebar = document.querySelector('.sidebar') as HTMLElement
-  if (sidebar) {
-    const isMobileOpen = sidebar.classList.contains('mobile-open')
-    if (isMobileOpen) {
-      sidebar.classList.remove('mobile-open')
-    } else {
-      sidebar.classList.add('mobile-open')
-    }
-  }
+  // 2025-01-27: 모바일 사이드바 토글 기능 개선 - 부모 컴포넌트에 이벤트 전달
   emit('toggle-mobile-menu')
 }
 
