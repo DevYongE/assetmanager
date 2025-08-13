@@ -38,6 +38,15 @@
             :icon="'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM9 17v2M15 17v2M9 9h6M9 13h6'"
             @click="printAllDevices"
           />
+          <!-- 2025-08-13: 일괄 QR 생성 버튼 추가 -->
+          <BaseButton
+            label="일괄 QR 생성"
+            variant="accent"
+            size="md"
+            :loading="bulkGenerating"
+            :icon="'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'"
+            @click="bulkGenerateQR"
+          />
         </div>
       </div>
     </div>
@@ -194,6 +203,53 @@
               <span class="size-value">{{ qrSize }}px</span>
             </div>
           </div>
+
+          <!-- 2025-08-13: QR 코드 품질 설정 추가 -->
+          <div class="setting-group">
+            <label class="setting-label">QR 코드 품질</label>
+            <div class="setting-options">
+              <label class="radio-option">
+                <input type="radio" v-model="qrQuality" value="L" />
+                <span class="radio-custom"></span>
+                낮음 (7% 복구)
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="qrQuality" value="M" />
+                <span class="radio-custom"></span>
+                보통 (15% 복구)
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="qrQuality" value="Q" />
+                <span class="radio-custom"></span>
+                높음 (25% 복구)
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="qrQuality" value="H" />
+                <span class="radio-custom"></span>
+                최고 (30% 복구)
+              </label>
+            </div>
+          </div>
+
+          <!-- 2025-08-13: QR 코드 링크 포함 설정 추가 -->
+          <div class="setting-group">
+            <label class="setting-label">QR 코드 링크 포함</label>
+            <div class="setting-options">
+              <label class="radio-option">
+                <input type="radio" v-model="includeLink" :value="true" />
+                <span class="radio-custom"></span>
+                포함 (스캔 시 장비 페이지로 이동)
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="includeLink" :value="false" />
+                <span class="radio-custom"></span>
+                미포함 (기본 QR 데이터만)
+              </label>
+            </div>
+            <p class="setting-description">
+              링크를 포함하면 QR 코드를 스캔했을 때 해당 장비의 상세 페이지로 바로 이동할 수 있습니다.
+            </p>
+          </div>
         </div>
 
         <!-- 액션 버튼 -->
@@ -218,6 +274,37 @@
             <img :src="deviceQRUrl" :alt="`QR Code for ${selectedDevice?.asset_number}`" class="qr-image" />
           </div>
           
+          <!-- 2025-08-13: QR 코드 메타데이터 표시 추가 -->
+          <div v-if="qrMetadata" class="qr-metadata">
+            <h4 class="metadata-title">QR 코드 정보</h4>
+            <div class="metadata-grid">
+              <div class="metadata-item">
+                <span class="metadata-label">생성일시:</span>
+                <span class="metadata-value">{{ formatDate(qrMetadata.generated_at) }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="metadata-label">형식:</span>
+                <span class="metadata-value">{{ qrMetadata.format }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="metadata-label">버전:</span>
+                <span class="metadata-value">{{ qrMetadata.version || '1.0' }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="metadata-label">장비번호:</span>
+                <span class="metadata-value">{{ qrMetadata.device_info?.asset_number }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="metadata-label">담당자:</span>
+                <span class="metadata-value">{{ qrMetadata.device_info?.employee || '미할당' }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="metadata-label">부서:</span>
+                <span class="metadata-value">{{ qrMetadata.device_info?.department || '-' }}</span>
+              </div>
+            </div>
+          </div>
+          
           <div class="qr-actions">
             <BaseButton
               label="다운로드"
@@ -231,6 +318,13 @@
               :icon="'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM9 17v2M15 17v2M9 9h6M9 13h6'"
               @click="printDeviceQR"
             />
+            <!-- 2025-08-13: QR 코드 검증 버튼 추가 -->
+            <BaseButton
+              label="검증"
+              variant="warning"
+              :icon="'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'"
+              @click="validateGeneratedQR"
+            />
           </div>
         </div>
       </div>
@@ -241,6 +335,8 @@
 <script setup lang="ts">
 // 2024-12-19: 트렌디한 UI 디자인으로 QR 생성 페이지 완전 재설계
 // 2024-12-19: TypeScript 오류 수정 - useApi composable 사용으로 변경
+// 2025-01-27: QR 생성 로직 수정 - asset_number 사용 및 폐기된 장비 제외
+// 2025-08-13: QR 생성기 고도화 - 고급 기능 및 메타데이터 추가
 
 import { ref, computed, onMounted } from 'vue'
 import { defineAsyncComponent } from 'vue'
@@ -256,20 +352,27 @@ const searchQuery = ref('')
 const selectedDevice = ref<any>(null)
 const qrFormat = ref<'png' | 'svg' | 'json'>('png') // 2024-12-19: 'json' 타입 추가
 const qrSize = ref(256)
+const qrQuality = ref<'L' | 'M' | 'Q' | 'H'>('M') // 2025-08-13: QR 품질 설정 추가
+const includeLink = ref(true) // 2025-08-13: QR 링크 포함 설정 추가 (기본값: true)
 const generating = ref(false)
 const deviceQRUrl = ref('')
+const qrMetadata = ref<any>(null) // 2025-08-13: QR 메타데이터 추가
 const downloadingAll = ref(false)
 const printingAll = ref(false)
+const bulkGenerating = ref(false) // 2025-08-13: 일괄 생성 상태 추가
 
 // 장비 데이터
 const devices = ref<any[]>([])
 
-// 필터된 장비 목록
+// 필터된 장비 목록 (폐기된 장비 제외)
 const filteredDevices = computed(() => {
-  if (!searchQuery.value) return devices.value
+  // 2025-01-27: Exclude disposed devices from QR generation
+  let filtered = devices.value.filter(device => device.purpose !== '폐기')
+  
+  if (!searchQuery.value) return filtered
   
   const query = searchQuery.value.toLowerCase()
-  return devices.value.filter(device => 
+  return filtered.filter(device => 
     device.manufacturer?.toLowerCase().includes(query) ||
     device.model_name?.toLowerCase().includes(query) ||
     device.asset_number?.toLowerCase().includes(query)
@@ -291,6 +394,7 @@ const getStatusText = (status: string) => {
 const selectDevice = (device: any) => {
   selectedDevice.value = device
   deviceQRUrl.value = ''
+  qrMetadata.value = null // 2025-08-13: 메타데이터 초기화
 }
 
 // QR 코드 생성
@@ -299,17 +403,34 @@ const generateQR = async () => {
   
   generating.value = true
   try {
-    // 2024-12-19: useApi composable 사용으로 변경하여 TypeScript 오류 해결
-    const response = await qrApi.getDeviceQR(selectedDevice.value.id, qrFormat.value)
+    // 2025-01-27: Use asset_number consistently for QR generation
+    // 2025-08-13: Include link parameter for direct navigation
+    const response = await qrApi.getDeviceQR(selectedDevice.value.asset_number, qrFormat.value, includeLink.value)
     
     if (qrFormat.value === 'json') {
       // JSON 응답인 경우
       const qrResponse = response as any
       deviceQRUrl.value = qrResponse.qrUrl || qrResponse.data?.qrUrl
+      qrMetadata.value = qrResponse.metadata // 2025-08-13: 메타데이터 저장
     } else {
       // Blob 응답인 경우 (PNG/SVG)
       const blob = response as Blob
       deviceQRUrl.value = URL.createObjectURL(blob)
+      // 2025-08-13: 기본 메타데이터 생성
+      qrMetadata.value = {
+        generated_at: new Date().toISOString(),
+        format: qrFormat.value,
+        version: '2.0',
+        device_info: {
+          asset_number: selectedDevice.value.asset_number,
+          manufacturer: selectedDevice.value.manufacturer,
+          model_name: selectedDevice.value.model_name,
+          employee: selectedDevice.value.employees?.name || '미할당',
+          department: selectedDevice.value.employees?.department || '',
+          purpose: selectedDevice.value.purpose
+        },
+        direct_link: includeLink.value ? `${window.location.origin}/devices/${selectedDevice.value.asset_number}` : null
+      }
     }
   } catch (error) {
     console.error('QR 생성 실패:', error)
@@ -395,9 +516,90 @@ const printDeviceQR = () => {
   }
 }
 
+// 2025-08-13: QR 코드 검증 기능 추가
+const validateGeneratedQR = async () => {
+  if (!selectedDevice.value) return
+  
+  try {
+    // QR 코드 데이터 생성
+    const qrData = {
+      t: 'd',
+      i: selectedDevice.value.id,
+      a: selectedDevice.value.asset_number,
+      m: selectedDevice.value.manufacturer,
+      n: selectedDevice.value.model_name,
+      s: selectedDevice.value.serial_number,
+      e: selectedDevice.value.employees?.name || '',
+      c: 'Company Name',
+      g: new Date().toISOString().split('T')[0],
+      dt: selectedDevice.value.device_type || '',
+      cpu: selectedDevice.value.cpu || '',
+      mem: selectedDevice.value.memory || '',
+      str: selectedDevice.value.storage || '',
+      os: selectedDevice.value.os || '',
+      ca: selectedDevice.value.created_at ? new Date(selectedDevice.value.created_at).toISOString().split('T')[0] : '',
+      v: '2.0'
+    }
+    
+    const qrString = JSON.stringify(qrData)
+    const validationResult = await qrApi.validate(qrString)
+    
+    if (validationResult.is_valid) {
+      alert('QR 코드가 유효합니다!')
+    } else {
+      alert('QR 코드가 유효하지 않습니다.')
+    }
+  } catch (error) {
+    console.error('QR 검증 실패:', error)
+    alert('QR 코드 검증에 실패했습니다.')
+  }
+}
+
+// 2025-08-13: 일괄 QR 생성 기능 추가
+const bulkGenerateQR = async () => {
+  const availableDevices = devices.value.filter(device => device.purpose !== '폐기')
+  
+  if (availableDevices.length === 0) {
+    alert('생성할 장비가 없습니다.')
+    return
+  }
+  
+  bulkGenerating.value = true
+  try {
+    const deviceIds = availableDevices.map(device => device.id)
+    // 2025-08-13: Include link parameter for bulk generation
+    const response = await qrApi.bulkDeviceQR(deviceIds, 'json', false, includeLink.value)
+    
+    console.log('일괄 QR 생성 결과:', response)
+    alert(`일괄 QR 생성 완료!\n총 ${response.total_requested}개 중 ${response.total_generated}개 생성됨\n성공률: ${response.success_rate}`)
+    
+  } catch (error) {
+    console.error('일괄 QR 생성 실패:', error)
+    alert('일괄 QR 생성에 실패했습니다.')
+  } finally {
+    bulkGenerating.value = false
+  }
+}
+
+// 2025-08-13: 날짜 포맷팅 함수 추가
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 // 전체 장비 다운로드
 const downloadAllDevices = async () => {
-  if (devices.value.length === 0) {
+  // 2025-01-27: Exclude disposed devices from bulk operations
+  const availableDevices = devices.value.filter(device => device.purpose !== '폐기')
+  
+  if (availableDevices.length === 0) {
     alert('다운로드할 장비가 없습니다.')
     return
   }
@@ -405,7 +607,7 @@ const downloadAllDevices = async () => {
   downloadingAll.value = true
   try {
     // 각 장비의 QR 코드를 개별적으로 다운로드
-    for (const device of devices.value) {
+    for (const device of availableDevices) {
       try {
         const qrResponse = await qrApi.getDeviceQR(device.asset_number, 'png')
         if (qrResponse instanceof Blob) {
@@ -437,7 +639,10 @@ const downloadAllDevices = async () => {
 
 // 전체 장비 프린트
 const printAllDevices = async () => {
-  if (devices.value.length === 0) {
+  // 2025-01-27: Exclude disposed devices from bulk operations
+  const availableDevices = devices.value.filter(device => device.purpose !== '폐기')
+  
+  if (availableDevices.length === 0) {
     alert('프린트할 장비가 없습니다.')
     return
   }
@@ -506,7 +711,7 @@ const printAllDevices = async () => {
       `
       
       // 각 장비의 QR 코드를 생성하여 HTML에 추가
-      for (const device of devices.value) {
+      for (const device of availableDevices) {
         try {
           const qrResponse = await qrApi.getDeviceQR(device.asset_number, 'png')
           let qrUrl = ''
@@ -1115,5 +1320,65 @@ onMounted(() => {
   .hero-section {
     padding: 0 1rem;
   }
+}
+
+/* 2025-08-13: QR 메타데이터 스타일 추가 */
+.qr-metadata {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+}
+
+.metadata-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.metadata-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.metadata-item:last-child {
+  border-bottom: none;
+}
+
+.metadata-label {
+  font-weight: 500;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.metadata-value {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.875rem;
+}
+
+/* 2025-08-13: 설정 설명 스타일 추가 */
+.setting-description {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* 애니메이션 */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 </style> 

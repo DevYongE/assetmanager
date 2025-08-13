@@ -9,6 +9,15 @@
       </div>
       <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">QR 스캐너</h1>
       <p class="text-sm md:text-base text-gray-600">QR 코드를 스캔하여 장비 정보를 수정하세요</p>
+      
+      <!-- 2025-08-13: QR 스캐너 상태 표시 추가 -->
+      <div class="mt-4 flex justify-center">
+        <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" 
+             :class="scannerStatus.class">
+          <div class="w-2 h-2 rounded-full mr-2" :class="scannerStatus.dot"></div>
+          {{ scannerStatus.text }}
+        </div>
+      </div>
     </div>
 
     <!-- Scanner Container with mobile optimization -->
@@ -42,8 +51,18 @@
               <div class="absolute bottom-0 left-0 w-4 h-4 md:w-6 md:h-6 border-b-4 border-l-4 border-green-400"></div>
               <div class="absolute bottom-0 right-0 w-4 h-4 md:w-6 md:h-6 border-b-4 border-r-4 border-green-400"></div>
               
-              <!-- Scanning animation for mobile -->
+              <!-- 2025-08-13: Enhanced scanning animation for mobile -->
               <div class="absolute inset-0 border-t-2 border-green-400 animate-pulse"></div>
+              
+              <!-- 2025-08-13: QR 코드 감지 표시 -->
+              <div v-if="qrDetected" class="absolute inset-0 bg-green-500 bg-opacity-20 flex items-center justify-center">
+                <div class="text-white text-center">
+                  <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <p class="text-sm font-medium">QR 코드 감지됨</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -94,6 +113,13 @@
             카메라 중지
           </button>
         </div>
+
+        <!-- 2025-08-13: QR 스캔 통계 추가 -->
+        <div v-if="scanStats.totalScans > 0" class="mt-4 text-center">
+          <div class="text-sm text-gray-600">
+            총 스캔: {{ scanStats.totalScans }} | 성공: {{ scanStats.successfulScans }} | 실패: {{ scanStats.failedScans }}
+          </div>
+        </div>
       </div>
 
       <!-- Manual Input with mobile optimization -->
@@ -106,19 +132,49 @@
               placeholder="QR 코드 데이터를 여기에 붙여넣으세요..."
               class="w-full h-20 md:h-24 resize-none px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm md:text-base"
             ></textarea>
-            <button 
-              @click="processManualQR"
-              :disabled="!manualQRInput.trim()"
-              class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 md:py-3 md:px-6 rounded-lg transition-colors duration-200 mt-2 text-sm md:text-base"
-            >
-              QR 코드 처리
-            </button>
-            <button 
-              @click="loadTestQR"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 md:py-3 md:px-6 rounded-lg transition-colors duration-200 mt-2 ml-2 text-sm md:text-base"
-            >
-              테스트 QR 로드
-            </button>
+            <div class="mt-2 flex justify-center space-x-2">
+              <button 
+                @click="processManualQR"
+                :disabled="!manualQRInput.trim()"
+                class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 md:py-3 md:px-6 rounded-lg transition-colors duration-200 text-sm md:text-base"
+              >
+                QR 코드 처리
+              </button>
+              <button 
+                @click="loadTestQR"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 md:py-3 md:px-6 rounded-lg transition-colors duration-200 text-sm md:text-base"
+              >
+                테스트 QR 로드
+              </button>
+              <!-- 2025-08-13: QR 코드 검증 버튼 추가 -->
+              <button 
+                @click="validateQR"
+                :disabled="!manualQRInput.trim()"
+                class="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 md:py-3 md:px-6 rounded-lg transition-colors duration-200 text-sm md:text-base"
+              >
+                검증
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2025-08-13: QR 코드 검증 결과 표시 -->
+      <div v-if="validationResult" class="mt-4 p-4 rounded-lg" :class="validationResult.is_valid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+        <div class="flex items-center">
+          <svg v-if="validationResult.is_valid" class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          <svg v-else class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          <div>
+            <p class="font-medium" :class="validationResult.is_valid ? 'text-green-800' : 'text-red-800'">
+              {{ validationResult.is_valid ? '유효한 QR 코드입니다' : '유효하지 않은 QR 코드입니다' }}
+            </p>
+            <p class="text-sm" :class="validationResult.is_valid ? 'text-green-600' : 'text-red-600'">
+              형식: {{ validationResult.format }} | 버전: {{ validationResult.version }} | 타입: {{ validationResult.type }}
+            </p>
           </div>
         </div>
       </div>
@@ -154,6 +210,12 @@
 </template>
 
 <script setup lang="ts">
+// 2025-08-13: QR 스캐너 고도화 - 모바일 최적화 및 고급 기능 추가
+// - 향상된 모바일 카메라 지원
+// - QR 코드 검증 기능
+// - 스캔 통계 및 상태 표시
+// - 개선된 에러 핸들링
+
 import type { QRCodeData } from '~/types'
 import { BrowserMultiFormatReader, Result } from '@zxing/library'
 
@@ -178,24 +240,72 @@ const processingMessage = ref('')
 const showErrorModal = ref(false)
 const errorMessage = ref('')
 const manualQRInput = ref('')
+const qrDetected = ref(false)
+const validationResult = ref<any>(null)
+
+// 2025-08-13: 스캔 통계 추가
+const scanStats = ref({
+  totalScans: 0,
+  successfulScans: 0,
+  failedScans: 0
+})
+
+// 2025-08-13: 스캐너 상태 계산
+const scannerStatus = computed(() => {
+  if (loading.value) {
+    return {
+      text: '초기화 중...',
+      class: 'bg-yellow-100 text-yellow-800',
+      dot: 'bg-yellow-400'
+    }
+  } else if (error.value) {
+    return {
+      text: '오류 발생',
+      class: 'bg-red-100 text-red-800',
+      dot: 'bg-red-400'
+    }
+  } else if (isScanning.value) {
+    return {
+      text: '스캔 중...',
+      class: 'bg-green-100 text-green-800',
+      dot: 'bg-green-400'
+    }
+  } else {
+    return {
+      text: '대기 중',
+      class: 'bg-gray-100 text-gray-800',
+      dot: 'bg-gray-400'
+    }
+  }
+})
 
 // QR Scanner
 let stream: MediaStream | null = null
 let qrReader: BrowserMultiFormatReader | null = null
 
-// Start camera with mobile optimization
+// Start camera with enhanced mobile optimization
 const startCamera = async () => {
   try {
     loading.value = true
     error.value = null
+    qrDetected.value = false
 
-    // Request camera access with mobile optimization
+    // 2025-08-13: Enhanced camera constraints for better mobile support
     const constraints = {
       video: {
         facingMode: 'environment', // Use back camera on mobile
-        width: { ideal: window.innerWidth < 768 ? 640 : 1280 },
-        height: { ideal: window.innerWidth < 768 ? 480 : 720 },
-        aspectRatio: { ideal: 4/3 }
+        width: { 
+          ideal: window.innerWidth < 768 ? 640 : 1280,
+          min: 320,
+          max: 1920
+        },
+        height: { 
+          ideal: window.innerWidth < 768 ? 480 : 720,
+          min: 240,
+          max: 1080
+        },
+        aspectRatio: { ideal: 4/3 },
+        frameRate: { ideal: 30, min: 15 }
       }
     }
 
@@ -214,13 +324,15 @@ const startCamera = async () => {
   } catch (err: any) {
     console.error('Camera error:', err)
     
-    // Mobile-specific error messages
+    // 2025-08-13: Enhanced mobile-specific error messages
     if (err.name === 'NotAllowedError') {
       error.value = '카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.'
     } else if (err.name === 'NotFoundError') {
       error.value = '카메라를 찾을 수 없습니다. 카메라가 연결되어 있는지 확인해주세요.'
     } else if (err.name === 'NotSupportedError') {
       error.value = '이 브라우저는 카메라를 지원하지 않습니다. 다른 브라우저를 사용해주세요.'
+    } else if (err.name === 'OverconstrainedError') {
+      error.value = '카메라 설정이 지원되지 않습니다. 다른 카메라를 시도해주세요.'
     } else {
       error.value = '카메라에 접근할 수 없습니다. 카메라 권한을 확인해주세요.'
     }
@@ -242,19 +354,21 @@ const stopCamera = () => {
   }
   
   isScanning.value = false
+  qrDetected.value = false
 }
 
-// Start QR scanning with mobile optimization
+// Start QR scanning with enhanced mobile optimization
 const startQRScanning = () => {
   if (!video.value) return
 
   try {
     qrReader = new BrowserMultiFormatReader()
     
-    // Mobile-optimized scanning configuration
+    // 2025-08-13: Enhanced mobile-optimized scanning configuration
     const hints = {
       tryHarder: true,
-      pureBarcode: false
+      pureBarcode: false,
+      possibleFormats: ['QR_CODE', 'DATA_MATRIX', 'AZTEC']
     }
     
     qrReader.decodeFromVideoDevice(
@@ -263,7 +377,13 @@ const startQRScanning = () => {
       (result: Result | null, error: any) => {
         if (result) {
           console.log('QR Code detected:', result.getText())
-          processQRString(result.getText())
+          qrDetected.value = true
+          scanStats.value.totalScans++
+          
+          // Process QR after a short delay to show detection feedback
+          setTimeout(() => {
+            processQRString(result.getText())
+          }, 500)
         }
         
         if (error && error.name !== 'NotFoundException') {
@@ -274,7 +394,7 @@ const startQRScanning = () => {
   } catch (err) {
     console.error('Failed to start QR scanning:', err)
     
-    // Fallback to simulated scanning for demo (mobile-friendly with simplified QR format)
+    // 2025-08-13: Enhanced fallback to simulated scanning for demo
     setTimeout(() => {
       const mockQRData = {
         t: 'd', // type: device (simplified)
@@ -285,22 +405,31 @@ const startQRScanning = () => {
         s: 'SCD8518SPP', // serial_number
         e: '김규일', // employee name
         c: 'Test Company', // company
-        g: new Date().toISOString().split('T')[0] // generated date
+        g: new Date().toISOString().split('T')[0], // generated date
+        dt: 'Laptop', // device type
+        cpu: 'Intel i7', // CPU
+        mem: '16GB', // memory
+        str: '512GB SSD', // storage
+        os: 'Windows 11', // OS
+        ca: new Date().toISOString().split('T')[0], // created date
+        v: '2.0' // version
       }
       
       console.log('🔍 [QR SCANNER] Using mock QR data for testing')
+      qrDetected.value = true
+      scanStats.value.totalScans++
       processQRString(JSON.stringify(mockQRData))
     }, 3000)
   }
 }
 
-// Process QR string with mobile optimization
+// Process QR string with enhanced validation
 const processQRString = async (qrString: string) => {
   try {
     processing.value = true
     processingMessage.value = 'QR 코드를 분석하는 중...'
 
-    // Validate QR string
+    // 2025-08-13: Enhanced QR string validation
     if (!qrString || qrString.trim() === '') {
       throw new Error('QR 코드 데이터가 비어있습니다.')
     }
@@ -313,13 +442,16 @@ const processQRString = async (qrString: string) => {
     console.log('🔍 [QR SCANNER] Decoded result:', decodedResult)
     
     if (!decodedResult.is_valid) {
+      scanStats.value.failedScans++
       throw new Error('유효하지 않은 QR 코드입니다.')
     }
 
     await processQRData(decodedResult.data)
+    scanStats.value.successfulScans++
     
   } catch (err: any) {
     console.error('QR string processing error:', err)
+    scanStats.value.failedScans++
     errorMessage.value = err.message || 'QR 코드 처리 중 오류가 발생했습니다.'
     showErrorModal.value = true
   } finally {
@@ -328,24 +460,27 @@ const processQRString = async (qrString: string) => {
   }
 }
 
-// Process QR data with mobile optimization
+// Process QR data with enhanced validation and direct link support
 const processQRData = async (qrData: any) => {
   try {
     processing.value = true
     processingMessage.value = 'QR 코드를 분석하는 중...'
 
-    // Handle both simplified and full format QR codes
+    // 2025-08-13: Enhanced QR data validation with direct link support
     let deviceId: string
     let deviceType: string
+    let directLink: string | null = null
 
     if (qrData.t) {
       // Simplified format
       deviceType = qrData.t === 'd' ? 'device' : 'employee'
       deviceId = qrData.i
+      directLink = qrData.l || null // 2025-08-13: Extract direct link
     } else {
       // Full format (backward compatibility)
       deviceType = qrData.type
       deviceId = qrData.id
+      directLink = qrData.link || null
     }
 
     // Validate QR data
@@ -357,7 +492,34 @@ const processQRData = async (qrData: any) => {
       throw new Error('장비 QR 코드만 지원됩니다.')
     }
 
-    // Verify device exists
+    // 2025-08-13: Handle direct link if available
+    if (directLink) {
+      processingMessage.value = '장비 페이지로 이동하는 중...'
+      
+      // Check if it's a relative link (starts with /)
+      if (directLink.startsWith('/')) {
+        // Navigate to relative path
+        await router.push(directLink)
+        return
+      } else if (directLink.startsWith('http')) {
+        // External link - open in new tab or navigate if same domain
+        const currentDomain = window.location.origin
+        if (directLink.startsWith(currentDomain)) {
+          // Same domain - navigate to the path
+          const path = directLink.replace(currentDomain, '')
+          await router.push(path)
+          return
+        } else {
+          // Different domain - ask user if they want to open
+          if (confirm('외부 링크를 새 탭에서 열까요?')) {
+            window.open(directLink, '_blank')
+          }
+          return
+        }
+      }
+    }
+
+    // Fallback: Verify device exists and navigate using device ID
     processingMessage.value = '장비 정보를 확인하는 중...'
     
     try {
@@ -384,7 +546,7 @@ const processQRData = async (qrData: any) => {
   }
 }
 
-// Process manual QR input with mobile optimization
+// Process manual QR input with enhanced validation
 const processManualQR = async () => {
   if (!manualQRInput.value.trim()) return
 
@@ -427,6 +589,44 @@ const processManualQR = async () => {
   }
 }
 
+// 2025-08-13: QR 코드 검증 기능 추가
+const validateQR = async () => {
+  if (!manualQRInput.value.trim()) return
+
+  try {
+    const qrString = manualQRInput.value.trim()
+    
+    // Try to parse as JSON first
+    let qrData: any
+    try {
+      qrData = JSON.parse(qrString)
+    } catch {
+      validationResult.value = {
+        is_valid: false,
+        format: 'unknown',
+        version: 'unknown',
+        type: 'unknown',
+        error: 'Invalid JSON format'
+      }
+      return
+    }
+
+    // Use validation API
+    const result = await api.qr.validate(qrString)
+    validationResult.value = result
+    
+  } catch (err: any) {
+    console.error('QR validation error:', err)
+    validationResult.value = {
+      is_valid: false,
+      format: 'unknown',
+      version: 'unknown',
+      type: 'unknown',
+      error: 'Validation failed'
+    }
+  }
+}
+
 // Load test QR data for debugging
 const loadTestQR = () => {
   const testQRData = {
@@ -438,14 +638,22 @@ const loadTestQR = () => {
     s: 'TEST123456', // serial_number
     e: '테스트 사용자', // employee name
     c: 'Test Company', // company
-    g: new Date().toISOString().split('T')[0] // generated date
+    g: new Date().toISOString().split('T')[0], // generated date
+    dt: 'Tablet', // device type
+    cpu: 'Snapdragon 8 Gen 2', // CPU
+    mem: '8GB', // memory
+    str: '256GB', // storage
+    os: 'Android 13', // OS
+    ca: new Date().toISOString().split('T')[0], // created date
+    v: '2.0', // version
+    l: `${window.location.origin}/devices/AS-TEST-001` // 2025-08-13: Direct link for testing
   }
   
   manualQRInput.value = JSON.stringify(testQRData, null, 2)
-  console.log('🔍 [QR SCANNER] Loaded test QR data')
+  console.log('🔍 [QR SCANNER] Loaded test QR data with direct link')
 }
 
-// Mobile-specific optimizations
+// Enhanced mobile-specific optimizations
 const handleOrientationChange = () => {
   // Reinitialize camera on orientation change for mobile
   if (isScanning.value) {
@@ -456,16 +664,18 @@ const handleOrientationChange = () => {
   }
 }
 
-// Cleanup on unmount
+// Enhanced cleanup on unmount
 onUnmounted(() => {
   stopCamera()
   window.removeEventListener('orientationchange', handleOrientationChange)
+  window.removeEventListener('resize', handleOrientationChange)
 })
 
-// Start camera on mount with mobile optimization
+// Start camera on mount with enhanced mobile optimization
 onMounted(() => {
   // Add orientation change listener for mobile
   window.addEventListener('orientationchange', handleOrientationChange)
+  window.addEventListener('resize', handleOrientationChange)
   
   // Start camera with slight delay for mobile devices
   setTimeout(() => {

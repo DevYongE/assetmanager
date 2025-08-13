@@ -484,11 +484,11 @@ export const useApi = () => {
   // =============================================================================
   const qr = {
     // 장비 QR 코드 생성 (ID 또는 자산번호)
-    async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
+    async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' = 'json', includeLink: boolean = true): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
-        return apiCall<QRCodeResponse>(`/qr/device/${identifier}`)
+        return apiCall<QRCodeResponse>(`/qr/device/${identifier}?includeLink=${includeLink}`)
       } else {
-        return apiCallForBlob(`/qr/device/${identifier}?format=${format}`)
+        return apiCallForBlob(`/qr/device/${identifier}?format=${format}&includeLink=${includeLink}`)
       }
     },
 
@@ -502,17 +502,43 @@ export const useApi = () => {
     },
 
     // 일괄 장비 QR 코드 생성
-    async bulkDeviceQR(deviceIds: string[], format: 'png' | 'json' = 'json', useTest: boolean = false): Promise<any> {
+    async bulkDeviceQR(deviceIds: string[], format: 'png' | 'json' = 'json', useTest: boolean = false, includeLink: boolean = true): Promise<any> {
       const endpoint = useTest ? '/qr/bulk/test' : '/qr/bulk/devices'
       return apiCall(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ device_ids: deviceIds, format })
+        body: JSON.stringify({ device_ids: deviceIds, format, includeLink })
       })
     },
 
     // QR 코드 디코딩
     async decode(qrString: string): Promise<{ data: any; is_valid: boolean }> {
       return apiCall<{ data: any; is_valid: boolean }>('/qr/decode', {
+        method: 'POST',
+        body: JSON.stringify({ qr_string: qrString })
+      })
+    },
+
+    // 2025-08-13: QR 코드 검증 기능 추가
+    async validate(qrString: string): Promise<{ 
+      is_valid: boolean; 
+      format: string; 
+      version: string; 
+      type: string; 
+      has_link: boolean;
+      link_type: string;
+      direct_link: string | null;
+      error?: string 
+    }> {
+      return apiCall<{ 
+        is_valid: boolean; 
+        format: string; 
+        version: string; 
+        type: string; 
+        has_link: boolean;
+        link_type: string;
+        direct_link: string | null;
+        error?: string 
+      }>('/qr/validate', {
         method: 'POST',
         body: JSON.stringify({ qr_string: qrString })
       })
