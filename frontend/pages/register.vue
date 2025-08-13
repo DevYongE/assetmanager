@@ -159,6 +159,12 @@
           type="submit"
           :disabled="authStore.loading || !isFormValid"
           class="btn-gradient register-btn"
+          @click="() => {
+            console.log('🔘 [REGISTER] Button clicked')
+            console.log('🔘 [REGISTER] Loading:', authStore.loading)
+            console.log('🔘 [REGISTER] Form valid:', isFormValid)
+            console.log('🔘 [REGISTER] Form data:', formData)
+          }"
         >
           <span v-if="!authStore.loading" class="btn-content">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -216,12 +222,22 @@ const formErrors = reactive({
 })
 
 const isFormValid = computed(() => {
-  return formData.email && 
+  const valid = formData.email && 
          formData.company_name && 
          formData.password && 
          formData.password_confirm &&
          formData.password === formData.password_confirm &&
          formData.password.length >= 6
+  console.log('🔍 [REGISTER] Form validation check:', {
+    email: !!formData.email,
+    company_name: !!formData.company_name,
+    password: !!formData.password,
+    password_confirm: !!formData.password_confirm,
+    password_match: formData.password === formData.password_confirm,
+    password_length: formData.password.length >= 6,
+    valid
+  })
+  return valid
 })
 
 const validateRegistrationForm = () => {
@@ -269,20 +285,29 @@ const validateRegistrationForm = () => {
 }
 
 const handleRegister = async () => {
+  console.log('🔍 [REGISTER] handleRegister called')
+  console.log('📝 [REGISTER] Form data:', formData)
+  console.log('✅ [REGISTER] Form valid:', isFormValid.value)
+  
   if (!validateRegistrationForm()) {
+    console.log('❌ [REGISTER] Form validation failed')
     return
   }
 
+  console.log('🚀 [REGISTER] Starting registration process...')
+  
   try {
     // 2024-12-19: RegisterData 객체 형태로 수정 - 회원가입 기능 개선
+    console.log('📞 [REGISTER] Calling authStore.register...')
     await authStore.register({
       email: formData.email,
       password: formData.password,
       company_name: formData.company_name
     })
+    console.log('✅ [REGISTER] Registration successful, navigating to dashboard...')
     await navigateTo('/dashboard')
   } catch (error: any) {
-    console.error('Registration failed:', error)
+    console.error('❌ [REGISTER] Registration failed:', error)
     // 에러 메시지를 사용자에게 표시할 수 있도록 개선
   }
 }
@@ -462,6 +487,58 @@ const handleRegister = async () => {
   color: #dc2626;
   font-size: 14px;
   font-weight: 500;
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-gradient:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .register-btn {

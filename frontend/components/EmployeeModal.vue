@@ -128,7 +128,8 @@ const form = reactive<CreateEmployeeData>({
   name: '',
   department: '',
   position: '',
-  company_name: ''
+  company_name: '',
+  email: ''
 })
 
 // Initialize form
@@ -154,18 +155,26 @@ const initializeForm = () => {
 
 // Handle submit
 const handleSubmit = async () => {
+  console.log('🔍 [EMPLOYEE MODAL] handleSubmit called')
+  console.log('📝 [EMPLOYEE MODAL] Form data:', form)
+  console.log('👤 [EMPLOYEE MODAL] Is edit mode:', !!props.employee)
+  
   try {
     isSubmitting.value = true
     
     if (props.employee) {
+      console.log('📝 [EMPLOYEE MODAL] Updating employee:', props.employee.id)
       await api.employees.update(props.employee.id, form)
     } else {
-      await api.employees.create(form)
+      console.log('➕ [EMPLOYEE MODAL] Creating new employee')
+      const result = await api.employees.create(form)
+      console.log('📝 [EMPLOYEE MODAL] API response:', result)
     }
     
+    console.log('✅ [EMPLOYEE MODAL] Employee saved successfully')
     emit('saved')
   } catch (error: any) {
-    console.error('Failed to save employee:', error)
+    console.error('❌ [EMPLOYEE MODAL] Failed to save employee:', error)
     alert(error.message || '직원 저장에 실패했습니다')
   } finally {
     isSubmitting.value = false

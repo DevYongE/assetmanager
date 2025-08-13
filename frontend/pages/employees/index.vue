@@ -219,6 +219,9 @@ definePageMeta({
   middleware: 'auth'
 })
 
+// 2025-01-27: EmployeeModal 컴포넌트 명시적 import
+import EmployeeModal from '~/components/EmployeeModal.vue'
+
 const { employees: employeesApi } = useApi()
 
 // Reactive data
@@ -250,6 +253,7 @@ const recentEmployees = computed(() => {
 })
 
 const filteredEmployees = computed(() => {
+  console.log('🔍 [EMPLOYEES] Computing filteredEmployees, employees.value:', employees.value)
   let filtered = employees.value
 
   // Search filter
@@ -268,6 +272,7 @@ const filteredEmployees = computed(() => {
     filtered = filtered.filter(emp => emp.department === filterDepartment.value)
   }
 
+  console.log('📝 [EMPLOYEES] Filtered result:', filtered)
   return filtered
 })
 
@@ -277,8 +282,23 @@ const loadEmployees = async () => {
     loading.value = true
     error.value = null
     
+    console.log('🔍 [EMPLOYEES] Loading employees...')
     const response = await employeesApi.getAll()
-    employees.value = response.employees
+    console.log('📝 [EMPLOYEES] API response:', response)
+    console.log('📝 [EMPLOYEES] Response type:', typeof response)
+    console.log('📝 [EMPLOYEES] Response keys:', Object.keys(response))
+    console.log('📝 [EMPLOYEES] Response employees:', response.employees)
+    console.log('📝 [EMPLOYEES] Response employees type:', typeof response.employees)
+    console.log('📝 [EMPLOYEES] Response employees length:', response.employees?.length)
+    
+    if (response.employees && Array.isArray(response.employees)) {
+      employees.value = response.employees
+      console.log('📝 [EMPLOYEES] Set employees.value:', employees.value)
+      console.log('📝 [EMPLOYEES] employees.value length:', employees.value.length)
+    } else {
+      console.error('❌ [EMPLOYEES] Invalid response format:', response)
+      employees.value = []
+    }
   } catch (err: any) {
     error.value = err.message || '직원 목록을 불러올 수 없습니다'
     console.error('Failed to load employees:', err)
@@ -307,11 +327,13 @@ const deleteEmployee = async (employeeId: string) => {
 }
 
 const closeModal = () => {
+  console.log('🔒 [EMPLOYEES] Closing modal')
   showAddModal.value = false
   selectedEmployee.value = null
 }
 
 const onEmployeeSaved = async () => {
+  console.log('✅ [EMPLOYEES] Employee saved, closing modal and reloading data')
   closeModal()
   await loadEmployees()
 }

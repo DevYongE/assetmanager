@@ -111,7 +111,9 @@ export const useApi = () => {
         throw new Error(error.error || `HTTP ${response.status}`)
       }
 
-      return response.json()
+      const responseData = await response.json()
+      console.log('📝 [API DEBUG] Development response data:', responseData)
+      return responseData
     }
     
     // =============================================================================
@@ -134,7 +136,9 @@ export const useApi = () => {
         throw new Error(error.error || `HTTP ${response.status}`)
       }
 
-      return response.json()
+      const responseData = await response.json()
+      console.log('📝 [API DEBUG] Production response data:', responseData)
+      return responseData
     } catch (error) {
       console.error('❌ [API ERROR] Production API call failed:', error)
       throw error
