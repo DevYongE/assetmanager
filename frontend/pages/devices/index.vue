@@ -159,7 +159,7 @@
               </svg>
             </div>
             <div class="stat-content">
-              <h3 class="stat-value">{{ devices.length }}</h3>
+              <h3 class="stat-value">{{ totalDevices }}</h3>
               <p class="stat-label">총 장비 수</p>
             </div>
           </div>
@@ -202,6 +202,20 @@
             <div class="stat-content">
               <h3 class="stat-value">{{ recentDevices }}</h3>
               <p class="stat-label">이번 달 신규</p>
+            </div>
+          </div>
+
+          <!-- 2025-01-27: 폐기된 장비 통계 추가 -->
+          <div class="stat-card disposed-card" @click="showDisposedModal = true">
+            <div class="stat-icon disposed-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-value">{{ disposedDevices }}</h3>
+              <p class="stat-label">폐기된 장비</p>
             </div>
           </div>
         </div>
@@ -265,8 +279,8 @@
                   <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
-              <!-- 2025-01-27: 폐기된 장비만 삭제 가능 -->
-              <button 
+              <!-- 2025-01-27: 삭제 기능 비활성화 -->
+              <!-- <button 
                 v-if="device.purpose === '폐기'"
                 @click.stop="deleteDevice(device.asset_number)" 
                 class="action-btn delete-btn"
@@ -276,7 +290,7 @@
                   <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-              </button>
+              </button> -->
             </div>
           </div>
           
@@ -392,7 +406,8 @@
                   <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
-              <button 
+              <!-- 2025-01-27: 삭제 기능 비활성화 -->
+              <!-- <button 
                 v-if="device.purpose === '폐기'"
                 @click="deleteDevice(device.asset_number)"
                 class="action-btn delete-btn"
@@ -402,7 +417,7 @@
                   <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-              </button>
+              </button> -->
             </div>
           </div>
         </div>
@@ -432,6 +447,51 @@
       @close="closeModal"
       @saved="onDeviceSaved"
     />
+
+    <!-- 2025-01-27: 폐기된 장비 모달 -->
+    <div v-if="showDisposedModal" class="modal-overlay" @click="showDisposedModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">폐기된 장비 목록</h2>
+          <button @click="showDisposedModal = false" class="modal-close">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div v-if="disposedDevicesList.length === 0" class="empty-state">
+            <div class="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3 class="empty-title">폐기된 장비가 없습니다</h3>
+            <p class="empty-message">현재 폐기 처리된 장비가 없습니다.</p>
+          </div>
+          
+          <div v-else class="disposed-devices-list">
+            <div 
+              v-for="device in disposedDevicesList" 
+              :key="device.id"
+              class="disposed-device-item"
+              @click="viewDeviceDetail(device.asset_number)"
+            >
+              <div class="device-info">
+                <h4 class="device-asset-number">{{ device.asset_number }}</h4>
+                <p class="device-model">{{ device.manufacturer }} {{ device.model_name }}</p>
+                <p class="device-purpose">{{ device.purpose }}</p>
+              </div>
+              <div class="device-meta">
+                <span class="disposed-date">{{ new Date(device.updated_at).toLocaleDateString('ko-KR') }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -456,6 +516,7 @@ const filterEmployee = ref('')
 const filterManufacturer = ref('')
 const filterStatus = ref('')
 const showAddModal = ref(false)
+const showDisposedModal = ref(false)
 const selectedDevice = ref<any | null>(null)
 const fileInput = ref<HTMLInputElement>()
 const viewMode = ref<'card' | 'list'>('card')
@@ -470,7 +531,7 @@ const manufacturers = computed(() => {
 const manufacturerCount = computed(() => manufacturers.value.length)
 
 const assignedDevices = computed(() => {
-  return devices.value.filter(device => device.employee_id).length
+  return devices.value.filter(device => device.employee_id && device.purpose !== '폐기').length
 })
 
 const recentDevices = computed(() => {
@@ -480,12 +541,23 @@ const recentDevices = computed(() => {
   
   return devices.value.filter(device => {
     const created = new Date(device.created_at)
-    return created.getMonth() === thisMonth && created.getFullYear() === thisYear
+    return created.getMonth() === thisMonth && created.getFullYear() === thisYear && device.purpose !== '폐기'
   }).length
 })
 
+// 2025-01-27: 폐기된 장비 수 계산
+const disposedDevices = computed(() => {
+  return devices.value.filter(device => device.purpose === '폐기').length
+})
+
+// 2025-01-27: 총 장비 수 (폐기 제외)
+const totalDevices = computed(() => {
+  return devices.value.filter(device => device.purpose !== '폐기').length
+})
+
 const filteredDevices = computed(() => {
-  let filtered = devices.value
+  // 2025-01-27: 폐기된 장비는 메인 리스트에서 제외
+  let filtered = devices.value.filter(device => device.purpose !== '폐기')
 
   // Search filter
   if (searchQuery.value) {
@@ -528,6 +600,11 @@ const filteredDevices = computed(() => {
   return filtered
 })
 
+// 2025-01-27: 폐기된 장비 목록
+const disposedDevicesList = computed(() => {
+  return devices.value.filter(device => device.purpose === '폐기')
+})
+
 // Methods
 // Search handler
 const handleSearch = () => {
@@ -567,19 +644,20 @@ const editDevice = (device: any) => {
   showAddModal.value = true
 }
 
-const deleteDevice = async (assetNumber: string) => {
-  if (!confirm(`폐기된 장비(자산번호: ${assetNumber})를 완전히 삭제하시겠습니까?\n\n⚠️ 삭제 후에는 복구할 수 없습니다.`)) {
-    return
-  }
+// 2025-01-27: 삭제 기능 비활성화
+// const deleteDevice = async (assetNumber: string) => {
+//   if (!confirm(`폐기된 장비(자산번호: ${assetNumber})를 완전히 삭제하시겠습니까?\n\n⚠️ 삭제 후에는 복구할 수 없습니다.`)) {
+//     return
+//   }
 
-  try {
-    await devicesApi.delete(assetNumber)
-    await loadDevices()
-  } catch (err: any) {
-    console.error('Failed to delete device:', err)
-    alert('장비 삭제에 실패했습니다')
-  }
-}
+//   try {
+//     await devicesApi.delete(assetNumber)
+//     await loadDevices()
+//   } catch (err: any) {
+//     console.error('Failed to delete device:', err)
+//     alert('장비 삭제에 실패했습니다')
+//   }
+// }
 
 const downloadQR = async (device: any) => {
   try {
@@ -1176,6 +1254,25 @@ onMounted(() => {
   color: white;
 }
 
+/* 2025-01-27: 폐기된 장비 카드 스타일 */
+.disposed-card {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.disposed-icon {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.disposed-card .stat-value {
+  color: #dc2626;
+}
+
+.disposed-card .stat-label {
+  color: #991b1b;
+}
+
 .stat-content {
   flex: 1;
 }
@@ -1620,6 +1717,194 @@ onMounted(() => {
   .list-cell {
     font-size: 11px;
     padding: 0 2px;
+  }
+}
+
+/* 2025-01-27: 폐기된 장비 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.modal-body {
+  padding: 32px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.empty-message {
+  color: #6b7280;
+  margin: 0;
+}
+
+.disposed-devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.disposed-device-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.disposed-device-item:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+}
+
+.device-info {
+  flex: 1;
+}
+
+.device-asset-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: #dc2626;
+  margin: 0 0 8px 0;
+}
+
+.device-model {
+  font-size: 14px;
+  color: #374151;
+  margin: 0 0 4px 0;
+}
+
+.device-purpose {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 600;
+  margin: 0;
+}
+
+.device-meta {
+  text-align: right;
+}
+
+.disposed-date {
+  font-size: 12px;
+  color: #6b7280;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* 폐기된 장비 카드 클릭 가능 스타일 */
+.disposed-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.disposed-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(239, 68, 68, 0.2);
+}
+
+/* 반응형 모달 */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: 10px;
+    max-height: 90vh;
+  }
+  
+  .modal-header {
+    padding: 20px 24px;
+  }
+  
+  .modal-title {
+    font-size: 20px;
+  }
+  
+  .modal-body {
+    padding: 24px;
+  }
+  
+  .disposed-device-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .device-meta {
+    text-align: left;
   }
 }
 </style> 

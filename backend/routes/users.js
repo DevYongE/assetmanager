@@ -125,6 +125,8 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       return acc;
     }, {});
 
+
+
     const dashboardData = {
       dashboard: {
         recent_employees: recentEmployees || [],

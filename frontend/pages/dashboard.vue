@@ -25,6 +25,7 @@
               <span class="stat-label">총 장비</span>
             </div>
           </div>
+          
           <div class="stat-card">
             <div class="stat-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -37,6 +38,7 @@
               <span class="stat-label">총 직원</span>
             </div>
           </div>
+          
           <div class="stat-card">
             <div class="stat-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -332,16 +334,14 @@ const loadDashboardData = async () => {
   try {
     const api = useApi()
     
-    // 통계 데이터 로드
     const statsResponse = await api.dashboard.getStats()
-    // 2024-12-19: DashboardStats 타입을 로컬 stats 객체 구조에 맞게 매핑
     stats.value = {
       totalDevices: statsResponse.stats.total_devices,
       totalEmployees: statsResponse.stats.total_employees,
-      activeDevices: statsResponse.stats.active_devices,
-      inactiveDevices: 0, // 백엔드에서 제공하지 않는 필드
-      maintenanceDevices: 0, // 백엔드에서 제공하지 않는 필드
-      retiredDevices: 0 // 백엔드에서 제공하지 않는 필드
+      activeDevices: statsResponse.stats.active_devices || 0,
+      inactiveDevices: statsResponse.stats.inactive_devices || 0,
+      maintenanceDevices: statsResponse.stats.maintenance_devices || 0,
+      retiredDevices: statsResponse.stats.retired_devices || 0
     }
     
     // 최근 활동 로드 (임시로 빈 배열 사용 - 백엔드에 해당 엔드포인트가 없음)
@@ -360,8 +360,8 @@ const loadDashboardData = async () => {
       totalEmployees: 12,
       activeDevices: 18,
       inactiveDevices: 4,
-      maintenanceDevices: 1,
-      retiredDevices: 1
+      maintenanceDevices: 2,
+      retiredDevices: 0
     }
     
     recentActivities.value = [
@@ -510,6 +510,8 @@ onMounted(() => {
   color: #64748b;
   margin-top: 0.25rem;
 }
+
+
 
 /* 메인 컨텐츠 */
 .main-content {

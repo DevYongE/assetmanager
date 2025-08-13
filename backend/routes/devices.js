@@ -443,10 +443,8 @@ router.delete('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    // 2025-01-27: 폐기된 장비만 삭제 가능
-    if (device.purpose !== '폐기') {
-      return res.status(400).json({ error: '폐기된 장비만 삭제할 수 있습니다' });
-    }
+    // 2025-01-27: 삭제 기능 비활성화 - 폐기된 장비는 별도 관리
+    return res.status(400).json({ error: '장비 삭제 기능은 비활성화되었습니다. 폐기된 장비는 별도로 관리됩니다.' });
 
     // Verify device belongs to current user (handle both assigned and unassigned devices)
     let deviceBelongsToUser = false;
@@ -474,17 +472,8 @@ router.delete('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    const { error } = await supabase
-      .from('personal_devices')
-      .delete()
-      .eq('id', device.id);
-
-    if (error) {
-      console.error('Delete device error:', error);
-      return res.status(500).json({ error: 'Failed to delete device' });
-    }
-
-    res.json({ message: 'Device deleted successfully' });
+    // 2025-01-27: 삭제 기능 비활성화
+    res.status(400).json({ error: '장비 삭제 기능은 비활성화되었습니다.' });
   } catch (error) {
     console.error('Delete device error:', error);
     res.status(500).json({ error: 'Internal server error' });
