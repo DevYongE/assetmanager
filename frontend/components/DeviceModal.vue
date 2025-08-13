@@ -61,14 +61,13 @@
         <!-- 용도 -->
         <div>
           <label class="form-label">용도</label>
-          <select v-model="form.purpose" class="form-input">
-            <option value="">용도를 선택하세요</option>
-            <option value="노트북">노트북</option>
-            <option value="데스크톱">데스크톱</option>
-            <option value="모니터">모니터</option>
-            <option value="프린터">프린터</option>
-            <option value="기타">기타</option>
-          </select>
+          <!-- 2025-01-27: 용도 필드를 select에서 input으로 변경하여 자유 입력 가능하도록 수정 -->
+          <input 
+            v-model="form.purpose" 
+            type="text" 
+            placeholder="예: 업무용, 개발용, 디자인용 등"
+            class="form-input"
+          />
         </div>
 
         <!-- 장비 Type -->
@@ -232,6 +231,7 @@ interface Props {
 interface Emits {
   (e: 'close'): void
   (e: 'saved'): void
+  (e: 'device-updated', device: any): void
 }
 
 const props = defineProps<Props>()
@@ -322,12 +322,13 @@ const handleSubmit = async () => {
     isSubmitting.value = true
     
     if (props.device) {
-      await api.devices.update(props.device.id, form)
+      // 2025-01-27: 장비 수정 시 자산번호로 업데이트된 장비 정보를 반환받아 이벤트로 전달
+      const response = await api.devices.update(props.device.asset_number, form)
+      emit('device-updated', response.device)
     } else {
       await api.devices.create(form)
+      emit('saved')
     }
-    
-    emit('saved')
   } catch (error: any) {
     console.error('Failed to save device:', error)
     alert(error.message || '장비 저장에 실패했습니다')

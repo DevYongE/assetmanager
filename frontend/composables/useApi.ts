@@ -410,9 +410,9 @@ export const useApi = () => {
       return apiCall<{ devices: Device[] }>(`/devices${queryString}`)
     },
 
-    // 특정 장비 조회
-    async getById(id: string): Promise<{ device: Device }> {
-      return apiCall<{ device: Device }>(`/devices/${id}`)
+    // 특정 장비 조회 (ID 또는 자산번호)
+    async getById(identifier: string): Promise<{ device: Device }> {
+      return apiCall<{ device: Device }>(`/devices/${identifier}`)
     },
 
     // 장비 생성
@@ -423,17 +423,17 @@ export const useApi = () => {
       })
     },
 
-    // 장비 정보 업데이트
-    async update(id: string, data: Partial<CreateDeviceData>): Promise<{ device: Device }> {
-      return apiCall<{ device: Device }>(`/devices/${id}`, {
+    // 장비 정보 업데이트 (ID 또는 자산번호)
+    async update(identifier: string, data: Partial<CreateDeviceData>): Promise<{ device: Device }> {
+      return apiCall<{ device: Device }>(`/devices/${identifier}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       })
     },
 
-    // 장비 삭제
-    async delete(id: string): Promise<{ message: string }> {
-      return apiCall<{ message: string }>(`/devices/${id}`, {
+    // 장비 삭제 (ID 또는 자산번호)
+    async delete(identifier: string): Promise<{ message: string }> {
+      return apiCall<{ message: string }>(`/devices/${identifier}`, {
         method: 'DELETE'
       })
     },
@@ -449,6 +449,33 @@ export const useApi = () => {
     // Excel 파일 export
     async exportExcel(): Promise<Blob> {
       return apiCallForBlob('/devices/export/excel') // 2025-08-08: 수정
+    },
+
+    // 2025-01-27: 새로운 반납/폐기 API 엔드포인트
+    async returnDevice(identifier: string): Promise<{ device: Device; message: string }> {
+      return apiCall<{ device: Device; message: string }>(`/devices/${identifier}/return`, {
+        method: 'PATCH'
+      })
+    },
+
+    async disposeDevice(identifier: string, reason: string): Promise<{ device: Device; message: string }> {
+      return apiCall<{ device: Device; message: string }>(`/devices/${identifier}/dispose`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reason })
+      })
+    },
+
+    // 기존 API 유지 (하위 호환성)
+    async updateStatus(identifier: string, status: string, reason?: string): Promise<{ device: Device; message: string }> {
+      return apiCall<{ device: Device; message: string }>(`/devices/${identifier}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, reason })
+      })
+    },
+
+    // 2025-01-27: 장비 히스토리 조회 API 추가 (ID 또는 자산번호)
+    async getHistory(identifier: string): Promise<{ device: any; history: any[] }> {
+      return apiCall<{ device: any; history: any[] }>(`/devices/${identifier}/history`)
     }
   }
 
@@ -456,12 +483,12 @@ export const useApi = () => {
   // QR 코드 관련 API 함수들
   // =============================================================================
   const qr = {
-    // 장비 QR 코드 생성
-    async getDeviceQR(id: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
+    // 장비 QR 코드 생성 (ID 또는 자산번호)
+    async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
-        return apiCall<QRCodeResponse>(`/qr/device/${id}`)
+        return apiCall<QRCodeResponse>(`/qr/device/${identifier}`)
       } else {
-        return apiCallForBlob(`/qr/device/${id}?format=${format}`)
+        return apiCallForBlob(`/qr/device/${identifier}?format=${format}`)
       }
     },
 

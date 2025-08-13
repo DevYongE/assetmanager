@@ -107,7 +107,7 @@
             v-for="device in filteredDevices"
             :key="device.id"
             class="device-card"
-            :class="{ selected: selectedDevice?.id === device.id }"
+            :class="{ selected: selectedDevice?.asset_number === device.asset_number }"
             @click="selectDevice(device)"
           >
             <div class="device-icon">
@@ -125,7 +125,7 @@
               </p>
             </div>
             <div class="device-check">
-              <svg v-if="selectedDevice?.id === device.id" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg v-if="selectedDevice?.asset_number === device.asset_number" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20,6 9,17 4,12"/>
               </svg>
             </div>
@@ -407,7 +407,7 @@ const downloadAllDevices = async () => {
     // 각 장비의 QR 코드를 개별적으로 다운로드
     for (const device of devices.value) {
       try {
-        const qrResponse = await qrApi.getDeviceQR(device.id, 'png')
+        const qrResponse = await qrApi.getDeviceQR(device.asset_number, 'png')
         if (qrResponse instanceof Blob) {
           const url = URL.createObjectURL(qrResponse)
           const link = document.createElement('a')
@@ -508,7 +508,7 @@ const printAllDevices = async () => {
       // 각 장비의 QR 코드를 생성하여 HTML에 추가
       for (const device of devices.value) {
         try {
-          const qrResponse = await qrApi.getDeviceQR(device.id, 'png')
+          const qrResponse = await qrApi.getDeviceQR(device.asset_number, 'png')
           let qrUrl = ''
           
           if (typeof qrResponse === 'object' && 'qrUrl' in qrResponse) {

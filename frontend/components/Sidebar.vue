@@ -148,12 +148,12 @@ const menuItems = [
     icon: 'M3 9h6v12H3z M9 3h12v18H9z M15 9h6 M15 15h6 M9 9h6 M9 15h6',
     badge: null
   },
-  {
-    path: '/devices',
-    label: '장비 관리',
-    icon: 'M3 9h6v12H3z M9 3h12v18H9z M15 9h6 M15 15h6 M9 9h6 M9 15h6',
-    badge: null
-  },
+          {
+          path: '/devices',
+          label: '장비 관리',
+          icon: 'M3 9h6v12H3z M9 3h12v18H9z M15 9h6 M15 15h6 M9 9h6 M9 15h6',
+          badge: null
+        },
   {
     path: '/employees',
     label: '직원 관리',

@@ -106,12 +106,16 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get single device by ID
-router.get('/:id', authenticateToken, async (req, res) => {
+// Get single device by ID or Asset Number
+router.get('/:identifier', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { identifier } = req.params;
 
-    const { data: device, error } = await supabase
+    // 2025-01-27: 자산번호로 장비 조회 지원 추가
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    
+    let query = supabase
       .from('personal_devices')
       .select(`
         *,
@@ -122,16 +126,24 @@ router.get('/:id', authenticateToken, async (req, res) => {
           position,
           admin_id
         )
-      `)
-      .eq('id', id)
-      .single();
+      `);
+
+    if (isUUID) {
+      // If it's a UUID, search by ID
+      query = query.eq('id', identifier);
+    } else {
+      // If it's not a UUID, search by asset_number
+      query = query.eq('asset_number', identifier);
+    }
+
+    const { data: device, error } = await query.single();
 
     if (error || !device) {
       return res.status(404).json({ error: 'Device not found' });
     }
 
     // Check if device belongs to user's employee
-    if (device.employees.admin_id !== req.user.id) {
+    if (device.employees && device.employees.admin_id !== req.user.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -230,10 +242,14 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Update device
-router.put('/:id', authenticateToken, async (req, res) => {
+// Update device by ID or Asset Number
+router.put('/:identifier', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { identifier } = req.params;
+    
+    // 2025-01-27: 자산번호로 장비 수정 지원 추가
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
     const {
       employee_id,
       asset_number,
@@ -254,7 +270,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     } = req.body;
 
     // Verify device belongs to user's employee
-    const { data: existingDevice, error: checkError } = await supabase
+    let query = supabase
       .from('personal_devices')
       .select(`
         id,
@@ -262,9 +278,17 @@ router.put('/:id', authenticateToken, async (req, res) => {
         employees (
           admin_id
         )
-      `)
-      .eq('id', id)
-      .single();
+      `);
+
+    if (isUUID) {
+      // If it's a UUID, search by ID
+      query = query.eq('id', identifier);
+    } else {
+      // If it's not a UUID, search by asset_number
+      query = query.eq('asset_number', identifier);
+    }
+
+    const { data: existingDevice, error: checkError } = await query.single();
 
     if (checkError || !existingDevice) {
       return res.status(404).json({ error: 'Device not found' });
@@ -325,7 +349,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         .from('personal_devices')
         .select('id')
         .eq('asset_number', asset_number)
-        .neq('id', id)
+        .neq('id', existingDevice.id)
         .single();
 
       if (duplicateDevice) {
@@ -356,7 +380,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const { data: device, error } = await supabase
       .from('personal_devices')
       .update(updates)
-      .eq('id', id)
+      .eq('id', existingDevice.id)
       .select(`
         *,
         employees (
@@ -383,25 +407,45 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete device
-router.delete('/:id', authenticateToken, async (req, res) => {
+// Delete device by ID or Asset Number
+router.delete('/:identifier', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { identifier } = req.params;
+    
+    // 2025-01-27: 자산번호로 장비 삭제 지원 추가
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
-    // Verify device belongs to user's employee
-    const { data: device, error: checkError } = await supabase
+    // 2025-01-27: 폐기된 장비만 삭제 가능하도록 수정
+    // Verify device exists and get its purpose
+    let query = supabase
       .from('personal_devices')
       .select(`
         id,
+        purpose,
+        employee_id,
         employees (
           admin_id
         )
-      `)
-      .eq('id', id)
-      .single();
+      `);
+
+    if (isUUID) {
+      // If it's a UUID, search by ID
+      query = query.eq('id', identifier);
+    } else {
+      // If it's not a UUID, search by asset_number
+      query = query.eq('asset_number', identifier);
+    }
+
+    const { data: device, error: checkError } = await query.single();
 
     if (checkError || !device) {
       return res.status(404).json({ error: 'Device not found' });
+    }
+
+    // 2025-01-27: 폐기된 장비만 삭제 가능
+    if (device.purpose !== '폐기') {
+      return res.status(400).json({ error: '폐기된 장비만 삭제할 수 있습니다' });
     }
 
     // Verify device belongs to current user (handle both assigned and unassigned devices)
@@ -433,7 +477,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { error } = await supabase
       .from('personal_devices')
       .delete()
-      .eq('id', id);
+      .eq('id', device.id);
 
     if (error) {
       console.error('Delete device error:', error);
@@ -786,6 +830,253 @@ router.get('/export/excel', authenticateToken, async (req, res) => {
     res.send(buffer);
   } catch (error) {
     console.error('Export error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2025-01-27: 장비 히스토리 조회 API 추가 (자산번호 지원)
+router.get('/:identifier/history', authenticateToken, async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    
+    // 2025-01-27: 자산번호로 장비 히스토리 조회 지원 추가
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    
+    let query = supabase
+      .from('personal_devices')
+      .select('id, asset_number');
+
+    if (isUUID) {
+      // If it's a UUID, search by ID
+      query = query.eq('id', identifier);
+    } else {
+      // If it's not a UUID, search by asset_number
+      query = query.eq('asset_number', identifier);
+    }
+    
+    const { data: device, error: deviceError } = await query.single();
+    
+    if (deviceError || !device) {
+      return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
+    }
+    
+         // 장비 히스토리 조회 (users 테이블 조인 제거)
+     const { data: history, error } = await supabase
+       .from('device_history')
+       .select('*')
+       .eq('device_id', device.id)
+       .order('performed_at', { ascending: false });
+    
+    if (error) {
+      console.error('History fetch error:', error);
+      return res.status(500).json({ error: '히스토리를 불러올 수 없습니다' });
+    }
+    
+    res.json({ 
+      device: { id: device.id, asset_number: device.asset_number },
+      history: history || [] 
+    });
+    
+  } catch (error) {
+    console.error('Device history error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2025-01-27: 장비 상태 변경 API 추가 (반납, 폐기 등) - 자산번호 지원
+// 2025-01-27: 반납 처리 API (사용자 요청에 따른 단순화)
+router.patch('/:identifier/return', authenticateToken, async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    
+    // 장비 존재 확인
+    let query = supabase
+      .from('personal_devices')
+      .select('id, asset_number, employee_id');
+
+    if (isUUID) {
+      query = query.eq('id', identifier);
+    } else {
+      query = query.eq('asset_number', identifier);
+    }
+    
+    const { data: device, error: deviceError } = await query.single();
+    
+    if (deviceError || !device) {
+      return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
+    }
+    
+    // 할당된 장비만 반납 가능
+    if (!device.employee_id) {
+      return res.status(400).json({ error: '이미 미할당 상태인 장비입니다' });
+    }
+    
+    // 반납 처리: 담당직원을 미할당으로 변경
+    const { data: updatedDevice, error: updateError } = await supabase
+      .from('personal_devices')
+      .update({ employee_id: null })
+      .eq('id', device.id)
+      .select('*')
+      .single();
+    
+    if (updateError) {
+      console.error('Return device error:', updateError);
+      return res.status(500).json({ error: '반납 처리에 실패했습니다' });
+    }
+    
+    res.json({ 
+      message: '장비가 성공적으로 반납되었습니다',
+      device: updatedDevice 
+    });
+    
+  } catch (error) {
+    console.error('Return device error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2025-01-27: 폐기 처리 API (사용자 요청에 따른 폐기 사유 포함)
+router.patch('/:identifier/dispose', authenticateToken, async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { reason } = req.body;
+    
+    // 폐기 사유 필수 확인
+    if (!reason || reason.trim() === '') {
+      return res.status(400).json({ error: '폐기 사유를 입력해주세요' });
+    }
+    
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    
+    // 장비 존재 확인
+    let query = supabase
+      .from('personal_devices')
+      .select('id, asset_number, employee_id, purpose');
+
+    if (isUUID) {
+      query = query.eq('id', identifier);
+    } else {
+      query = query.eq('asset_number', identifier);
+    }
+    
+    const { data: device, error: deviceError } = await query.single();
+    
+    if (deviceError || !device) {
+      return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
+    }
+    
+    // 이미 폐기된 장비 확인
+    if (device.purpose === '폐기') {
+      return res.status(400).json({ error: '이미 폐기된 장비입니다' });
+    }
+    
+    // 폐기 처리: 담당직원 미할당 + 용도를 '폐기'로 설정
+    const { data: updatedDevice, error: updateError } = await supabase
+      .from('personal_devices')
+      .update({ 
+        employee_id: null,
+        purpose: '폐기'
+      })
+      .eq('id', device.id)
+      .select('*')
+      .single();
+    
+    if (updateError) {
+      console.error('Dispose device error:', updateError);
+      return res.status(500).json({ error: '폐기 처리에 실패했습니다' });
+    }
+    
+    // 폐기 사유를 히스토리에 추가 기록
+    await supabase
+      .from('device_history')
+      .insert([{
+        device_id: device.id,
+        action_type: '폐기',
+        action_description: `폐기 사유: ${reason}`,
+        previous_status: device.employee_id ? '할당됨' : '미할당',
+        new_status: '미할당',
+        performed_by: req.user.id,
+        metadata: { dispose_reason: reason, manual_action: true }
+      }]);
+    
+    res.json({ 
+      message: '장비가 성공적으로 폐기되었습니다',
+      device: updatedDevice 
+    });
+    
+  } catch (error) {
+    console.error('Dispose device error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 기존 status API는 유지 (하위 호환성)
+router.patch('/:identifier/status', authenticateToken, async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    
+    // 2025-01-27: 자산번호로 장비 상태 변경 지원 추가
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    const { status, reason } = req.body;
+    
+    // 유효한 상태값 확인
+    const validStatuses = ['returned', 'disposed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: '유효하지 않은 상태값입니다. 반납(returned) 또는 폐기(disposed)만 가능합니다.' });
+    }
+    
+    // 장비 존재 확인
+    let query = supabase
+      .from('personal_devices')
+      .select('id, asset_number, employee_id');
+
+    if (isUUID) {
+      // If it's a UUID, search by ID
+      query = query.eq('id', identifier);
+    } else {
+      // If it's not a UUID, search by asset_number
+      query = query.eq('asset_number', identifier);
+    }
+    
+    const { data: device, error: deviceError } = await query.single();
+    
+    if (deviceError || !device) {
+      return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
+    }
+    
+    // 2025-01-27: 상태 변경 업데이트 - employee_id를 null로 설정하고, 폐기 시 purpose를 '폐기'로 설정
+    const updateData = { employee_id: null };
+    
+    // 폐기 처리 시 purpose를 '폐기'로 설정
+    if (status === 'disposed') {
+      updateData.purpose = '폐기';
+    }
+    
+    const { data: updatedDevice, error: updateError } = await supabase
+      .from('personal_devices')
+      .update(updateData)
+      .eq('id', device.id)
+      .select('*')
+      .single();
+    
+    if (updateError) {
+      console.error('Status update error:', updateError);
+      return res.status(500).json({ error: '상태 변경에 실패했습니다' });
+    }
+    
+    res.json({ 
+      message: '상태가 성공적으로 변경되었습니다',
+      device: updatedDevice 
+    });
+    
+  } catch (error) {
+    console.error('Status change error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

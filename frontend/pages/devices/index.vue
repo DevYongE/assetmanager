@@ -250,11 +250,13 @@
           v-for="device in filteredDevices" 
           :key="device.id"
           class="device-card"
+          @click="viewDeviceDetail(device.asset_number)"
         >
           <div class="device-header">
             <div class="device-actions">
+              <!-- 2025-01-27: 이벤트 버블링 방지 추가 -->
               <button 
-                @click="editDevice(device)"
+                @click.stop="editDevice(device)" 
                 class="action-btn edit-btn"
                 title="수정"
               >
@@ -263,8 +265,10 @@
                   <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
+              <!-- 2025-01-27: 폐기된 장비만 삭제 가능 -->
               <button 
-                @click="deleteDevice(device)"
+                v-if="device.purpose === '폐기'"
+                @click.stop="deleteDevice(device.asset_number)" 
                 class="action-btn delete-btn"
                 title="삭제"
               >
@@ -389,7 +393,8 @@
                 </svg>
               </button>
               <button 
-                @click="deleteDevice(device)"
+                v-if="device.purpose === '폐기'"
+                @click="deleteDevice(device.asset_number)"
                 class="action-btn delete-btn"
                 title="삭제"
               >
@@ -562,13 +567,13 @@ const editDevice = (device: any) => {
   showAddModal.value = true
 }
 
-const deleteDevice = async (device: any) => {
-  if (!confirm(`${device.asset_number} 장비를 삭제하시겠습니까?`)) {
+const deleteDevice = async (assetNumber: string) => {
+  if (!confirm(`폐기된 장비(자산번호: ${assetNumber})를 완전히 삭제하시겠습니까?\n\n⚠️ 삭제 후에는 복구할 수 없습니다.`)) {
     return
   }
 
   try {
-    await devicesApi.delete(device.id)
+    await devicesApi.delete(assetNumber)
     await loadDevices()
   } catch (err: any) {
     console.error('Failed to delete device:', err)
@@ -733,6 +738,10 @@ const getDeviceEmployeeInfo = (device: any) => {
     } : null
   }
   return null
+}
+
+const viewDeviceDetail = (deviceId: string) => {
+  navigateTo(`/devices/${deviceId}`)
 }
 
 // Load data on mount
@@ -1273,6 +1282,7 @@ onMounted(() => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
+  cursor: pointer; /* 추가: 카드 클릭 시 포인터 변경 */
 }
 
 .device-card:hover {

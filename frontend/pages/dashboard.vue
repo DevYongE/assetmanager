@@ -247,7 +247,7 @@
               v-for="device in recentDevices" 
               :key="device.id"
               class="device-item"
-              @click="navigateTo(`/devices/edit/${device.id}`)"
+              @click="navigateTo(`/devices/${device.asset_number}`)"
             >
               <div class="device-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
