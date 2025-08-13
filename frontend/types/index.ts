@@ -34,6 +34,8 @@ export interface Employee {
   position: string
   name: string
   company_name: string
+  email?: string // 2025-01-27: 이메일 필드 추가 (선택사항)
+  device_count?: number // 2025-01-27: 장비 개수 필드 추가
   created_at: string
 }
 
@@ -42,6 +44,7 @@ export interface CreateEmployeeData {
   position: string
   name: string
   company_name: string
+  email?: string // 2025-01-27: 이메일 필드 추가
 }
 
 // Device types

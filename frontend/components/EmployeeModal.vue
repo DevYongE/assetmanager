@@ -54,6 +54,17 @@
           />
         </div>
 
+        <!-- 2025-01-27: 이메일 필드 추가 -->
+        <div>
+          <label class="form-label">이메일</label>
+          <input 
+            v-model="form.email" 
+            type="email" 
+            placeholder="예: employee@company.com"
+            class="form-input"
+          />
+        </div>
+
         <!-- 회사명 -->
         <div>
           <label class="form-label">회사명 *</label>
@@ -127,14 +138,16 @@ const initializeForm = () => {
       name: props.employee.name,
       department: props.employee.department,
       position: props.employee.position,
-      company_name: props.employee.company_name
+      company_name: props.employee.company_name,
+      email: props.employee.email || '' // 2025-01-27: 이메일 필드 추가
     })
   } else {
     Object.assign(form, {
       name: '',
       department: '',
       position: '',
-      company_name: ''
+      company_name: '',
+      email: '' // 2025-01-27: 이메일 필드 추가
     })
   }
 }

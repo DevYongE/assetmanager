@@ -7,9 +7,13 @@ const router = express.Router();
 // Get all employees for the authenticated user's company
 router.get('/', authenticateToken, async (req, res) => {
   try {
+    // 2025-01-27: 장비 개수를 포함한 직원 목록 조회
     const { data: employees, error } = await supabase
       .from('employees')
-      .select('*')
+      .select(`
+        *,
+        personal_devices!inner(count)
+      `)
       .eq('admin_id', req.user.id)
       .order('created_at', { ascending: false });
 
@@ -18,7 +22,13 @@ router.get('/', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch employees' });
     }
 
-    res.json({ employees });
+    // 2025-01-27: 장비 개수 계산 및 응답 데이터 구성
+    const employeesWithDeviceCount = employees.map(employee => ({
+      ...employee,
+      device_count: employee.personal_devices?.[0]?.count || 0
+    }));
+
+    res.json({ employees: employeesWithDeviceCount });
   } catch (error) {
     console.error('Get employees error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -51,8 +61,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create new employee
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { department, position, name, company_name } = req.body;
+    const { department, position, name, company_name, email } = req.body;
 
+    // 2025-01-27: 이메일 필드 추가
     if (!department || !position || !name || !company_name) {
       return res.status(400).json({ error: 'Department, position, name, and company_name are required' });
     }
@@ -64,7 +75,8 @@ router.post('/', authenticateToken, async (req, res) => {
         department,
         position,
         name,
-        company_name
+        company_name,
+        email: email || null // 2025-01-27: 이메일 필드 추가 (선택사항)
       }])
       .select('*')
       .single();
@@ -88,7 +100,7 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { department, position, name, company_name } = req.body;
+    const { department, position, name, company_name, email } = req.body;
 
     // Verify employee belongs to current user
     const { data: existingEmployee, error: checkError } = await supabase
@@ -107,6 +119,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (position) updates.position = position;
     if (name) updates.name = name;
     if (company_name) updates.company_name = company_name;
+    // 2025-01-27: 이메일 필드 업데이트 추가
+    if (email !== undefined) updates.email = email;
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No updates provided' });
