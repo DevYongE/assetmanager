@@ -262,27 +262,30 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // 2025-01-27: Add admin_id to device creation to fix not-null constraint violation
+    // 2025-01-27: Fix date field validation to prevent empty string errors
+    const deviceData = {
+      admin_id: req.user.id, // 2025-01-27: Add admin_id from authenticated user
+      employee_id: verifiedEmployeeId,
+      asset_number,
+      manufacturer: manufacturer || null,
+      model_name: model_name || null,
+      serial_number: serial_number || null,
+      cpu: cpu || null,
+      memory: memory || null,
+      storage: storage || null,
+      gpu: gpu || null,
+      os: os || null,
+      monitor: monitor || null,
+      inspection_date: inspection_date || null,
+      purpose: purpose || null,
+      device_type: device_type || null,
+      monitor_size: monitor_size || null,
+      issue_date: issue_date || null
+    };
+    
     const { data: device, error } = await supabase
       .from('personal_devices')
-      .insert([{
-        admin_id: req.user.id, // 2025-01-27: Add admin_id from authenticated user
-        employee_id: verifiedEmployeeId,
-        asset_number,
-        manufacturer,
-        model_name,
-        serial_number,
-        cpu,
-        memory,
-        storage,
-        gpu,
-        os,
-        monitor,
-        inspection_date,
-        purpose,
-        device_type,
-        monitor_size,
-        issue_date
-      }])
+      .insert([deviceData])
       .select('*')
       .single();
 
@@ -421,20 +424,21 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       updates.asset_number = asset_number;
     }
 
-    if (manufacturer !== undefined) updates.manufacturer = manufacturer;
-    if (model_name !== undefined) updates.model_name = model_name;
-    if (serial_number !== undefined) updates.serial_number = serial_number;
-    if (cpu !== undefined) updates.cpu = cpu;
-    if (memory !== undefined) updates.memory = memory;
-    if (storage !== undefined) updates.storage = storage;
-    if (gpu !== undefined) updates.gpu = gpu;
-    if (os !== undefined) updates.os = os;
-    if (monitor !== undefined) updates.monitor = monitor;
-    if (inspection_date !== undefined) updates.inspection_date = inspection_date;
-    if (purpose !== undefined) updates.purpose = purpose;
-    if (device_type !== undefined) updates.device_type = device_type;
-    if (monitor_size !== undefined) updates.monitor_size = monitor_size;
-    if (issue_date !== undefined) updates.issue_date = issue_date;
+    // 2025-01-27: Fix date field validation to prevent empty string errors
+    if (manufacturer !== undefined) updates.manufacturer = manufacturer || null;
+    if (model_name !== undefined) updates.model_name = model_name || null;
+    if (serial_number !== undefined) updates.serial_number = serial_number || null;
+    if (cpu !== undefined) updates.cpu = cpu || null;
+    if (memory !== undefined) updates.memory = memory || null;
+    if (storage !== undefined) updates.storage = storage || null;
+    if (gpu !== undefined) updates.gpu = gpu || null;
+    if (os !== undefined) updates.os = os || null;
+    if (monitor !== undefined) updates.monitor = monitor || null;
+    if (inspection_date !== undefined) updates.inspection_date = inspection_date || null;
+    if (purpose !== undefined) updates.purpose = purpose || null;
+    if (device_type !== undefined) updates.device_type = device_type || null;
+    if (monitor_size !== undefined) updates.monitor_size = monitor_size || null;
+    if (issue_date !== undefined) updates.issue_date = issue_date || null;
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No updates provided' });
@@ -732,23 +736,24 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
           .single();
 
         // 2025-01-27: Create device with all new fields including admin_id
+        // 2025-01-27: Fix date field validation to prevent empty string errors
         const deviceData = {
           admin_id: req.user.id, // 2025-01-27: Add admin_id from authenticated user
           employee_id: employeeId,
           asset_number: row.자산번호.toString().trim(),
-          inspection_date: row.조사일자 ? row.조사일자.toString().trim() : null,
-          purpose: row.용도 ? row.용도.toString().trim() : null,
-          device_type: row['장비 Type'] ? row['장비 Type'].toString().trim() : null,
-          manufacturer: row.제조사 ? row.제조사.toString().trim() : null,
-          model_name: row.모델명 ? row.모델명.toString().trim() : null,
-          serial_number: row['S/N'] ? row['S/N'].toString().trim() : null,
-          monitor_size: row.모니터크기 ? row.모니터크기.toString().trim() : null,
-          issue_date: row.지급일자 ? row.지급일자.toString().trim() : null,
-          cpu: row.CPU ? row.CPU.toString().trim() : null,
-          memory: row.메모리 ? row.메모리.toString().trim() : null,
-          storage: row.하드디스크 ? row.하드디스크.toString().trim() : null,
-          gpu: row.그래픽카드 ? row.그래픽카드.toString().trim() : null,
-          os: row.OS ? row.OS.toString().trim() : null
+          inspection_date: row.조사일자 && row.조사일자.toString().trim() !== '' ? row.조사일자.toString().trim() : null,
+          purpose: row.용도 && row.용도.toString().trim() !== '' ? row.용도.toString().trim() : null,
+          device_type: row['장비 Type'] && row['장비 Type'].toString().trim() !== '' ? row['장비 Type'].toString().trim() : null,
+          manufacturer: row.제조사 && row.제조사.toString().trim() !== '' ? row.제조사.toString().trim() : null,
+          model_name: row.모델명 && row.모델명.toString().trim() !== '' ? row.모델명.toString().trim() : null,
+          serial_number: row['S/N'] && row['S/N'].toString().trim() !== '' ? row['S/N'].toString().trim() : null,
+          monitor_size: row.모니터크기 && row.모니터크기.toString().trim() !== '' ? row.모니터크기.toString().trim() : null,
+          issue_date: row.지급일자 && row.지급일자.toString().trim() !== '' ? row.지급일자.toString().trim() : null,
+          cpu: row.CPU && row.CPU.toString().trim() !== '' ? row.CPU.toString().trim() : null,
+          memory: row.메모리 && row.메모리.toString().trim() !== '' ? row.메모리.toString().trim() : null,
+          storage: row.하드디스크 && row.하드디스크.toString().trim() !== '' ? row.하드디스크.toString().trim() : null,
+          gpu: row.그래픽카드 && row.그래픽카드.toString().trim() !== '' ? row.그래픽카드.toString().trim() : null,
+          os: row.OS && row.OS.toString().trim() !== '' ? row.OS.toString().trim() : null
         };
         
         let device;
