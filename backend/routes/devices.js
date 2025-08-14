@@ -74,20 +74,26 @@ router.get('/', authenticateToken, async (req, res) => {
         )
       `);
     
-    // Apply assignment status filter
+    // 2025-01-27: Fix device access control - only show devices owned by current user
+    // Apply assignment status filter with proper admin_id check
     if (assignment_status === 'assigned') {
-      // Only assigned devices (employee_id is not null and in employeeIds)
-      query = query.not('employee_id', 'is', null).in('employee_id', employeeIds);
+      // Only assigned devices (employee_id is not null and in employeeIds) AND owned by current user
+      query = query.not('employee_id', 'is', null)
+                   .in('employee_id', employeeIds)
+                   .eq('admin_id', req.user.id);
     } else if (assignment_status === 'unassigned') {
-      // Only unassigned devices (employee_id is null)
-      query = query.is('employee_id', null);
+      // Only unassigned devices (employee_id is null) AND owned by current user
+      query = query.is('employee_id', null)
+                   .eq('admin_id', req.user.id);
     } else {
-      // Show all devices: assigned to current user's employees OR unassigned
+      // Show all devices owned by current user: assigned to current user's employees OR unassigned
       if (employeeIds.length > 0) {
-        query = query.or(`employee_id.in.(${employeeIds.join(',')}),employee_id.is.null`);
+        query = query.eq('admin_id', req.user.id)
+                     .or(`employee_id.in.(${employeeIds.join(',')}),employee_id.is.null`);
       } else {
-        // If no employees, show only unassigned devices
-        query = query.is('employee_id', null);
+        // If no employees, show only unassigned devices owned by current user
+        query = query.is('employee_id', null)
+                     .eq('admin_id', req.user.id);
       }
     }
     
@@ -142,8 +148,18 @@ router.get('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    // Check if device belongs to user's employee
-    if (device.employees && device.employees.admin_id !== req.user.id) {
+    // 2025-01-27: Check if device belongs to current user (either through employee or direct ownership)
+    let hasAccess = false;
+    
+    if (device.employees && device.employees.admin_id === req.user.id) {
+      // Device is assigned to current user's employee
+      hasAccess = true;
+    } else if (device.admin_id === req.user.id) {
+      // Device is owned by current user (including unassigned devices)
+      hasAccess = true;
+    }
+    
+    if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -271,12 +287,14 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       issue_date
     } = req.body;
 
-    // Verify device belongs to user's employee
+    // 2025-01-27: Verify device belongs to current user with admin_id check
     let query = supabase
       .from('personal_devices')
       .select(`
         id,
         asset_number,
+        admin_id,
+        employee_id,
         employees (
           admin_id
         )
@@ -296,30 +314,19 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    // Verify device belongs to current user (handle both assigned and unassigned devices)
+    // 2025-01-27: Verify device belongs to current user (either through employee or direct ownership)
     let deviceBelongsToUser = false;
     
-    if (existingDevice.employee_id) {
-      // For assigned devices, check through employee
-      const { data: employee } = await supabase
-        .from('employees')
-        .select('admin_id')
-        .eq('id', existingDevice.employee_id)
-        .single();
-      
-      deviceBelongsToUser = employee && employee.admin_id === req.user.id;
-    } else {
-      // For unassigned devices, check if user has any employees (to ensure they can manage unassigned devices)
-      const { data: userEmployees } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('admin_id', req.user.id);
-      
-      deviceBelongsToUser = userEmployees && userEmployees.length > 0;
+    if (existingDevice.employees && existingDevice.employees.admin_id === req.user.id) {
+      // Device is assigned to current user's employee
+      deviceBelongsToUser = true;
+    } else if (existingDevice.admin_id === req.user.id) {
+      // Device is owned by current user (including unassigned devices)
+      deviceBelongsToUser = true;
     }
 
     if (!deviceBelongsToUser) {
-      return res.status(404).json({ error: 'Device not found' });
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const updates = {};
