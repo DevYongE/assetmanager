@@ -492,7 +492,7 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       });
 
              if (changedFields.length > 0) {
-         // 2025-01-27: 구체적인 변경 내역을 명확하게 표시
+         // 2025-01-27: 실제로 변경된 필드만 표시
          const changeDescriptions = changedFields.map(field => {
            const fieldNames = {
              'asset_number': '자산번호',
@@ -520,7 +520,7 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
            return `${fieldName}: ${beforeValue} → ${afterValue}`;
          });
          
-         // 히스토리에 변경 내역 기록
+         // 히스토리에 변경 내역 기록 (실제 변경된 필드만)
          await supabase
            .from('device_history')
            .insert([{
@@ -892,51 +892,51 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
                }
              });
              
-             if (changedFields.length > 0) {
-               // 2025-01-27: Excel 임포트 시에도 구체적인 변경 내역을 명확하게 표시
-               const changeDescriptions = changedFields.map(field => {
-                 const fieldNames = {
-                   'asset_number': '자산번호',
-                   'employee_id': '담당자',
-                   'manufacturer': '제조사',
-                   'model_name': '모델명',
-                   'serial_number': '시리얼번호',
-                   'cpu': 'CPU',
-                   'memory': '메모리',
-                   'storage': '저장장치',
-                   'gpu': '그래픽카드',
-                   'os': '운영체제',
-                   'monitor': '모니터',
-                   'monitor_size': '모니터크기',
-                   'inspection_date': '조사일자',
-                   'purpose': '용도',
-                   'device_type': '장비타입',
-                   'issue_date': '지급일자'
-                 };
-                 
-                 const fieldName = fieldNames[field.field] || field.field;
-                 const beforeValue = field.before || '없음';
-                 const afterValue = field.after || '없음';
-                 
-                 return `${fieldName}: ${beforeValue} → ${afterValue}`;
-               });
-               
-               await supabase
-                 .from('device_history')
-                 .insert([{
-                   device_id: device.id,
-                   action_type: 'Excel수정',
-                   action_description: `Excel 임포트로 수정 - ${changeDescriptions.join(', ')}`,
-                   previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
-                   new_status: device.employee_id ? '할당됨' : '미할당',
-                   performed_by: req.user.id,
-                   metadata: { 
-                     changed_fields: changedFields,
-                     import_source: 'excel',
-                     manual_action: false 
-                   }
-                 }]);
-             }
+                           if (changedFields.length > 0) {
+                // 2025-01-27: Excel 임포트 시에도 실제 변경된 필드만 표시
+                const changeDescriptions = changedFields.map(field => {
+                  const fieldNames = {
+                    'asset_number': '자산번호',
+                    'employee_id': '담당자',
+                    'manufacturer': '제조사',
+                    'model_name': '모델명',
+                    'serial_number': '시리얼번호',
+                    'cpu': 'CPU',
+                    'memory': '메모리',
+                    'storage': '저장장치',
+                    'gpu': '그래픽카드',
+                    'os': '운영체제',
+                    'monitor': '모니터',
+                    'monitor_size': '모니터크기',
+                    'inspection_date': '조사일자',
+                    'purpose': '용도',
+                    'device_type': '장비타입',
+                    'issue_date': '지급일자'
+                  };
+                  
+                  const fieldName = fieldNames[field.field] || field.field;
+                  const beforeValue = field.before || '없음';
+                  const afterValue = field.after || '없음';
+                  
+                  return `${fieldName}: ${beforeValue} → ${afterValue}`;
+                });
+                
+                await supabase
+                  .from('device_history')
+                  .insert([{
+                    device_id: device.id,
+                    action_type: 'Excel수정',
+                    action_description: `Excel 임포트로 수정 - ${changeDescriptions.join(', ')}`,
+                    previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
+                    new_status: device.employee_id ? '할당됨' : '미할당',
+                    performed_by: req.user.id,
+                    metadata: { 
+                      changed_fields: changedFields,
+                      import_source: 'excel',
+                      manual_action: false 
+                    }
+                  }]);
+              }
            } else {
              // 새로 생성된 경우
              await supabase
