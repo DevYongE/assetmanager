@@ -124,12 +124,7 @@ router.get('/recent-activities', authenticateToken, async (req, res) => {
         action_type,
         action_description,
         performed_at,
-        device_id,
-        personal_devices (
-          asset_number,
-          manufacturer,
-          model_name
-        )
+        device_id
       `)
       .order('performed_at', { ascending: false })
       .limit(10);
@@ -153,7 +148,7 @@ router.get('/recent-activities', authenticateToken, async (req, res) => {
       title: item.action_type,
       description: item.action_description,
       createdAt: item.performed_at,
-      device: item.personal_devices
+      device: { asset_number: `장비 ID: ${item.device_id?.slice(0, 8)}...` }
     })) || [];
     
     res.json({ activities });

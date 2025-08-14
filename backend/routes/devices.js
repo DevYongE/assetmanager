@@ -1160,14 +1160,7 @@ router.get('/:identifier/history', authenticateToken, async (req, res) => {
          // 2025-01-27: 장비 히스토리 조회 시 처리자 정보 포함
      const { data: history, error } = await supabase
        .from('device_history')
-       .select(`
-         *,
-         users!device_history_performed_by_fkey (
-           id,
-           email,
-           company_name
-         )
-       `)
+       .select('*')
        .eq('device_id', device.id)
        .order('performed_at', { ascending: false });
     

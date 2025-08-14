@@ -508,8 +508,10 @@ const getStatusText = (status: string) => {
 
 // 2025-01-27: 처리자 이름 표시 함수
 const getProcessorName = (item: any) => {
-  if (item.users && item.users.email) {
-    return item.users.company_name || item.users.email
+  // 2025-01-27: 사용자 정보가 없는 경우 performed_by ID를 표시하거나 시스템으로 표시
+  if (item.performed_by) {
+    // TODO: 향후 사용자 정보를 별도로 조회하여 표시할 수 있도록 개선
+    return `관리자 (${item.performed_by.slice(0, 8)}...)`
   }
   return '시스템'
 }
