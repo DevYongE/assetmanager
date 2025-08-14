@@ -207,9 +207,11 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Asset number already exists' });
     }
 
+    // 2025-01-27: Add admin_id to device creation to fix not-null constraint violation
     const { data: device, error } = await supabase
       .from('personal_devices')
       .insert([{
+        admin_id: req.user.id, // 2025-01-27: Add admin_id from authenticated user
         employee_id: verifiedEmployeeId,
         asset_number,
         manufacturer,
@@ -668,8 +670,9 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
           .eq('asset_number', row.자산번호.toString().trim())
           .single();
 
-        // Create device with all new fields
+        // 2025-01-27: Create device with all new fields including admin_id
         const deviceData = {
+          admin_id: req.user.id, // 2025-01-27: Add admin_id from authenticated user
           employee_id: employeeId,
           asset_number: row.자산번호.toString().trim(),
           inspection_date: row.조사일자 ? row.조사일자.toString().trim() : null,
