@@ -256,50 +256,24 @@
                 <span class="timeline-date">{{ formatDate(item.performed_at) }}</span>
               </div>
               <p class="timeline-description">{{ item.action_description }}</p>
+              <!-- 2025-01-27: 처리자 정보 표시 개선 -->
               <div class="timeline-user">
                 <span class="user-label">처리자:</span>
-                <span class="user-name">{{ item.performed_by || '시스템' }}</span>
+                <span class="user-name">{{ getProcessorName(item) }}</span>
               </div>
-              <!-- 2025-01-27: 재할당 시 이전/현재 직원 정보 표시 개선 -->
-              <div v-if="item.action_type === '재할당' && item.metadata" class="timeline-employees">
-                <div class="employee-change">
-                  <span class="change-label">이전 직원:</span>
-                  <span class="employee-name previous">{{ item.metadata.old_employee_name || '알 수 없는 직원' }}</span>
-                </div>
-                <div class="employee-change">
-                  <span class="change-label">현재 직원:</span>
-                  <span class="employee-name current">{{ item.metadata.new_employee_name || '알 수 없는 직원' }}</span>
-                </div>
-              </div>
-              <!-- 2025-01-27: 할당/반납 시 직원 정보 표시 -->
-              <div v-else-if="(item.action_type === '할당' || item.action_type === '반납') && item.metadata" class="timeline-employees">
-                <div v-if="item.action_type === '할당'" class="employee-change">
-                  <span class="change-label">할당된 직원:</span>
-                  <span class="employee-name current">{{ item.metadata.new_employee_name || '알 수 없는 직원' }}</span>
-                </div>
-                <div v-else-if="item.action_type === '반납'" class="employee-change">
-                  <span class="change-label">반납한 직원:</span>
-                  <span class="employee-name previous">{{ item.metadata.old_employee_name || '알 수 없는 직원' }}</span>
-                </div>
-              </div>
-              <!-- 2025-01-27: 수정 시 변경된 필드 상세 정보 표시 -->
-              <div v-if="item.action_type === '수정' && item.metadata && item.metadata.changed_fields" class="timeline-changes">
+              
+              <!-- 2025-01-27: 수정 시 변경된 필드만 깔끔하게 표시 -->
+              <div v-if="item.action_type === '수정' && item.metadata && item.metadata.changed_fields && item.metadata.changed_fields.length > 0" class="timeline-changes">
                 <div class="changes-header">
                   <span class="changes-label">변경된 항목:</span>
                 </div>
-                <div v-for="(fieldData, fieldName) in item.metadata.changed_fields" :key="fieldName" class="change-item">
+                <div v-for="field in item.metadata.changed_fields" :key="field.field" class="change-item">
                   <div class="change-field">
-                    <span class="field-name">{{ fieldData.label }}:</span>
-                  </div>
-                  <div class="change-values">
-                    <div class="old-value">
-                      <span class="value-label">이전:</span>
-                      <span class="value-text">{{ fieldData.old_value || '-' }}</span>
-                    </div>
-                    <div class="new-value">
-                      <span class="value-label">변경:</span>
-                      <span class="value-text">{{ fieldData.new_value || '-' }}</span>
-                    </div>
+                    <span class="field-name">{{ getFieldName(field.field) }}:</span>
+                    <span class="change-arrow">→</span>
+                    <span class="old-value">{{ field.before || '없음' }}</span>
+                    <span class="change-arrow">→</span>
+                    <span class="new-value">{{ field.after || '없음' }}</span>
                   </div>
                 </div>
               </div>
@@ -522,9 +496,45 @@ const changeStatus = async (newStatus: string) => {
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
     'returned': '반납',
-    'disposed': '폐기'
+    'disposed': '폐기',
+    '할당됨': '할당됨',
+    '미할당': '미할당',
+    '반납됨': '반납됨',
+    '폐기됨': '폐기됨',
+    '없음': '없음'
   }
   return statusMap[status] || status
+}
+
+// 2025-01-27: 처리자 이름 표시 함수
+const getProcessorName = (item: any) => {
+  if (item.users && item.users.email) {
+    return item.users.company_name || item.users.email
+  }
+  return '시스템'
+}
+
+// 2025-01-27: 필드명 변환 함수
+const getFieldName = (field: string) => {
+  const fieldNames: Record<string, string> = {
+    'asset_number': '자산번호',
+    'employee_id': '담당자',
+    'manufacturer': '제조사',
+    'model_name': '모델명',
+    'serial_number': '시리얼번호',
+    'cpu': 'CPU',
+    'memory': '메모리',
+    'storage': '저장장치',
+    'gpu': '그래픽카드',
+    'os': '운영체제',
+    'monitor': '모니터',
+    'monitor_size': '모니터크기',
+    'inspection_date': '조사일자',
+    'purpose': '용도',
+    'device_type': '장비타입',
+    'issue_date': '지급일자'
+  }
+  return fieldNames[field] || field
 }
 
 // Format date
@@ -1010,13 +1020,13 @@ onMounted(() => {
    color: #1f2937;
  }
  
- /* 2025-01-27: 변경된 필드 상세 정보 스타일 */
+ /* 2025-01-27: 변경된 필드 상세 정보 스타일 개선 */
  .timeline-changes {
    margin-top: 12px;
    padding: 12px;
-   background: #f3f4f6;
+   background: #f8fafc;
    border-radius: 8px;
-   border-left: 3px solid #10b981;
+   border-left: 3px solid #667eea;
  }
  
  .changes-header {
@@ -1030,10 +1040,10 @@ onMounted(() => {
  }
  
  .change-item {
-   margin-bottom: 8px;
-   padding: 8px;
+   margin-bottom: 6px;
+   padding: 6px 8px;
    background: white;
-   border-radius: 6px;
+   border-radius: 4px;
    border: 1px solid #e5e7eb;
  }
  
@@ -1042,48 +1052,41 @@ onMounted(() => {
  }
  
  .change-field {
-   margin-bottom: 4px;
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   flex-wrap: wrap;
  }
  
  .field-name {
    font-weight: 600;
    color: #374151;
    font-size: 13px;
+   min-width: 60px;
  }
  
- .change-values {
-   display: flex;
-   gap: 16px;
+ .change-arrow {
+   color: #667eea;
+   font-weight: bold;
    font-size: 12px;
  }
  
- .old-value,
- .new-value {
-   display: flex;
-   align-items: center;
-   gap: 4px;
- }
- 
- .value-label {
-   font-weight: 600;
+ .old-value {
    color: #6b7280;
-   min-width: 40px;
+   background: #f3f4f6;
+   padding: 2px 6px;
+   border-radius: 3px;
+   font-size: 13px;
  }
  
- .value-text {
-   color: #374151;
+ .new-value {
+   color: #059669;
+   background: #ecfdf5;
+   padding: 2px 6px;
+   border-radius: 3px;
+   font-size: 13px;
    font-weight: 500;
  }
- 
- .old-value .value-text {
-   color: #ef4444;
-   text-decoration: line-through;
- }
- 
-   .new-value .value-text {
-    color: #10b981;
-    font-weight: 600;
-  }
   
   /* 2025-01-27: 폐기 모달창 스타일 */
   .modal-overlay {

@@ -1157,10 +1157,17 @@ router.get('/:identifier/history', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
     }
     
-         // 장비 히스토리 조회 (users 테이블 조인 제거)
+         // 2025-01-27: 장비 히스토리 조회 시 처리자 정보 포함
      const { data: history, error } = await supabase
        .from('device_history')
-       .select('*')
+       .select(`
+         *,
+         users!device_history_performed_by_fkey (
+           id,
+           email,
+           company_name
+         )
+       `)
        .eq('device_id', device.id)
        .order('performed_at', { ascending: false });
     
