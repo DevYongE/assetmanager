@@ -589,8 +589,24 @@ router.delete('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    // 2025-01-27: 삭제 기능 비활성화 - 폐기된 장비는 별도 관리
-    return res.status(400).json({ error: '장비 삭제 기능은 비활성화되었습니다. 폐기된 장비는 별도로 관리됩니다.' });
+    // 2025-01-27: 삭제 기능 활성화 - 관리자만 삭제 가능
+    // Check if user has admin permission for devices
+    const { data: hasAdminPermission, error: permError } = await supabase
+      .rpc('check_user_permission', {
+        p_user_id: req.user.id,
+        p_resource_type: 'devices',
+        p_resource_id: device.id,
+        p_action: 'delete'
+      });
+    
+    if (permError) {
+      console.error('Permission check error:', permError);
+      return res.status(500).json({ error: 'Failed to check user permissions' });
+    }
+    
+    if (!hasAdminPermission) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다. 관리자만 장비를 삭제할 수 있습니다.' });
+    }
 
     // Verify device belongs to current user (handle both assigned and unassigned devices)
     let deviceBelongsToUser = false;
@@ -618,8 +634,37 @@ router.delete('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    // 2025-01-27: 삭제 기능 비활성화
-    res.status(400).json({ error: '장비 삭제 기능은 비활성화되었습니다.' });
+    // 2025-01-27: 장비 삭제 실행
+    const { error: deleteError } = await supabase
+      .from('personal_devices')
+      .delete()
+      .eq('id', device.id);
+
+    if (deleteError) {
+      console.error('Delete device error:', deleteError);
+      return res.status(500).json({ error: '장비 삭제에 실패했습니다.' });
+    }
+
+    // 2025-01-27: 삭제 히스토리 기록
+    await supabase
+      .from('device_history')
+      .insert([{
+        device_id: device.id,
+        action_type: '삭제',
+        action_description: `장비 삭제: ${device.asset_number}`,
+        previous_status: device.employee_id ? '할당됨' : '미할당',
+        new_status: '삭제됨',
+        performed_by: req.user.id,
+        metadata: { 
+          deleted_device: device,
+          manual_action: true 
+        }
+      }]);
+
+    res.json({ 
+      message: '장비가 성공적으로 삭제되었습니다.',
+      deleted_device: device
+    });
   } catch (error) {
     console.error('Delete device error:', error);
     res.status(500).json({ error: 'Internal server error' });

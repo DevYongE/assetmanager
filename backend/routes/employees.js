@@ -243,6 +243,24 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 2025-01-27: Check if user has delete permission for employees
+    const { data: hasDeletePermission, error: permError } = await supabase
+      .rpc('check_user_permission', {
+        p_user_id: req.user.id,
+        p_resource_type: 'employees',
+        p_resource_id: id,
+        p_action: 'delete'
+      });
+    
+    if (permError) {
+      console.error('Permission check error:', permError);
+      return res.status(500).json({ error: 'Failed to check user permissions' });
+    }
+    
+    if (!hasDeletePermission) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다. 관리자만 직원을 삭제할 수 있습니다.' });
+    }
+
     // Check if employee has associated devices
     const { data: devices, error: deviceError } = await supabase
       .from('personal_devices')
