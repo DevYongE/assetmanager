@@ -545,7 +545,7 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
 
     res.json({
       message: 'Device updated successfully',
-      device
+      device: updatedDevice
     });
   } catch (error) {
     console.error('Update device error:', error);
