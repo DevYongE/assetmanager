@@ -323,7 +323,7 @@ const handleSubmit = async () => {
     
     if (props.device) {
       // 2025-01-27: 실제로 변경된 필드만 백엔드로 전송
-      const changedFields = {};
+      const changedFields: Record<string, any> = {};
       
       // 각 필드를 비교하여 변경된 것만 추가
       const fieldsToCheck = [
@@ -334,8 +334,8 @@ const handleSubmit = async () => {
       ];
       
       fieldsToCheck.forEach(field => {
-        const currentValue = form[field];
-        const originalValue = props.device[field];
+        const currentValue = (form as any)[field];
+        const originalValue = props.device ? (props.device as any)[field] : undefined;
         
         // null과 undefined를 빈 문자열로 통일하여 비교
         const normalizedCurrent = currentValue === null || currentValue === undefined ? '' : currentValue;

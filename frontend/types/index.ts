@@ -68,6 +68,7 @@ export interface Device {
   monitor?: string
   created_at: string
   employees?: Employee
+  [key: string]: any // 인덱스 시그니처 추가
 }
 
 export interface CreateDeviceData {
@@ -87,6 +88,7 @@ export interface CreateDeviceData {
   gpu?: string
   os?: string
   monitor?: string
+  [key: string]: any // 인덱스 시그니처 추가
 }
 
 // Dashboard types
@@ -94,6 +96,9 @@ export interface DashboardStats {
   total_employees: number
   total_devices: number
   active_devices: number
+  inactive_devices: number
+  maintenance_devices: number
+  retired_devices: number
   company_name: string
 }
 
