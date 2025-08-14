@@ -429,6 +429,10 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // 2025-01-27: 디버깅을 위한 로그 추가
+    console.log('🔍 [DEBUG] Request body:', req.body);
+    console.log('🔍 [DEBUG] Existing device:', existingDevice);
+    
     const updates = {};
     
     // Handle employee_id (can be null for unassigned)
@@ -467,7 +471,7 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       updates.asset_number = asset_number;
     }
 
-    // 2025-01-27: Fix date field validation to prevent empty string errors
+    // 2025-01-27: 프론트엔드에서 변경된 필드만 보내므로 직접 사용
     if (manufacturer !== undefined) updates.manufacturer = manufacturer || null;
     if (model_name !== undefined) updates.model_name = model_name || null;
     if (serial_number !== undefined) updates.serial_number = serial_number || null;
@@ -483,6 +487,9 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
     if (monitor_size !== undefined) updates.monitor_size = monitor_size || null;
     if (issue_date !== undefined) updates.issue_date = issue_date || null;
 
+    // 2025-01-27: 디버깅을 위한 로그 추가
+    console.log('🔍 [DEBUG] Final updates object:', updates);
+    
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No updates provided' });
     }
@@ -504,8 +511,10 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       .single();
 
     if (!error && updatedDevice) {
-      // 2025-01-27: 실제로 변경된 필드만 정확히 감지
+      // 2025-01-27: 실제로 변경된 필드만 정확히 감지하고 이전/이후 값 기록
       const changedFields = [];
+      
+      // updates 객체에 있는 필드들을 기존 값과 비교
       Object.keys(updates).forEach(field => {
         if (field !== 'updated_at') {
           const beforeValue = existingDevice[field];
@@ -527,8 +536,12 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       });
 
       if (changedFields.length > 0) {
-        // 2025-01-27: 실제로 변경된 필드만 표시
-        const changeDescriptions = changedFields.map(field => {
+        // 2025-01-27: 간결한 히스토리 메시지 생성
+        let actionDescription;
+        
+        if (changedFields.length === 1) {
+          // 단일 필드 변경 시: "장비 정보 수정: 필드명: 이전값 → 현재값"
+          const field = changedFields[0];
           const fieldNames = {
             'asset_number': '자산번호',
             'employee_id': '담당자',
@@ -552,16 +565,19 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
           const beforeValue = field.before || '없음';
           const afterValue = field.after || '없음';
           
-          return `${fieldName}: ${beforeValue} → ${afterValue}`;
-        });
+          actionDescription = `장비 정보 수정: ${fieldName}: ${beforeValue} → ${afterValue}`;
+        } else {
+          // 다중 필드 변경 시: "장비 정보가 수정되었습니다 (X개 항목)"
+          actionDescription = `장비 정보가 수정되었습니다 (${changedFields.length}개 항목)`;
+        }
         
-        // 히스토리에 변경 내역 기록 (실제 변경된 필드만)
+        // 히스토리에 변경 내역 기록
         await supabase
           .from('device_history')
           .insert([{
             device_id: existingDevice.id,
             action_type: '수정',
-            action_description: `장비 정보 수정 - ${changeDescriptions.join(', ')}`,
+            action_description: actionDescription,
             previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
             new_status: updatedDevice.employee_id ? '할당됨' : '미할당',
             performed_by: req.user.id,
@@ -974,7 +990,12 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
              
                            if (changedFields.length > 0) {
                 // 2025-01-27: Excel 임포트 시에도 실제 변경된 필드만 표시
-                const changeDescriptions = changedFields.map(field => {
+                // 2025-01-27: 간결한 Excel 수정 히스토리 메시지 생성
+                let actionDescription;
+                
+                if (changedFields.length === 1) {
+                  // 단일 필드 변경 시: "Excel 임포트로 수정: 필드명: 이전값 → 현재값"
+                  const field = changedFields[0];
                   const fieldNames = {
                     'asset_number': '자산번호',
                     'employee_id': '담당자',
@@ -998,15 +1019,18 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
                   const beforeValue = field.before || '없음';
                   const afterValue = field.after || '없음';
                   
-                  return `${fieldName}: ${beforeValue} → ${afterValue}`;
-                });
+                  actionDescription = `Excel 임포트로 수정: ${fieldName}: ${beforeValue} → ${afterValue}`;
+                } else {
+                  // 다중 필드 변경 시: "Excel 임포트로 수정되었습니다 (X개 항목)"
+                  actionDescription = `Excel 임포트로 수정되었습니다 (${changedFields.length}개 항목)`;
+                }
                 
                 await supabase
                   .from('device_history')
                   .insert([{
                     device_id: device.id,
                     action_type: 'Excel수정',
-                    action_description: `Excel 임포트로 수정 - ${changeDescriptions.join(', ')}`,
+                    action_description: actionDescription,
                     previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
                     new_status: device.employee_id ? '할당됨' : '미할당',
                     performed_by: req.user.id,
@@ -1157,10 +1181,17 @@ router.get('/:identifier/history', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
     }
     
-         // 2025-01-27: 장비 히스토리 조회 시 처리자 정보 포함
+         // 2025-01-27: 장비 히스토리 조회 시 처리자 정보 포함 (사용자 정보 조인)
      const { data: history, error } = await supabase
        .from('device_history')
-       .select('*')
+       .select(`
+         *,
+         users!device_history_performed_by_fkey (
+           id,
+           email,
+           company_name
+         )
+       `)
        .eq('device_id', device.id)
        .order('performed_at', { ascending: false });
     

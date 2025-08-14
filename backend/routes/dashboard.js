@@ -116,7 +116,7 @@ router.get('/recent-activities', authenticateToken, async (req, res) => {
     
     const hasReadPermission = permissions;
     
-    // 장비 히스토리 조회
+    // 장비 히스토리 조회 (사용자 정보 조인)
     let historyQuery = supabase
       .from('device_history')
       .select(`
@@ -124,7 +124,12 @@ router.get('/recent-activities', authenticateToken, async (req, res) => {
         action_type,
         action_description,
         performed_at,
-        device_id
+        device_id,
+        users!device_history_performed_by_fkey (
+          id,
+          email,
+          company_name
+        )
       `)
       .order('performed_at', { ascending: false })
       .limit(10);
@@ -141,15 +146,26 @@ router.get('/recent-activities', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch history' });
     }
     
-    // 활동 데이터 변환
-    const activities = history?.map(item => ({
-      id: item.id,
-      type: 'device',
-      title: item.action_type,
-      description: item.action_description,
-      createdAt: item.performed_at,
-      device: { asset_number: `장비 ID: ${item.device_id?.slice(0, 8)}...` }
-    })) || [];
+    // 활동 데이터 변환 (처리자 정보 포함)
+    const activities = history?.map(item => {
+      // 2025-01-27: 처리자 정보 추출
+      let processor = '시스템'
+      if (item.users && item.users.email) {
+        processor = `관리자 (${item.users.email})`
+      } else if (item.users && item.users.company_name) {
+        processor = `관리자 (${item.users.company_name})`
+      }
+      
+      return {
+        id: item.id,
+        type: 'device',
+        title: item.action_type,
+        description: item.action_description,
+        createdAt: item.performed_at,
+        processor: processor,
+        device: { asset_number: `장비 ID: ${item.device_id?.slice(0, 8)}...` }
+      }
+    }) || [];
     
     res.json({ activities });
     

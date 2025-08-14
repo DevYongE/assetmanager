@@ -262,19 +262,11 @@
                 <span class="user-name">{{ getProcessorName(item) }}</span>
               </div>
               
-              <!-- 2025-01-27: 수정 시 변경된 필드만 깔끔하게 표시 -->
-              <div v-if="item.action_type === '수정' && item.metadata && item.metadata.changed_fields && item.metadata.changed_fields.length > 0" class="timeline-changes">
-                <div class="changes-header">
+              <!-- 2025-01-27: 수정 시 변경된 항목만 간단히 표시 (action_description 활용) -->
+              <div v-if="item.action_type === '수정' && item.action_description" class="timeline-changes">
+                <div class="changes-summary">
                   <span class="changes-label">변경된 항목:</span>
-                </div>
-                <div v-for="field in item.metadata.changed_fields" :key="field.field" class="change-item">
-                  <div class="change-field">
-                    <span class="field-name">{{ getFieldName(field.field) }}:</span>
-                    <span class="change-arrow">→</span>
-                    <span class="old-value">{{ field.before || '없음' }}</span>
-                    <span class="change-arrow">→</span>
-                    <span class="new-value">{{ field.after || '없음' }}</span>
-                  </div>
+                  <span class="changes-content">{{ item.action_description }}</span>
                 </div>
               </div>
               
@@ -506,12 +498,16 @@ const getStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-// 2025-01-27: 처리자 이름 표시 함수
+// 2025-01-27: 처리자 이름 표시 함수 (사용자 정보 조인 활용)
 const getProcessorName = (item: any) => {
-  // 2025-01-27: 사용자 정보가 없는 경우 performed_by ID를 표시하거나 시스템으로 표시
-  if (item.performed_by) {
-    // TODO: 향후 사용자 정보를 별도로 조회하여 표시할 수 있도록 개선
-    return `관리자 (${item.performed_by.slice(0, 8)}...)`
+  // 2025-01-27: 사용자 정보가 조인된 경우 email 또는 company_name 표시
+  if (item.users && item.users.email) {
+    return `관리자 (${item.users.email})`
+  } else if (item.users && item.users.company_name) {
+    return `관리자 (${item.users.company_name})`
+  } else if (item.performed_by) {
+    // 2025-01-27: 사용자 정보가 없는 경우 기본값
+    return '관리자'
   }
   return '시스템'
 }
@@ -1022,7 +1018,7 @@ onMounted(() => {
    color: #1f2937;
  }
  
- /* 2025-01-27: 변경된 필드 상세 정보 스타일 개선 */
+ /* 2025-01-27: 변경된 항목 간단 표시 스타일 */
  .timeline-changes {
    margin-top: 12px;
    padding: 12px;
@@ -1031,63 +1027,24 @@ onMounted(() => {
    border-left: 3px solid #667eea;
  }
  
- .changes-header {
-   margin-bottom: 8px;
+ .changes-summary {
+   display: flex;
+   align-items: flex-start;
+   gap: 8px;
  }
  
  .changes-label {
    font-weight: 600;
    color: #1f2937;
    font-size: 13px;
+   white-space: nowrap;
  }
  
- .change-item {
-   margin-bottom: 6px;
-   padding: 6px 8px;
-   background: white;
-   border-radius: 4px;
-   border: 1px solid #e5e7eb;
- }
- 
- .change-item:last-child {
-   margin-bottom: 0;
- }
- 
- .change-field {
-   display: flex;
-   align-items: center;
-   gap: 6px;
-   flex-wrap: wrap;
- }
- 
- .field-name {
-   font-weight: 600;
+ .changes-content {
    color: #374151;
    font-size: 13px;
-   min-width: 60px;
- }
- 
- .change-arrow {
-   color: #667eea;
-   font-weight: bold;
-   font-size: 12px;
- }
- 
- .old-value {
-   color: #6b7280;
-   background: #f3f4f6;
-   padding: 2px 6px;
-   border-radius: 3px;
-   font-size: 13px;
- }
- 
- .new-value {
-   color: #059669;
-   background: #ecfdf5;
-   padding: 2px 6px;
-   border-radius: 3px;
-   font-size: 13px;
-   font-weight: 500;
+   line-height: 1.4;
+   flex: 1;
  }
   
   /* 2025-01-27: 폐기 모달창 스타일 */

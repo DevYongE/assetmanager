@@ -322,9 +322,40 @@ const handleSubmit = async () => {
     isSubmitting.value = true
     
     if (props.device) {
-      // 2025-01-27: 장비 수정 시 자산번호로 업데이트된 장비 정보를 반환받아 이벤트로 전달
-      const response = await api.devices.update(props.device.asset_number, form)
-      emit('device-updated', response.device)
+      // 2025-01-27: 실제로 변경된 필드만 백엔드로 전송
+      const changedFields = {};
+      
+      // 각 필드를 비교하여 변경된 것만 추가
+      const fieldsToCheck = [
+        'employee_id', 'asset_number', 'manufacturer', 'model_name', 
+        'serial_number', 'cpu', 'memory', 'storage', 'gpu', 'os', 
+        'monitor', 'inspection_date', 'purpose', 'device_type', 
+        'monitor_size', 'issue_date'
+      ];
+      
+      fieldsToCheck.forEach(field => {
+        const currentValue = form[field];
+        const originalValue = props.device[field];
+        
+        // null과 undefined를 빈 문자열로 통일하여 비교
+        const normalizedCurrent = currentValue === null || currentValue === undefined ? '' : currentValue;
+        const normalizedOriginal = originalValue === null || originalValue === undefined ? '' : originalValue;
+        
+        if (normalizedCurrent !== normalizedOriginal) {
+          changedFields[field] = currentValue;
+        }
+      });
+      
+      console.log('🔍 [DEBUG] Changed fields:', changedFields);
+      
+      // 변경된 필드가 있으면 업데이트
+      if (Object.keys(changedFields).length > 0) {
+        const response = await api.devices.update(props.device.asset_number, changedFields)
+        emit('device-updated', response.device)
+      } else {
+        // 변경된 필드가 없으면 그냥 닫기
+        emit('close')
+      }
     } else {
       await api.devices.create(form)
       emit('saved')
