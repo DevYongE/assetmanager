@@ -6,6 +6,111 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// 2025-01-27: 장비 수정 시 변경된 필드만 정확히 감지하는 유틸리티 함수
+const detectChangedFields = (existingDevice, updates) => {
+  const changedFields = [];
+  
+  Object.keys(updates).forEach(field => {
+    if (field !== 'updated_at') {
+      const beforeValue = existingDevice[field];
+      const afterValue = updates[field];
+      
+      // 2025-01-27: 디버깅을 위한 로그 추가
+      console.log(`🔍 [DEBUG] Field comparison - ${field}:`, {
+        beforeValue,
+        afterValue,
+        beforeType: typeof beforeValue,
+        afterType: typeof afterValue,
+        beforeNull: beforeValue === null,
+        beforeUndefined: beforeValue === undefined,
+        afterNull: afterValue === null,
+        afterUndefined: afterValue === undefined
+      });
+      
+      // null과 undefined를 '없음'으로 통일하여 비교
+      const normalizedBefore = beforeValue === null || beforeValue === undefined ? '없음' : beforeValue;
+      const normalizedAfter = afterValue === null || afterValue === undefined ? '없음' : afterValue;
+      
+      // 실제로 값이 변경된 경우만 추가
+      if (normalizedBefore !== normalizedAfter) {
+        changedFields.push({
+          field,
+          before: beforeValue,
+          after: afterValue
+        });
+        console.log(`✅ [DEBUG] Field changed: ${field} - "${beforeValue}" → "${afterValue}"`);
+      } else {
+        console.log(`❌ [DEBUG] Field unchanged: ${field} - "${beforeValue}" = "${afterValue}"`);
+      }
+    }
+  });
+  
+  console.log(`📊 [DEBUG] Total changed fields: ${changedFields.length}`);
+  return changedFields;
+};
+
+// 2025-01-27: 필드명을 한글로 변환하는 유틸리티 함수
+const getFieldDisplayName = (fieldName) => {
+  const fieldNames = {
+    'asset_number': '자산번호',
+    'employee_id': '담당자',
+    'manufacturer': '제조사',
+    'model_name': '모델명',
+    'serial_number': '시리얼번호',
+    'cpu': 'CPU',
+    'memory': '메모리',
+    'storage': '저장장치',
+    'gpu': '그래픽카드',
+    'os': '운영체제',
+    'monitor': '모니터',
+    'monitor_size': '모니터크기',
+    'inspection_date': '조사일자',
+    'purpose': '용도',
+    'device_type': '장비타입',
+    'issue_date': '지급일자'
+  };
+  
+  return fieldNames[fieldName] || fieldName;
+};
+
+// 2025-01-27: 담당직원 UUID를 이름으로 변환하는 유틸리티 함수
+const getEmployeeName = async (employeeId) => {
+  if (!employeeId) return '없음';
+  
+  try {
+    const { data: employee, error } = await supabase
+      .from('employees')
+      .select('name')
+      .eq('id', employeeId)
+      .single();
+    
+    if (error || !employee) {
+      return '알 수 없음';
+    }
+    
+    return employee.name;
+  } catch (error) {
+    console.error('Error fetching employee name:', error);
+    return '알 수 없음';
+  }
+};
+
+// 2025-01-27: 히스토리 메시지 생성 유틸리티 함수
+const generateHistoryMessage = (changedFields) => {
+  if (changedFields.length === 1) {
+    // 단일 필드 변경 시: "장비 정보 수정: 필드명: 이전값 → 현재값"
+    const field = changedFields[0];
+    const fieldName = getFieldDisplayName(field.field);
+    const beforeValue = field.before || '없음';
+    const afterValue = field.after || '없음';
+    
+    return `장비 정보 수정: ${fieldName}: ${beforeValue} → ${afterValue}`;
+  } else {
+    // 다중 필드 변경 시: "장비 정보가 수정되었습니다 (X개 항목)"
+    return `장비 정보가 수정되었습니다 (${changedFields.length}개 항목)`;
+  }
+};
+
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({ 
@@ -372,13 +477,30 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
     } = req.body;
 
     // 2025-01-27: Verify device belongs to current user with admin_id check
+    // 2025-01-27: 기존 장비의 모든 필드를 명시적으로 조회하여 정확한 변경 감지를 위해 수정
     let query = supabase
       .from('personal_devices')
       .select(`
         id,
-        asset_number,
         admin_id,
         employee_id,
+        asset_number,
+        manufacturer,
+        model_name,
+        serial_number,
+        cpu,
+        memory,
+        storage,
+        gpu,
+        os,
+        monitor,
+        monitor_size,
+        inspection_date,
+        purpose,
+        device_type,
+        issue_date,
+        created_at,
+        updated_at,
         employees (
           admin_id
         )
@@ -432,9 +554,16 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
     // 2025-01-27: 디버깅을 위한 로그 추가
     console.log('🔍 [DEBUG] Request body:', req.body);
     console.log('🔍 [DEBUG] Existing device:', existingDevice);
+    console.log('🔍 [DEBUG] Memory field check:', {
+      memory: existingDevice.memory,
+      memoryType: typeof existingDevice.memory,
+      memoryNull: existingDevice.memory === null,
+      memoryUndefined: existingDevice.memory === undefined
+    });
     
     const updates = {};
     
+    // 2025-01-27: 수정된 사항만 정확히 감지하여 히스토리에 기록하도록 개선
     // Handle employee_id (can be null for unassigned)
     if (employee_id !== undefined) {
       if (employee_id && employee_id.trim() !== '') {
@@ -495,6 +624,7 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
     }
 
     // 2025-01-27: 장비 정보 변경 전/후 기록을 위한 히스토리 추가
+    // 2025-01-27: 수정된 사항만 정확히 감지하여 히스토리에 기록하도록 개선
     const { data: updatedDevice, error } = await supabase
       .from('personal_devices')
       .update(updates)
@@ -511,78 +641,63 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       .single();
 
     if (!error && updatedDevice) {
-      // 2025-01-27: 실제로 변경된 필드만 정확히 감지하고 이전/이후 값 기록
-      const changedFields = [];
-      
-      // updates 객체에 있는 필드들을 기존 값과 비교
-      Object.keys(updates).forEach(field => {
-        if (field !== 'updated_at') {
-          const beforeValue = existingDevice[field];
-          const afterValue = updates[field];
-          
-          // null과 undefined를 '없음'으로 통일하여 비교
-          const normalizedBefore = beforeValue === null || beforeValue === undefined ? '없음' : beforeValue;
-          const normalizedAfter = afterValue === null || afterValue === undefined ? '없음' : afterValue;
-          
-          // 실제로 값이 변경된 경우만 추가
-          if (normalizedBefore !== normalizedAfter) {
-            changedFields.push({
-              field,
-              before: beforeValue,
-              after: afterValue
-            });
-          }
-        }
-      });
+      // 2025-01-27: 수정된 사항만 정확히 감지하여 히스토리에 기록하도록 개선
+      const changedFields = detectChangedFields(existingDevice, updates);
 
       if (changedFields.length > 0) {
-        // 2025-01-27: 간결한 히스토리 메시지 생성
+        // 2025-01-27: 담당직원 변경 시 UUID를 이름으로 변환
+        const processedChangedFields = await Promise.all(
+          changedFields.map(async (field) => {
+            if (field.field === 'employee_id') {
+              const beforeName = await getEmployeeName(field.before);
+              const afterName = await getEmployeeName(field.after);
+              return {
+                ...field,
+                before: beforeName,
+                after: afterName
+              };
+            }
+            return field;
+          })
+        );
+
+        // 2025-01-27: 여러 필드 변경 시 하나의 히스토리 행에 요약하여 기록
         let actionDescription;
-        
-        if (changedFields.length === 1) {
-          // 단일 필드 변경 시: "장비 정보 수정: 필드명: 이전값 → 현재값"
-          const field = changedFields[0];
-          const fieldNames = {
-            'asset_number': '자산번호',
-            'employee_id': '담당자',
-            'manufacturer': '제조사',
-            'model_name': '모델명',
-            'serial_number': '시리얼번호',
-            'cpu': 'CPU',
-            'memory': '메모리',
-            'storage': '저장장치',
-            'gpu': '그래픽카드',
-            'os': '운영체제',
-            'monitor': '모니터',
-            'monitor_size': '모니터크기',
-            'inspection_date': '조사일자',
-            'purpose': '용도',
-            'device_type': '장비타입',
-            'issue_date': '지급일자'
-          };
-          
-          const fieldName = fieldNames[field.field] || field.field;
-          const beforeValue = field.before || '없음';
-          const afterValue = field.after || '없음';
-          
-          actionDescription = `장비 정보 수정: ${fieldName}: ${beforeValue} → ${afterValue}`;
+        let previousStatus;
+        let newStatus;
+
+        if (processedChangedFields.length === 1) {
+          // 단일 필드 변경 시: "필드명: 이전값 → 새값"
+          const field = processedChangedFields[0];
+          actionDescription = `${getFieldDisplayName(field.field)}: ${field.before || '없음'} → ${field.after || '없음'}`;
+          previousStatus = field.before || '없음';
+          newStatus = field.after || '없음';
         } else {
-          // 다중 필드 변경 시: "장비 정보가 수정되었습니다 (X개 항목)"
-          actionDescription = `장비 정보가 수정되었습니다 (${changedFields.length}개 항목)`;
+          // 다중 필드 변경 시: 각 필드별 "이전값 → 변경값" 상세 표시
+          const fieldChanges = processedChangedFields.map(field => 
+            `${getFieldDisplayName(field.field)}: ${field.before || '없음'} → ${field.after || '없음'}`
+          );
+          actionDescription = `장비 정보 수정 (${processedChangedFields.length}개 항목): ${fieldChanges.join(', ')}`;
+          previousStatus = '수정 전';
+          newStatus = '수정 후';
         }
         
-        // 히스토리에 변경 내역 기록
         await supabase
           .from('device_history')
           .insert([{
             device_id: existingDevice.id,
             action_type: '수정',
             action_description: actionDescription,
-            previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
-            new_status: updatedDevice.employee_id ? '할당됨' : '미할당',
+            previous_status: previousStatus,
+            new_status: newStatus,
             performed_by: req.user.id,
             metadata: { 
-              changed_fields: changedFields,
+              changed_fields: processedChangedFields.map(field => ({
+                field: field.field,
+                field_display_name: getFieldDisplayName(field.field),
+                before: field.before,
+                after: field.after
+              })),
               manual_action: true 
             }
           }]);
@@ -901,14 +1016,36 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
           console.log(`✅ [DEBUG] Found employee ID: ${employeeId}`)
         }
 
-        // 2025-01-27: UPSERT 로직 구현 - 자산번호 중복 시 UPDATE 처리
-        // Check if asset number already exists
-        console.log(`🔍 [DEBUG] Checking if asset number exists: "${row.자산번호}"`)
-        const { data: existingDevice } = await supabase
-          .from('personal_devices')
-          .select('id')
-          .eq('asset_number', row.자산번호.toString().trim())
-          .single();
+                 // 2025-01-27: UPSERT 로직 구현 - 자산번호 중복 시 UPDATE 처리
+         // 2025-01-27: 기존 장비의 모든 필드를 명시적으로 조회하여 정확한 변경 감지를 위해 수정
+         // Check if asset number already exists
+         console.log(`🔍 [DEBUG] Checking if asset number exists: "${row.자산번호}"`)
+         const { data: existingDevice } = await supabase
+           .from('personal_devices')
+           .select(`
+             id,
+             admin_id,
+             employee_id,
+             asset_number,
+             manufacturer,
+             model_name,
+             serial_number,
+             cpu,
+             memory,
+             storage,
+             gpu,
+             os,
+             monitor,
+             monitor_size,
+             inspection_date,
+             purpose,
+             device_type,
+             issue_date,
+             created_at,
+             updated_at
+           `)
+           .eq('asset_number', row.자산번호.toString().trim())
+           .single();
 
         // 2025-01-27: Create device with all new fields including admin_id
         // 2025-01-27: Fix date field validation to prevent empty string errors
@@ -974,74 +1111,71 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
          } else {
            console.log(`✅ [DEBUG] Device ${existingDevice ? 'updated' : 'created'} successfully: ${device.id}`)
            
-           // 2025-01-27: Excel 임포트 시 히스토리 기록
-           if (existingDevice) {
-             // 업데이트된 경우 변경 내역 기록
-             const changedFields = [];
-             Object.keys(deviceData).forEach(field => {
-               if (field !== 'admin_id' && existingDevice[field] !== deviceData[field]) {
-                 changedFields.push({
-                   field,
-                   before: existingDevice[field],
-                   after: deviceData[field]
-                 });
+                       // 2025-01-27: Excel 임포트 시 히스토리 기록
+                        if (existingDevice) {
+              // 2025-01-27: Excel 임포트 시에도 수정된 사항만 정확히 감지하여 히스토리에 기록
+              const changedFields = detectChangedFields(existingDevice, deviceData);
+              
+                             if (changedFields.length > 0) {
+                 // 2025-01-27: 담당직원 변경 시 UUID를 이름으로 변환
+                 const processedChangedFields = await Promise.all(
+                   changedFields.map(async (field) => {
+                     if (field.field === 'employee_id') {
+                       const beforeName = await getEmployeeName(field.before);
+                       const afterName = await getEmployeeName(field.after);
+                       return {
+                         ...field,
+                         before: beforeName,
+                         after: afterName
+                       };
+                     }
+                     return field;
+                   })
+                 );
+
+                 // 2025-01-27: 여러 필드 변경 시 하나의 히스토리 행에 요약하여 기록
+                 let actionDescription;
+                 let previousStatus;
+                 let newStatus;
+
+                 if (processedChangedFields.length === 1) {
+                   // 단일 필드 변경 시: "Excel 임포트로 필드명: 이전값 → 새값"
+                   const field = processedChangedFields[0];
+                   actionDescription = `Excel 임포트로 ${getFieldDisplayName(field.field)}: ${field.before || '없음'} → ${field.after || '없음'}`;
+                   previousStatus = field.before || '없음';
+                   newStatus = field.after || '없음';
+                 } else {
+                   // 다중 필드 변경 시: 각 필드별 "이전값 → 변경값" 상세 표시
+                   const fieldChanges = processedChangedFields.map(field => 
+                     `${getFieldDisplayName(field.field)}: ${field.before || '없음'} → ${field.after || '없음'}`
+                   );
+                   actionDescription = `Excel 임포트로 장비 정보 수정 (${processedChangedFields.length}개 항목): ${fieldChanges.join(', ')}`;
+                   previousStatus = '수정 전';
+                   newStatus = '수정 후';
+                 }
+                 
+                 await supabase
+                   .from('device_history')
+                   .insert([{
+                     device_id: device.id,
+                     action_type: 'Excel수정',
+                     action_description: actionDescription,
+                     previous_status: previousStatus,
+                     new_status: newStatus,
+                     performed_by: req.user.id,
+                     metadata: { 
+                       changed_fields: processedChangedFields.map(field => ({
+                         field: field.field,
+                         field_display_name: getFieldDisplayName(field.field),
+                         before: field.before,
+                         after: field.after
+                       })),
+                       import_source: 'excel',
+                       manual_action: false 
+                     }
+                   }]);
                }
-             });
-             
-                           if (changedFields.length > 0) {
-                // 2025-01-27: Excel 임포트 시에도 실제 변경된 필드만 표시
-                // 2025-01-27: 간결한 Excel 수정 히스토리 메시지 생성
-                let actionDescription;
-                
-                if (changedFields.length === 1) {
-                  // 단일 필드 변경 시: "Excel 임포트로 수정: 필드명: 이전값 → 현재값"
-                  const field = changedFields[0];
-                  const fieldNames = {
-                    'asset_number': '자산번호',
-                    'employee_id': '담당자',
-                    'manufacturer': '제조사',
-                    'model_name': '모델명',
-                    'serial_number': '시리얼번호',
-                    'cpu': 'CPU',
-                    'memory': '메모리',
-                    'storage': '저장장치',
-                    'gpu': '그래픽카드',
-                    'os': '운영체제',
-                    'monitor': '모니터',
-                    'monitor_size': '모니터크기',
-                    'inspection_date': '조사일자',
-                    'purpose': '용도',
-                    'device_type': '장비타입',
-                    'issue_date': '지급일자'
-                  };
-                  
-                  const fieldName = fieldNames[field.field] || field.field;
-                  const beforeValue = field.before || '없음';
-                  const afterValue = field.after || '없음';
-                  
-                  actionDescription = `Excel 임포트로 수정: ${fieldName}: ${beforeValue} → ${afterValue}`;
-                } else {
-                  // 다중 필드 변경 시: "Excel 임포트로 수정되었습니다 (X개 항목)"
-                  actionDescription = `Excel 임포트로 수정되었습니다 (${changedFields.length}개 항목)`;
-                }
-                
-                await supabase
-                  .from('device_history')
-                  .insert([{
-                    device_id: device.id,
-                    action_type: 'Excel수정',
-                    action_description: actionDescription,
-                    previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
-                    new_status: device.employee_id ? '할당됨' : '미할당',
-                    performed_by: req.user.id,
-                    metadata: { 
-                      changed_fields: changedFields,
-                      import_source: 'excel',
-                      manual_action: false 
-                    }
-                  }]);
-              }
-           } else {
+            } else {
              // 새로 생성된 경우
              await supabase
                .from('device_history')
@@ -1181,19 +1315,19 @@ router.get('/:identifier/history', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
     }
     
-         // 2025-01-27: 장비 히스토리 조회 시 처리자 정보 포함 (사용자 정보 조인)
-     const { data: history, error } = await supabase
-       .from('device_history')
-       .select(`
-         *,
-         users!device_history_performed_by_fkey (
-           id,
-           email,
-           company_name
-         )
-       `)
-       .eq('device_id', device.id)
-       .order('performed_at', { ascending: false });
+    // 2025-01-27: 장비 히스토리 조회 시 처리자 정보 포함 (사용자 정보 조인)
+    const { data: history, error } = await supabase
+      .from('device_history')
+      .select(`
+        *,
+        users!device_history_performed_by_fkey (
+          id,
+          email,
+          company_name
+        )
+      `)
+      .eq('device_id', device.id)
+      .order('performed_at', { ascending: false });
     
     if (error) {
       console.error('History fetch error:', error);
@@ -1207,6 +1341,60 @@ router.get('/:identifier/history', authenticateToken, async (req, res) => {
     
   } catch (error) {
     console.error('Device history error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2025-01-27: 장비 필드별 변경 이력 조회 API 추가 (자산번호 지원)
+router.get('/:identifier/field-changes', authenticateToken, async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    
+    // Check if identifier is a UUID (device ID) or asset number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    
+    let query = supabase
+      .from('personal_devices')
+      .select('id, asset_number');
+
+    if (isUUID) {
+      query = query.eq('id', identifier);
+    } else {
+      query = query.eq('asset_number', identifier);
+    }
+    
+    const { data: device, error: deviceError } = await query.single();
+    
+    if (deviceError || !device) {
+      return res.status(404).json({ error: '장비를 찾을 수 없습니다' });
+    }
+    
+    // 2025-01-27: 장비 필드별 변경 이력 조회 (새로운 테이블 사용)
+    const { data: fieldChanges, error } = await supabase
+      .from('device_field_changes')
+      .select(`
+        *,
+        users!device_field_changes_performed_by_fkey (
+          id,
+          email,
+          company_name
+        )
+      `)
+      .eq('device_id', device.id)
+      .order('performed_at', { ascending: false });
+    
+    if (error) {
+      console.error('Field changes fetch error:', error);
+      return res.status(500).json({ error: '필드 변경 이력을 불러올 수 없습니다' });
+    }
+    
+    res.json({ 
+      device: { id: device.id, asset_number: device.asset_number },
+      field_changes: fieldChanges || [] 
+    });
+    
+  } catch (error) {
+    console.error('Device field changes error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

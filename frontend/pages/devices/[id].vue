@@ -273,11 +273,11 @@
               <div v-if="item.previous_status || item.new_status" class="timeline-status">
                 <span v-if="item.previous_status" class="status-change">
                   <span class="status-label">이전:</span>
-                  <span class="status-value previous">{{ getStatusText(item.previous_status) }}</span>
+                  <span class="status-value previous">{{ item.previous_status }}</span>
                 </span>
                 <span v-if="item.new_status" class="status-change">
                   <span class="status-label">변경:</span>
-                  <span class="status-value current">{{ getStatusText(item.new_status) }}</span>
+                  <span class="status-value current">{{ item.new_status }}</span>
                 </span>
               </div>
             </div>
@@ -363,6 +363,7 @@ const error = ref<string | null>(null)
 // 2025-01-27: 히스토리 관련 변수 추가
 const history = ref<any[]>([])
 const historyLoading = ref(false)
+
 // 2025-01-27: 수정 모달 관련 변수 추가
 const showEditModal = ref(false)
 
@@ -400,6 +401,8 @@ const loadHistory = async () => {
     historyLoading.value = false
   }
 }
+
+
 
 // Edit device
 const editDevice = () => {

@@ -485,6 +485,11 @@ export const useApi = () => {
     // 2025-01-27: 장비 히스토리 조회 API 추가 (ID 또는 자산번호)
     async getHistory(identifier: string): Promise<{ device: any; history: any[] }> {
       return apiCall<{ device: any; history: any[] }>(`/devices/${identifier}/history`)
+    },
+
+    // 2025-01-27: 장비 필드별 변경 이력 조회 API 추가 (ID 또는 자산번호)
+    async getFieldChanges(identifier: string): Promise<{ device: any; field_changes: any[] }> {
+      return apiCall<{ device: any; field_changes: any[] }>(`/devices/${identifier}/field-changes`)
     }
   }
 
