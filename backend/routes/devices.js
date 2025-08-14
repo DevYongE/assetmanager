@@ -54,13 +54,21 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const { assignment_status } = req.query; // 'assigned', 'unassigned', or undefined for all
     
-    // Get employee IDs for current user
-    const { data: employees } = await supabase
-      .from('employees')
-      .select('id')
-      .eq('admin_id', req.user.id);
+    // 2025-01-27: Check user permissions using permissions table
+    const { data: permissions, error: permError } = await supabase
+      .rpc('check_user_permission', {
+        p_user_id: req.user.id,
+        p_resource_type: 'devices',
+        p_resource_id: null,
+        p_action: 'admin'
+      });
     
-    const employeeIds = employees?.map(emp => emp.id) || [];
+    if (permError) {
+      console.error('Permission check error:', permError);
+      return res.status(500).json({ error: 'Failed to check user permissions' });
+    }
+    
+    const isAdmin = permissions;
     
     let query = supabase
       .from('personal_devices')
@@ -74,26 +82,40 @@ router.get('/', authenticateToken, async (req, res) => {
         )
       `);
     
-    // 2025-01-27: Fix device access control - only show devices owned by current user
-    // Apply assignment status filter with proper admin_id check
-    if (assignment_status === 'assigned') {
-      // Only assigned devices (employee_id is not null and in employeeIds) AND owned by current user
-      query = query.not('employee_id', 'is', null)
-                   .in('employee_id', employeeIds)
-                   .eq('admin_id', req.user.id);
-    } else if (assignment_status === 'unassigned') {
-      // Only unassigned devices (employee_id is null) AND owned by current user
-      query = query.is('employee_id', null)
-                   .eq('admin_id', req.user.id);
+    // 2025-01-27: Role-based access control
+    if (isAdmin) {
+      // Admin can see all devices
+      if (assignment_status === 'assigned') {
+        query = query.not('employee_id', 'is', null);
+      } else if (assignment_status === 'unassigned') {
+        query = query.is('employee_id', null);
+      }
+      // If no assignment_status filter, show all devices
     } else {
-      // Show all devices owned by current user: assigned to current user's employees OR unassigned
-      if (employeeIds.length > 0) {
-        query = query.eq('admin_id', req.user.id)
-                     .or(`employee_id.in.(${employeeIds.join(',')}),employee_id.is.null`);
-      } else {
-        // If no employees, show only unassigned devices owned by current user
+      // Manager can only see their own devices
+      if (assignment_status === 'assigned') {
+        // Get employee IDs for current user
+        const { data: employees } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('admin_id', req.user.id);
+        
+        const employeeIds = employees?.map(emp => emp.id) || [];
+        
+        if (employeeIds.length > 0) {
+          query = query.not('employee_id', 'is', null)
+                       .in('employee_id', employeeIds)
+                       .eq('admin_id', req.user.id);
+        } else {
+          // No employees, return empty result
+          query = query.eq('id', '00000000-0000-0000-0000-000000000000'); // Impossible ID
+        }
+      } else if (assignment_status === 'unassigned') {
         query = query.is('employee_id', null)
                      .eq('admin_id', req.user.id);
+      } else {
+        // Show all devices owned by current user
+        query = query.eq('admin_id', req.user.id);
       }
     }
     
@@ -148,15 +170,31 @@ router.get('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    // 2025-01-27: Check if device belongs to current user (either through employee or direct ownership)
-    let hasAccess = false;
+    // 2025-01-27: Check user permissions for single device
+    const { data: hasReadPermission, error: permError } = await supabase
+      .rpc('check_user_permission', {
+        p_user_id: req.user.id,
+        p_resource_type: 'devices',
+        p_resource_id: device.id,
+        p_action: 'read'
+      });
     
-    if (device.employees && device.employees.admin_id === req.user.id) {
-      // Device is assigned to current user's employee
-      hasAccess = true;
-    } else if (device.admin_id === req.user.id) {
-      // Device is owned by current user (including unassigned devices)
-      hasAccess = true;
+    if (permError) {
+      console.error('Permission check error:', permError);
+      return res.status(500).json({ error: 'Failed to check user permissions' });
+    }
+    
+    let hasAccess = hasReadPermission;
+    
+    // If no specific permission, check if user owns the device
+    if (!hasAccess) {
+      if (device.employees && device.employees.admin_id === req.user.id) {
+        // Device is assigned to current user's employee
+        hasAccess = true;
+      } else if (device.admin_id === req.user.id) {
+        // Device is owned by current user (including unassigned devices)
+        hasAccess = true;
+      }
     }
     
     if (!hasAccess) {
@@ -314,15 +352,31 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Device not found' });
     }
 
-    // 2025-01-27: Verify device belongs to current user (either through employee or direct ownership)
-    let deviceBelongsToUser = false;
+    // 2025-01-27: Check user permissions for device update
+    const { data: hasWritePermission, error: permError } = await supabase
+      .rpc('check_user_permission', {
+        p_user_id: req.user.id,
+        p_resource_type: 'devices',
+        p_resource_id: existingDevice.id,
+        p_action: 'write'
+      });
     
-    if (existingDevice.employees && existingDevice.employees.admin_id === req.user.id) {
-      // Device is assigned to current user's employee
-      deviceBelongsToUser = true;
-    } else if (existingDevice.admin_id === req.user.id) {
-      // Device is owned by current user (including unassigned devices)
-      deviceBelongsToUser = true;
+    if (permError) {
+      console.error('Permission check error:', permError);
+      return res.status(500).json({ error: 'Failed to check user permissions' });
+    }
+    
+    let deviceBelongsToUser = hasWritePermission;
+    
+    // If no specific permission, check if user owns the device
+    if (!deviceBelongsToUser) {
+      if (existingDevice.employees && existingDevice.employees.admin_id === req.user.id) {
+        // Device is assigned to current user's employee
+        deviceBelongsToUser = true;
+      } else if (existingDevice.admin_id === req.user.id) {
+        // Device is owned by current user (including unassigned devices)
+        deviceBelongsToUser = true;
+      }
     }
 
     if (!deviceBelongsToUser) {

@@ -4,150 +4,135 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get current user's statistics
-router.get('/stats', authenticateToken, async (req, res) => {
+// Get current user profile with role
+router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    console.log('🔍 [STATS] Loading stats for user:', req.user.id);
-    
-    // Get employee count and company name
-    const { data: employees, error: empError } = await supabase
-      .from('employees')
-      .select('id, company_name')
-      .eq('admin_id', req.user.id);
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, role, created_at')
+      .eq('id', req.user.id)
+      .single();
 
-    if (empError) {
-      console.error('Get employees error:', empError);
-      return res.status(500).json({ error: 'Failed to fetch employee stats' });
+    if (error || !user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    const employeeIds = employees?.map(emp => emp.id) || [];
-    const companyName = employees?.[0]?.company_name || 'Unknown Company';
-
-    // Get device count
-    const { data: devices, error: devError } = await supabase
-      .from('personal_devices')
-      .select('id')
-      .in('employee_id', employeeIds);
-
-    if (devError) {
-      console.error('Get devices error:', devError);
-      return res.status(500).json({ error: 'Failed to fetch device stats' });
-    }
-
-    const statsData = {
-      stats: {
-        total_employees: employees?.length || 0,
-        total_devices: devices?.length || 0,
-        company_name: companyName
-      }
-    };
-    
-    console.log('🔍 [STATS] Stats loaded:', statsData);
-    
-    res.json(statsData);
+    res.json({ user });
   } catch (error) {
-    console.error('Get stats error:', error);
+    console.error('Get user profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Get dashboard data
-router.get('/dashboard', authenticateToken, async (req, res) => {
+// Update user profile (only email for now)
+router.put('/profile', authenticateToken, async (req, res) => {
   try {
-    console.log('🔍 [DASHBOARD] Loading dashboard data for user:', req.user.id);
-    
-    // Get recent employees (last 5)
-    const { data: recentEmployees, error: empError } = await supabase
-      .from('employees')
-      .select('id, name, department, position, created_at')
-      .eq('admin_id', req.user.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    const { email } = req.body;
 
-    if (empError) {
-      console.error('Get recent employees error:', empError);
-      return res.status(500).json({ error: 'Failed to fetch recent employees' });
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
     }
 
-    const employeeIds = await supabase
-      .from('employees')
-      .select('id')
-      .eq('admin_id', req.user.id)
-      .then(({ data }) => data?.map(emp => emp.id) || []);
+    const { data: user, error } = await supabase
+      .from('users')
+      .update({ email })
+      .eq('id', req.user.id)
+      .select('id, email, role, created_at')
+      .single();
 
-    // Get recent devices (last 5)
-    const { data: recentDevices, error: devError } = await supabase
-      .from('personal_devices')
-      .select(`
-        id,
-        asset_number,
-        manufacturer,
-        model_name,
-        created_at,
-        employees (
-          name,
-          department
-        )
-      `)
-      .in('employee_id', employeeIds)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (devError) {
-      console.error('Get recent devices error:', devError);
-      return res.status(500).json({ error: 'Failed to fetch recent devices' });
+    if (error) {
+      console.error('Update user profile error:', error);
+      return res.status(500).json({ error: 'Failed to update profile' });
     }
 
-    // Get device distribution by department
-    const { data: departmentStats, error: deptError } = await supabase
-      .from('employees')
-      .select(`
-        department,
-        personal_devices (
-          id
-        )
-      `)
-      .eq('admin_id', req.user.id);
-
-    if (deptError) {
-      console.error('Get department stats error:', deptError);
-      return res.status(500).json({ error: 'Failed to fetch department stats' });
-    }
-
-    // Process department statistics
-    const departmentDistribution = departmentStats?.reduce((acc, emp) => {
-      const dept = emp.department || 'Unassigned';
-      if (!acc[dept]) {
-        acc[dept] = { department: dept, device_count: 0, employee_count: 0 };
-      }
-      acc[dept].employee_count += 1;
-      acc[dept].device_count += emp.personal_devices?.length || 0;
-      return acc;
-    }, {});
-
-
-
-    const dashboardData = {
-      dashboard: {
-        recent_employees: recentEmployees || [],
-        recent_devices: recentDevices || [],
-        department_distribution: Object.values(departmentDistribution || {}),
-        summary: {
-          total_employees: employeeIds.length,
-          total_devices: recentDevices?.length || 0
-        }
-      }
-    };
-    
-    console.log('🔍 [DASHBOARD] Dashboard data loaded:', {
-      employees: recentEmployees?.length || 0,
-      devices: recentDevices?.length || 0,
-      departments: Object.keys(departmentDistribution || {}).length
-    });
-    
-    res.json(dashboardData);
+    res.json({ user });
   } catch (error) {
-    console.error('Get dashboard error:', error);
+    console.error('Update user profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2025-01-27: Admin only - Get all users (for admin management)
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    // Check if user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
+    
+    if (userError || !currentUser) {
+      return res.status(500).json({ error: 'Failed to get user information' });
+    }
+    
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, email, role, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Get users error:', error);
+      return res.status(500).json({ error: 'Failed to fetch users' });
+    }
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 2025-01-27: Admin only - Update user role
+router.put('/:id/role', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // Check if user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
+    
+    if (userError || !currentUser) {
+      return res.status(500).json({ error: 'Failed to get user information' });
+    }
+    
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+
+    // Validate role
+    if (!role || !['admin', 'manager'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be "admin" or "manager".' });
+    }
+
+    // Prevent admin from changing their own role to manager (at least one admin must remain)
+    if (id === req.user.id && role === 'manager') {
+      return res.status(400).json({ error: 'Cannot change your own role to manager. At least one admin must remain.' });
+    }
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .update({ role })
+      .eq('id', id)
+      .select('id, email, role, created_at')
+      .single();
+
+    if (error) {
+      console.error('Update user role error:', error);
+      return res.status(500).json({ error: 'Failed to update user role' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error('Update user role error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
