@@ -357,7 +357,12 @@ export const useApi = () => {
   const dashboard = {
     // 통계 데이터 조회
     async getStats(): Promise<{ stats: DashboardStats }> {
-      return apiCall<{ stats: DashboardStats }>('/users/stats')
+      return apiCall<{ stats: DashboardStats }>('/dashboard/stats')
+    },
+
+    // 최근 활동 조회
+    async getRecentActivities(): Promise<{ activities: any[] }> {
+      return apiCall<{ activities: any[] }>('/dashboard/recent-activities')
     },
 
     // 대시보드 데이터 조회

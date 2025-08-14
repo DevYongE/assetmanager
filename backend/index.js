@@ -32,6 +32,7 @@ const employeesRoutes = require('./routes/employees');
 const devicesRoutes = require('./routes/devices');
 const qrRoutes = require('./routes/qr');
 const permissionsRoutes = require('./routes/permissions');
+const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 
@@ -84,6 +85,7 @@ app.use('/api/employees', employeesRoutes);
 app.use('/api/devices', devicesRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/permissions', permissionsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // =============================================================================
 // 기본 라우트

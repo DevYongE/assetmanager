@@ -234,6 +234,24 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Asset number is required' });
     }
 
+    // 2025-01-27: Check user permissions for device creation
+    const { data: hasWritePermission, error: permError } = await supabase
+      .rpc('check_user_permission', {
+        p_user_id: req.user.id,
+        p_resource_type: 'devices',
+        p_resource_id: null,
+        p_action: 'write'
+      });
+    
+    if (permError) {
+      console.error('Permission check error:', permError);
+      return res.status(500).json({ error: 'Failed to check user permissions' });
+    }
+    
+    if (!hasWritePermission) {
+      return res.status(403).json({ error: 'Access denied - no write permission for devices' });
+    }
+
     // Verify employee belongs to current user (only if employee_id is provided)
     let verifiedEmployeeId = null;
     if (employee_id && employee_id.trim() !== '') {
@@ -283,7 +301,14 @@ router.post('/', authenticateToken, async (req, res) => {
       issue_date: issue_date || null
     };
     
-    const { data: device, error } = await supabase
+    // 2025-01-27: Use service role client to bypass RLS for device creation
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseAdmin = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    const { data: device, error } = await supabaseAdmin
       .from('personal_devices')
       .insert([deviceData])
       .select('*')
@@ -296,7 +321,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // 2025-01-27: 장비 생성 시 히스토리 기록
     if (device) {
-      await supabase
+      await supabaseAdmin
         .from('device_history')
         .insert([{
           device_id: device.id,
@@ -479,63 +504,73 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       .single();
 
     if (!error && updatedDevice) {
-      // 변경된 필드들을 찾아서 히스토리에 기록
+      // 2025-01-27: 실제로 변경된 필드만 정확히 감지
       const changedFields = [];
       Object.keys(updates).forEach(field => {
-        if (field !== 'updated_at' && existingDevice[field] !== updates[field]) {
-          changedFields.push({
-            field,
-            before: existingDevice[field],
-            after: updates[field]
-          });
+        if (field !== 'updated_at') {
+          const beforeValue = existingDevice[field];
+          const afterValue = updates[field];
+          
+          // null과 undefined를 '없음'으로 통일하여 비교
+          const normalizedBefore = beforeValue === null || beforeValue === undefined ? '없음' : beforeValue;
+          const normalizedAfter = afterValue === null || afterValue === undefined ? '없음' : afterValue;
+          
+          // 실제로 값이 변경된 경우만 추가
+          if (normalizedBefore !== normalizedAfter) {
+            changedFields.push({
+              field,
+              before: beforeValue,
+              after: afterValue
+            });
+          }
         }
       });
 
-             if (changedFields.length > 0) {
-         // 2025-01-27: 실제로 변경된 필드만 표시
-         const changeDescriptions = changedFields.map(field => {
-           const fieldNames = {
-             'asset_number': '자산번호',
-             'employee_id': '담당자',
-             'manufacturer': '제조사',
-             'model_name': '모델명',
-             'serial_number': '시리얼번호',
-             'cpu': 'CPU',
-             'memory': '메모리',
-             'storage': '저장장치',
-             'gpu': '그래픽카드',
-             'os': '운영체제',
-             'monitor': '모니터',
-             'monitor_size': '모니터크기',
-             'inspection_date': '조사일자',
-             'purpose': '용도',
-             'device_type': '장비타입',
-             'issue_date': '지급일자'
-           };
-           
-           const fieldName = fieldNames[field.field] || field.field;
-           const beforeValue = field.before || '없음';
-           const afterValue = field.after || '없음';
-           
-           return `${fieldName}: ${beforeValue} → ${afterValue}`;
-         });
-         
-         // 히스토리에 변경 내역 기록 (실제 변경된 필드만)
-         await supabase
-           .from('device_history')
-           .insert([{
-             device_id: existingDevice.id,
-             action_type: '수정',
-             action_description: `장비 정보 수정 - ${changeDescriptions.join(', ')}`,
-             previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
-             new_status: updatedDevice.employee_id ? '할당됨' : '미할당',
-             performed_by: req.user.id,
-             metadata: { 
-               changed_fields: changedFields,
-               manual_action: true 
-             }
-           }]);
-       }
+      if (changedFields.length > 0) {
+        // 2025-01-27: 실제로 변경된 필드만 표시
+        const changeDescriptions = changedFields.map(field => {
+          const fieldNames = {
+            'asset_number': '자산번호',
+            'employee_id': '담당자',
+            'manufacturer': '제조사',
+            'model_name': '모델명',
+            'serial_number': '시리얼번호',
+            'cpu': 'CPU',
+            'memory': '메모리',
+            'storage': '저장장치',
+            'gpu': '그래픽카드',
+            'os': '운영체제',
+            'monitor': '모니터',
+            'monitor_size': '모니터크기',
+            'inspection_date': '조사일자',
+            'purpose': '용도',
+            'device_type': '장비타입',
+            'issue_date': '지급일자'
+          };
+          
+          const fieldName = fieldNames[field.field] || field.field;
+          const beforeValue = field.before || '없음';
+          const afterValue = field.after || '없음';
+          
+          return `${fieldName}: ${beforeValue} → ${afterValue}`;
+        });
+        
+        // 히스토리에 변경 내역 기록 (실제 변경된 필드만)
+        await supabase
+          .from('device_history')
+          .insert([{
+            device_id: existingDevice.id,
+            action_type: '수정',
+            action_description: `장비 정보 수정 - ${changeDescriptions.join(', ')}`,
+            previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
+            new_status: updatedDevice.employee_id ? '할당됨' : '미할당',
+            performed_by: req.user.id,
+            metadata: { 
+              changed_fields: changedFields,
+              manual_action: true 
+            }
+          }]);
+      }
     }
 
     if (error) {

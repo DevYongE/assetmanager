@@ -259,10 +259,12 @@
                 </svg>
               </div>
               <div class="device-info">
-                <h4 class="device-name">{{ device.manufacturer }} {{ device.model_name }}</h4>
+                <h4 class="device-name">
+                  {{ (device.manufacturer || '제조사 미지정') + ' ' + (device.model_name || '모델명 미지정') }}
+                </h4>
                 <p class="device-number">{{ device.asset_number }}</p>
-                <span class="device-status" :class="device.status">
-                  {{ getStatusText(device.status) }}
+                <span class="device-status" :class="getDeviceStatus(device)">
+                  {{ getStatusText(getDeviceStatus(device)) }}
                 </span>
               </div>
               <div class="device-arrow">
@@ -303,6 +305,13 @@ const stats = ref({
 const recentActivities = ref<any[]>([])
 const recentDevices = ref<any[]>([])
 
+// 장비 상태 계산
+const getDeviceStatus = (device: any) => {
+  if (device.purpose === '폐기') return 'retired'
+  if (device.employee_id) return 'active'
+  return 'inactive'
+}
+
 // 상태 텍스트 변환
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
@@ -334,70 +343,69 @@ const loadDashboardData = async () => {
   try {
     const api = useApi()
     
+    // 대시보드 통계 API 호출
     const statsResponse = await api.dashboard.getStats()
+    const dashboardStats = statsResponse.stats
+    
+    // 통계 데이터 설정
     stats.value = {
-      totalDevices: statsResponse.stats.total_devices,
-      totalEmployees: statsResponse.stats.total_employees,
-      activeDevices: statsResponse.stats.active_devices || 0,
-      inactiveDevices: statsResponse.stats.inactive_devices || 0,
-      maintenanceDevices: statsResponse.stats.maintenance_devices || 0,
-      retiredDevices: statsResponse.stats.retired_devices || 0
+      totalDevices: dashboardStats.total_devices || 0,
+      totalEmployees: dashboardStats.total_employees || 0,
+      activeDevices: dashboardStats.active_devices || 0,
+      inactiveDevices: dashboardStats.inactive_devices || 0,
+      maintenanceDevices: dashboardStats.maintenance_devices || 0,
+      retiredDevices: dashboardStats.retired_devices || 0
     }
     
-    // 최근 활동 로드 (임시로 빈 배열 사용 - 백엔드에 해당 엔드포인트가 없음)
-    recentActivities.value = []
-    
-    // 최근 장비 로드
+    // 장비 데이터 로드 (최근 5개)
     const devicesResponse = await api.devices.getAll()
-    recentDevices.value = devicesResponse.devices.slice(0, 5) // 최근 5개만 표시
+    const devices = devicesResponse.devices || []
+    
+    // 최근 장비 (최근 5개)
+    recentDevices.value = devices
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5)
+    
+    // 최근 활동 API 호출
+    try {
+      const activitiesResponse = await api.dashboard.getRecentActivities()
+      recentActivities.value = activitiesResponse.activities || []
+    } catch (activitiesError) {
+      console.warn('최근 활동 로드 실패, 기본 데이터 사용:', activitiesError)
+      
+      // 최근 활동 생성 (장비 기반)
+      const recentActivitiesData = []
+      
+      // 최근 장비들을 기반으로 활동 생성
+      for (const device of recentDevices.value.slice(0, 3)) {
+        recentActivitiesData.push({
+          id: device.id,
+          type: 'device',
+          title: '장비 등록',
+          description: `${device.manufacturer || '제조사 미지정'} ${device.model_name || '모델명 미지정'} (${device.asset_number})`,
+          createdAt: device.created_at
+        })
+      }
+      
+      recentActivities.value = recentActivitiesData
+    }
     
   } catch (error) {
     console.error('대시보드 데이터 로드 실패:', error)
     
-    // 테스트 데이터 (개발용)
+    // 에러 시 기본값 설정
     stats.value = {
-      totalDevices: 24,
-      totalEmployees: 12,
-      activeDevices: 18,
-      inactiveDevices: 4,
-      maintenanceDevices: 2,
-      retiredDevices: 0
-    }
-    
-    recentActivities.value = [
-      {
-        id: 1,
-        type: 'device',
-        title: '새 장비 추가',
-        description: 'MacBook Pro 16인치가 추가되었습니다',
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 2,
-        type: 'qr',
-        title: 'QR 코드 생성',
-        description: '장비 QR 코드가 생성되었습니다',
-        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
-      }
-    ]
-    
-    recentDevices.value = [
-      {
-        id: 1,
-        manufacturer: 'Apple',
-        model_name: 'MacBook Pro 16"',
-        asset_number: 'MBP-001',
-        status: 'active'
-      },
-      {
-        id: 2,
-        manufacturer: 'Dell',
-        model_name: 'XPS 15',
-        asset_number: 'DLL-002',
-        status: 'active'
-      }
-    ]
+      totalDevices: 0,
+      totalEmployees: 0,
+      activeDevices: 0,
+      inactiveDevices: 0,
+      maintenanceDevices: 0,
+          retiredDevices: 0
   }
+  
+  recentActivities.value = []
+  recentDevices.value = []
+}
 }
 
 // 사용자 정보 로드
