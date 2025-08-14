@@ -294,6 +294,24 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Failed to create device' });
     }
 
+    // 2025-01-27: 장비 생성 시 히스토리 기록
+    if (device) {
+      await supabase
+        .from('device_history')
+        .insert([{
+          device_id: device.id,
+          action_type: '생성',
+          action_description: `새 장비 등록: ${device.asset_number}`,
+          previous_status: '없음',
+          new_status: device.employee_id ? '할당됨' : '미할당',
+          performed_by: req.user.id,
+          metadata: { 
+            created_device: device,
+            manual_action: true 
+          }
+        }]);
+    }
+
     res.json({ device });
   } catch (error) {
     console.error('Create device error:', error);
@@ -444,7 +462,8 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'No updates provided' });
     }
 
-    const { data: device, error } = await supabase
+    // 2025-01-27: 장비 정보 변경 전/후 기록을 위한 히스토리 추가
+    const { data: updatedDevice, error } = await supabase
       .from('personal_devices')
       .update(updates)
       .eq('id', existingDevice.id)
@@ -458,6 +477,38 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
         )
       `)
       .single();
+
+    if (!error && updatedDevice) {
+      // 변경된 필드들을 찾아서 히스토리에 기록
+      const changedFields = [];
+      Object.keys(updates).forEach(field => {
+        if (field !== 'updated_at' && existingDevice[field] !== updates[field]) {
+          changedFields.push({
+            field,
+            before: existingDevice[field],
+            after: updates[field]
+          });
+        }
+      });
+
+      if (changedFields.length > 0) {
+        // 히스토리에 변경 내역 기록
+        await supabase
+          .from('device_history')
+          .insert([{
+            device_id: existingDevice.id,
+            action_type: '수정',
+            action_description: `장비 정보 수정: ${changedFields.map(f => `${f.field}: ${f.before || '없음'} → ${f.after || '없음'}`).join(', ')}`,
+            previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
+            new_status: updatedDevice.employee_id ? '할당됨' : '미할당',
+            performed_by: req.user.id,
+            metadata: { 
+              changed_fields: changedFields,
+              manual_action: true 
+            }
+          }]);
+      }
+    }
 
     if (error) {
       console.error('Update device error:', error);
@@ -792,14 +843,65 @@ router.post('/import', authenticateToken, upload.single('file'), async (req, res
           }
         }
 
-        if (error) {
-          const errorMsg = `Row ${i + 2}: Failed to ${existingDevice ? 'update' : 'create'} device - ${error.message}`;
-          console.log('❌ [DEBUG]', errorMsg);
-          errors.push(errorMsg);
-        } else {
-          console.log(`✅ [DEBUG] Device ${existingDevice ? 'updated' : 'created'} successfully: ${device.id}`)
-          successDevices.push(device);
-        }
+                 if (error) {
+           const errorMsg = `Row ${i + 2}: Failed to ${existingDevice ? 'update' : 'create'} device - ${error.message}`;
+           console.log('❌ [DEBUG]', errorMsg);
+           errors.push(errorMsg);
+         } else {
+           console.log(`✅ [DEBUG] Device ${existingDevice ? 'updated' : 'created'} successfully: ${device.id}`)
+           
+           // 2025-01-27: Excel 임포트 시 히스토리 기록
+           if (existingDevice) {
+             // 업데이트된 경우 변경 내역 기록
+             const changedFields = [];
+             Object.keys(deviceData).forEach(field => {
+               if (field !== 'admin_id' && existingDevice[field] !== deviceData[field]) {
+                 changedFields.push({
+                   field,
+                   before: existingDevice[field],
+                   after: deviceData[field]
+                 });
+               }
+             });
+             
+             if (changedFields.length > 0) {
+               await supabase
+                 .from('device_history')
+                 .insert([{
+                   device_id: device.id,
+                   action_type: 'Excel수정',
+                   action_description: `Excel 임포트로 수정: ${changedFields.map(f => `${f.field}: ${f.before || '없음'} → ${f.after || '없음'}`).join(', ')}`,
+                   previous_status: existingDevice.employee_id ? '할당됨' : '미할당',
+                   new_status: device.employee_id ? '할당됨' : '미할당',
+                   performed_by: req.user.id,
+                   metadata: { 
+                     changed_fields: changedFields,
+                     import_source: 'excel',
+                     manual_action: false 
+                   }
+                 }]);
+             }
+           } else {
+             // 새로 생성된 경우
+             await supabase
+               .from('device_history')
+               .insert([{
+                 device_id: device.id,
+                 action_type: 'Excel생성',
+                 action_description: `Excel 임포트로 생성: ${device.asset_number}`,
+                 previous_status: '없음',
+                 new_status: device.employee_id ? '할당됨' : '미할당',
+                 performed_by: req.user.id,
+                 metadata: { 
+                   created_device: device,
+                   import_source: 'excel',
+                   manual_action: false 
+                 }
+               }]);
+           }
+           
+           successDevices.push(device);
+         }
       } catch (error) {
         const errorMsg = `Row ${i + 2}: ${error.message}`;
         console.log('❌ [DEBUG]', errorMsg);
