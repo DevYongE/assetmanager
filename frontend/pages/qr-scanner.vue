@@ -10,6 +10,16 @@
       <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">QR 스캐너</h1>
       <p class="text-sm md:text-base text-gray-600">QR 코드를 스캔하여 장비 정보를 수정하세요</p>
       
+      <!-- 2025-01-27: 리다이렉트 상태 표시 -->
+      <div v-if="isRedirectedFromLogin" class="mt-2">
+        <div class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+          로그인 후 자동 이동됨
+        </div>
+      </div>
+      
       <!-- 2025-08-13: QR 스캐너 상태 표시 추가 -->
       <div class="mt-4 flex justify-center">
         <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" 
@@ -226,6 +236,14 @@ definePageMeta({
 
 const api = useApi()
 const router = useRouter()
+
+// 2025-01-27: 리다이렉트 상태 감지
+const isRedirectedFromLogin = computed(() => {
+  if (process.client) {
+    return sessionStorage.getItem('redirected_from_login') === 'true'
+  }
+  return false
+})
 
 // Refs
 const video = ref<HTMLVideoElement>()
@@ -676,6 +694,13 @@ onMounted(() => {
   // Add orientation change listener for mobile
   window.addEventListener('orientationchange', handleOrientationChange)
   window.addEventListener('resize', handleOrientationChange)
+  
+  // 2025-01-27: 리다이렉트 플래그 정리 (페이지 로드 후)
+  if (process.client && isRedirectedFromLogin.value) {
+    setTimeout(() => {
+      sessionStorage.removeItem('redirected_from_login')
+    }, 3000) // 3초 후 플래그 제거
+  }
   
   // Start camera with slight delay for mobile devices
   setTimeout(() => {

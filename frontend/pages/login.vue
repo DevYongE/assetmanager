@@ -166,6 +166,18 @@ const form = reactive({
   password: ''
 })
 
+// 2025-01-27: QR 링크 리다이렉트를 위한 저장된 URL 확인
+const getRedirectUrl = () => {
+  if (process.client) {
+    const savedUrl = sessionStorage.getItem('redirect_after_login')
+    if (savedUrl) {
+      sessionStorage.removeItem('redirect_after_login')
+      return savedUrl
+    }
+  }
+  return '/dashboard'
+}
+
 // 로그인 처리
 const handleLogin = async () => {
   if (!form.email || !form.password) return
@@ -181,8 +193,18 @@ const handleLogin = async () => {
       password: form.password
     })
     
-    // 로그인 성공 시 대시보드로 이동
-    await navigateTo('/dashboard')
+    // 2025-01-27: 저장된 URL로 리다이렉트 (QR 링크 우선)
+    const redirectUrl = getRedirectUrl()
+    console.log('🔐 [LOGIN] Redirecting to:', redirectUrl)
+    
+    // QR 페이지로 리다이렉트하는 경우 플래그 설정
+    if (redirectUrl.includes('/qr-') || redirectUrl.includes('/devices/') || redirectUrl.includes('/employees/')) {
+      if (process.client) {
+        sessionStorage.setItem('redirected_from_login', 'true')
+      }
+    }
+    
+    await navigateTo(redirectUrl)
   } catch (err: any) {
     console.error('로그인 실패:', err)
     error.value = err.message || '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.'

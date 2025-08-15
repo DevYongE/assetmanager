@@ -12,6 +12,17 @@ export default defineNuxtRouteMiddleware((to, from) => {
       return
     }
     
+    // 2025-01-27: QR 링크 접속 시 원래 URL 저장 후 로그인 페이지로 리다이렉트
+    if (process.client) {
+      // QR 관련 페이지인지 확인
+      const isQRPage = to.path.includes('/qr-') || to.path.includes('/devices/') || to.path.includes('/employees/')
+      
+      if (isQRPage) {
+        console.log('🔐 [AUTH MIDDLEWARE] QR page access detected, saving URL:', to.fullPath)
+        sessionStorage.setItem('redirect_after_login', to.fullPath)
+      }
+    }
+    
     // Redirect to login for protected routes
     return navigateTo('/login')
   }
