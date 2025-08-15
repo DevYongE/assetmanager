@@ -282,11 +282,17 @@
 
 <script setup lang="ts">
 // 2024-12-19: 트렌디한 UI 디자인으로 대시보드 페이지 완전 재설계
+// 2025-01-27: 인증 미들웨어 추가
 
 import { ref, computed, onMounted } from 'vue'
 import { defineAsyncComponent } from 'vue'
 
 const BaseButton = defineAsyncComponent(() => import('~/components/BaseButton.vue'))
+
+// 2025-01-27: 인증 미들웨어 설정
+definePageMeta({
+  middleware: 'auth'
+})
 
 // 2024-12-19: useApi composable 사용 준비
 // useApi는 composable이므로 직접 호출하여 사용

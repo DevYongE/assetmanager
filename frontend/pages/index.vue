@@ -5,10 +5,16 @@
 </template>
 
 <script setup lang="ts">
-// 메인 페이지에서 대시보드로 리다이렉트
+// 2025-01-27: 인증 상태 확인 후 조건부 리다이렉트
 const router = useRouter()
+const authStore = useAuthStore()
 
 onMounted(() => {
-  router.push('/dashboard')
+  // 인증된 사용자는 대시보드로, 그렇지 않으면 로그인 페이지로
+  if (authStore.isAuthenticated) {
+    router.push('/dashboard')
+  } else {
+    router.push('/login')
+  }
 })
 </script> 
