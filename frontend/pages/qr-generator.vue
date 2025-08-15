@@ -53,8 +53,79 @@
 
     <!-- 메인 컨텐츠 -->
     <div class="main-content">
-      <!-- QR 타입 선택 -->
+      <!-- QR 생성 방식 선택 -->
       <div class="section-card">
+        <h2 class="section-title">QR 생성 방식 선택</h2>
+        <div class="generation-mode-grid">
+          <div 
+            class="generation-mode-card"
+            :class="{ active: generationMode === 'single' }"
+            @click="generationMode = 'single'"
+          >
+            <div class="generation-mode-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21,15 16,10 5,21"/>
+              </svg>
+            </div>
+            <h3 class="generation-mode-title">단일 QR 생성</h3>
+            <p class="generation-mode-description">개별 장비/직원 QR 코드 생성</p>
+          </div>
+          
+          <div 
+            class="generation-mode-card"
+            :class="{ active: generationMode === 'bulk' }"
+            @click="generationMode = 'bulk'"
+          >
+            <div class="generation-mode-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                <path d="M9 14l2 2 4-4"/>
+              </svg>
+            </div>
+            <h3 class="generation-mode-title">일괄 QR 생성</h3>
+            <p class="generation-mode-description">여러 장비/직원 QR 코드 일괄 생성</p>
+          </div>
+          
+          <div 
+            class="generation-mode-card"
+            :class="{ active: generationMode === 'template' }"
+            @click="generationMode = 'template'"
+          >
+            <div class="generation-mode-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10,9 9,9 8,9"/>
+              </svg>
+            </div>
+            <h3 class="generation-mode-title">템플릿 기반 생성</h3>
+            <p class="generation-mode-description">사용자 정의 템플릿으로 QR 생성</p>
+          </div>
+          
+          <div 
+            class="generation-mode-card"
+            :class="{ active: generationMode === 'custom' }"
+            @click="generationMode = 'custom'"
+          >
+            <div class="generation-mode-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
+            <h3 class="generation-mode-title">사용자 정의 생성</h3>
+            <p class="generation-mode-description">직접 입력한 데이터로 QR 생성</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR 타입 선택 (단일 생성 모드일 때만 표시) -->
+      <div v-if="generationMode === 'single'" class="section-card">
         <h2 class="section-title">QR 코드 타입 선택</h2>
         <div class="qr-type-grid">
           <div 
@@ -90,8 +161,8 @@
         </div>
       </div>
 
-      <!-- 장비 선택 (장비 QR 코드일 때만 표시) -->
-      <div v-if="qrType === 'device'" class="section-card">
+      <!-- 장비 선택 (단일 생성 모드에서 장비 QR 코드일 때만 표시) -->
+      <div v-if="generationMode === 'single' && qrType === 'device'" class="section-card">
         <h2 class="section-title">장비 선택</h2>
         
         <!-- 검색 필터 -->
@@ -139,6 +210,137 @@
               </svg>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 일괄 생성 설정 (일괄 생성 모드일 때 표시) -->
+      <div v-if="generationMode === 'bulk'" class="section-card">
+        <h2 class="section-title">일괄 QR 생성 설정</h2>
+        
+        <div class="bulk-settings">
+          <div class="setting-group">
+            <label class="setting-label">생성 대상</label>
+            <div class="setting-options">
+              <label class="radio-option">
+                <input type="radio" v-model="bulkTarget" value="all" />
+                <span class="radio-custom"></span>
+                전체 장비 ({{ filteredDevices.length }}개)
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="bulkTarget" value="selected" />
+                <span class="radio-custom"></span>
+                선택된 장비
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="bulkTarget" value="filtered" />
+                <span class="radio-custom"></span>
+                필터된 장비
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">출력 형식</label>
+            <div class="setting-options">
+              <label class="radio-option">
+                <input type="radio" v-model="bulkFormat" value="zip" />
+                <span class="radio-custom"></span>
+                ZIP 압축파일
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="bulkFormat" value="pdf" />
+                <span class="radio-custom"></span>
+                PDF 문서
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="bulkFormat" value="individual" />
+                <span class="radio-custom"></span>
+                개별 파일
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="bulk-actions">
+          <BaseButton
+            label="일괄 QR 생성 시작"
+            variant="success"
+            size="lg"
+            :loading="bulkGenerating"
+            :icon="'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'"
+            @click="startBulkGeneration"
+          />
+        </div>
+      </div>
+
+      <!-- 템플릿 기반 생성 설정 (템플릿 모드일 때 표시) -->
+      <div v-if="generationMode === 'template'" class="section-card">
+        <h2 class="section-title">템플릿 기반 QR 생성</h2>
+        
+        <div class="template-settings">
+          <div class="setting-group">
+            <label class="setting-label">템플릿 선택</label>
+            <select v-model="selectedTemplate" class="template-select">
+              <option value="">템플릿을 선택하세요</option>
+              <option value="device-basic">장비 기본 템플릿</option>
+              <option value="device-detailed">장비 상세 템플릿</option>
+              <option value="employee-basic">직원 기본 템플릿</option>
+              <option value="custom">사용자 정의 템플릿</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">템플릿 미리보기</label>
+            <div class="template-preview">
+              <pre class="template-code">{{ templatePreview }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="template-actions">
+          <BaseButton
+            label="템플릿으로 QR 생성"
+            variant="accent"
+            size="lg"
+            :loading="templateGenerating"
+            :icon="'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'"
+            @click="generateFromTemplate"
+          />
+        </div>
+      </div>
+
+      <!-- 사용자 정의 생성 설정 (사용자 정의 모드일 때 표시) -->
+      <div v-if="generationMode === 'custom'" class="section-card">
+        <h2 class="section-title">사용자 정의 QR 생성</h2>
+        
+        <div class="custom-settings">
+          <div class="setting-group">
+            <label class="setting-label">QR 데이터 입력</label>
+            <textarea
+              v-model="customQRData"
+              placeholder="QR 코드에 포함할 데이터를 JSON 형식으로 입력하세요..."
+              class="custom-data-input"
+              rows="10"
+            ></textarea>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">데이터 검증</label>
+            <div class="validation-status" :class="validationStatus">
+              {{ validationMessage }}
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-actions">
+          <BaseButton
+            label="사용자 정의 QR 생성"
+            variant="warning"
+            size="lg"
+            :loading="customGenerating"
+            :icon="'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'"
+            @click="generateCustomQR"
+          />
         </div>
       </div>
 
@@ -353,6 +555,8 @@ const { devices: devicesApi, qr: qrApi } = useApi()
 
 // 상태 관리
 const qrType = ref<'device' | 'employee'>('device')
+// 2025-01-27: QR 생성 방식 선택 추가
+const generationMode = ref<'single' | 'bulk' | 'template' | 'custom'>('single')
 const searchQuery = ref('')
 const selectedDevice = ref<any>(null)
 const qrFormat = ref<'png' | 'svg' | 'json'>('png') // 2024-12-19: 'json' 타입 추가
@@ -365,6 +569,17 @@ const qrMetadata = ref<any>(null) // 2025-08-13: QR 메타데이터 추가
 const downloadingAll = ref(false)
 const printingAll = ref(false)
 const bulkGenerating = ref(false) // 2025-08-13: 일괄 생성 상태 추가
+
+// 2025-01-27: 새로운 생성 방식 관련 상태 추가
+const bulkTarget = ref<'all' | 'selected' | 'filtered'>('all')
+const bulkFormat = ref<'zip' | 'pdf' | 'individual'>('zip')
+const selectedTemplate = ref('')
+const templatePreview = ref('')
+const templateGenerating = ref(false)
+const customQRData = ref('')
+const customGenerating = ref(false)
+const validationStatus = ref<'idle' | 'valid' | 'invalid'>('idle')
+const validationMessage = ref('데이터를 입력하세요')
 
 // 2025-01-27: QR 링크 타입에 따른 includeLink 값 계산
 const includeLink = computed(() => {
@@ -596,6 +811,138 @@ const bulkGenerateQR = async () => {
     bulkGenerating.value = false
   }
 }
+
+// 2025-01-27: 새로운 생성 방식 관련 함수들 추가
+const startBulkGeneration = async () => {
+  let targetDevices: any[] = []
+  
+  switch (bulkTarget.value) {
+    case 'all':
+      targetDevices = filteredDevices.value
+      break
+    case 'selected':
+      if (!selectedDevice.value) {
+        alert('선택된 장비가 없습니다.')
+        return
+      }
+      targetDevices = [selectedDevice.value]
+      break
+    case 'filtered':
+      targetDevices = filteredDevices.value
+      break
+  }
+  
+  if (targetDevices.length === 0) {
+    alert('생성할 장비가 없습니다.')
+    return
+  }
+  
+  bulkGenerating.value = true
+  try {
+    const deviceIds = targetDevices.map(device => device.id)
+    const response = await qrApi.bulkDeviceQR(deviceIds, bulkFormat.value, false, includeLink.value)
+    
+    console.log('일괄 QR 생성 결과:', response)
+    alert(`일괄 QR 생성 완료!\n총 ${response.total_requested}개 중 ${response.total_generated}개 생성됨\n성공률: ${response.success_rate}`)
+    
+  } catch (error) {
+    console.error('일괄 QR 생성 실패:', error)
+    alert('일괄 QR 생성에 실패했습니다.')
+  } finally {
+    bulkGenerating.value = false
+  }
+}
+
+const generateFromTemplate = async () => {
+  if (!selectedTemplate.value) {
+    alert('템플릿을 선택해주세요.')
+    return
+  }
+  
+  templateGenerating.value = true
+  try {
+    // 템플릿에 따른 QR 데이터 생성
+    const templateData = getTemplateData(selectedTemplate.value)
+    const response = await qrApi.generateFromTemplate(templateData, qrFormat.value)
+    
+    console.log('템플릿 QR 생성 결과:', response)
+    alert('템플릿 기반 QR 생성이 완료되었습니다.')
+    
+  } catch (error) {
+    console.error('템플릿 QR 생성 실패:', error)
+    alert('템플릿 기반 QR 생성에 실패했습니다.')
+  } finally {
+    templateGenerating.value = false
+  }
+}
+
+const generateCustomQR = async () => {
+  if (!customQRData.value.trim()) {
+    alert('QR 데이터를 입력해주세요.')
+    return
+  }
+  
+  // JSON 데이터 검증
+  try {
+    JSON.parse(customQRData.value)
+    validationStatus.value = 'valid'
+    validationMessage.value = '유효한 JSON 데이터입니다.'
+  } catch (error) {
+    validationStatus.value = 'invalid'
+    validationMessage.value = '유효하지 않은 JSON 형식입니다.'
+    return
+  }
+  
+  customGenerating.value = true
+  try {
+    const response = await qrApi.generateCustom(customQRData.value, qrFormat.value)
+    
+    console.log('사용자 정의 QR 생성 결과:', response)
+    alert('사용자 정의 QR 생성이 완료되었습니다.')
+    
+  } catch (error) {
+    console.error('사용자 정의 QR 생성 실패:', error)
+    alert('사용자 정의 QR 생성에 실패했습니다.')
+  } finally {
+    customGenerating.value = false
+  }
+}
+
+const getTemplateData = (templateType: string) => {
+  switch (templateType) {
+    case 'device-basic':
+      return {
+        type: 'device',
+        fields: ['asset_number', 'manufacturer', 'model_name', 'serial_number']
+      }
+    case 'device-detailed':
+      return {
+        type: 'device',
+        fields: ['asset_number', 'manufacturer', 'model_name', 'serial_number', 'device_type', 'cpu', 'memory', 'storage', 'os']
+      }
+    case 'employee-basic':
+      return {
+        type: 'employee',
+        fields: ['name', 'email', 'department', 'position']
+      }
+    default:
+      return {}
+  }
+}
+
+// 템플릿 미리보기 업데이트
+const updateTemplatePreview = () => {
+  if (!selectedTemplate.value) {
+    templatePreview.value = ''
+    return
+  }
+  
+  const templateData = getTemplateData(selectedTemplate.value)
+  templatePreview.value = JSON.stringify(templateData, null, 2)
+}
+
+// 템플릿 선택 변경 시 미리보기 업데이트
+watch(selectedTemplate, updateTemplatePreview)
 
 // 2025-08-13: 날짜 포맷팅 함수 추가
 const formatDate = (dateString: string) => {
@@ -1148,6 +1495,120 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
   margin-bottom: 2rem;
+}
+
+/* 일괄 생성 설정 */
+.bulk-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.bulk-actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* 템플릿 설정 */
+.template-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.template-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.template-select:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.template-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.template-code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  color: #1e293b;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.template-actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* 사용자 정의 설정 */
+.custom-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.custom-data-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.custom-data-input:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.validation-status {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.validation-status.idle {
+  background: rgba(100, 116, 139, 0.1);
+  color: #475569;
+}
+
+.validation-status.valid {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.validation-status.invalid {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.custom-actions {
+  text-align: center;
+  margin-top: 2rem;
 }
 
 .setting-group {
