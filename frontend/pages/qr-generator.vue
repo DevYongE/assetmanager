@@ -157,26 +157,49 @@
                    </label>
                  </div>
                </div>
-               <div class="option-group">
-                 <label class="option-label">QR 코드 크기</label>
-                 <div class="option-options">
-                   <label class="radio-option">
-                     <input type="radio" v-model="printQRSize" value="small" />
-                     <span class="radio-custom"></span>
-                     작게 (150px)
-                   </label>
-                   <label class="radio-option">
-                     <input type="radio" v-model="printQRSize" value="medium" />
-                     <span class="radio-custom"></span>
-                     보통 (200px)
-                   </label>
-                   <label class="radio-option">
-                     <input type="radio" v-model="printQRSize" value="large" />
-                     <span class="radio-custom"></span>
-                     크게 (250px)
-                   </label>
-                 </div>
-               </div>
+                               <div class="option-group">
+                  <label class="option-label">QR 코드 크기</label>
+                  <div class="option-options">
+                    <label class="radio-option">
+                      <input type="radio" v-model="printQRSize" value="small" />
+                      <span class="radio-custom"></span>
+                      작게 (150px)
+                    </label>
+                    <label class="radio-option">
+                      <input type="radio" v-model="printQRSize" value="medium" />
+                      <span class="radio-custom"></span>
+                      보통 (200px)
+                    </label>
+                    <label class="radio-option">
+                      <input type="radio" v-model="printQRSize" value="large" />
+                      <span class="radio-custom"></span>
+                      크게 (250px)
+                    </label>
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label class="option-label">QR 코드 링크 포함</label>
+                  <div class="option-options">
+                    <label class="radio-option">
+                      <input type="radio" v-model="printLinkType" value="include" />
+                      <span class="radio-custom"></span>
+                      포함 (스캔 시 장비 페이지로 이동)
+                    </label>
+                    <label class="radio-option">
+                      <input type="radio" v-model="printLinkType" value="linkOnly" />
+                      <span class="radio-custom"></span>
+                      링크로 바로 연결 (QR에 링크만 포함)
+                    </label>
+                    <label class="radio-option">
+                      <input type="radio" v-model="printLinkType" value="none" />
+                      <span class="radio-custom"></span>
+                      미포함 (기본 QR 데이터만)
+                    </label>
+                  </div>
+                  <p class="option-description">
+                    링크를 포함하면 QR 코드를 스캔했을 때 해당 장비의 상세 페이지로 바로 이동할 수 있습니다. "링크로 바로 연결" 옵션은 QR 코드에 링크만 포함하여 즉시 접속이 가능합니다.
+                  </p>
+                </div>
              </div>
              <div class="options-footer">
                <BaseButton
@@ -835,6 +858,7 @@ const downloadLinkType = ref<'include' | 'linkOnly' | 'none'>('include')
 // 2025-01-27: 프린트 옵션 관련 상태
 const printLayout = ref<'grid' | 'individual' | 'compact'>('grid')
 const printQRSize = ref<'small' | 'medium' | 'large'>('medium')
+const printLinkType = ref<'include' | 'linkOnly' | 'none'>('include')
 
 // 2025-01-27: 일괄 생성 옵션 관련 상태
 const bulkLinkType = ref<'include' | 'linkOnly' | 'none'>('include')
@@ -1192,12 +1216,12 @@ const executePrint = async () => {
             <div class="qr-grid">
       `
       
-      // 각 장비의 QR 코드를 생성하여 HTML에 추가
-      for (const device of availableDevices) {
-        try {
-          const includeLinkForPrint = bulkLinkType.value === 'include' || bulkLinkType.value === 'linkOnly'
-          const linkOnlyForPrint = bulkLinkType.value === 'linkOnly'
-          const qrResponse = await qrApi.getDeviceQR(device.asset_number, 'png', includeLinkForPrint, linkOnlyForPrint)
+             // 각 장비의 QR 코드를 생성하여 HTML에 추가
+       for (const device of availableDevices) {
+         try {
+           const includeLinkForPrint = printLinkType.value === 'include' || printLinkType.value === 'linkOnly'
+           const linkOnlyForPrint = printLinkType.value === 'linkOnly'
+           const qrResponse = await qrApi.getDeviceQR(device.asset_number, 'png', includeLinkForPrint, linkOnlyForPrint)
           let qrUrl = ''
           
           if (typeof qrResponse === 'object' && 'qrUrl' in qrResponse) {
