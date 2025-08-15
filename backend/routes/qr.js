@@ -95,13 +95,13 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
       ca: device.created_at ? new Date(device.created_at).toISOString().split('T')[0] : '', // created date
       v: '2.0', // QR code version for backward compatibility
       // 2025-08-13: Direct link to device page
-      l: includeLink === 'true' ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/devices/${device.asset_number}` : null // direct link
+      l: includeLink === 'true' ? `${process.env.FRONTEND_URL || 'https://invenOne.it.kr'}/devices/${device.asset_number}` : null // direct link
     };
 
     // 2025-01-27: Enhanced QR string generation with link type support
     const { linkOnly = 'false' } = req.query;
     const qrString = linkOnly === 'true' 
-      ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/devices/${device.asset_number}` // 링크만 포함
+      ? `${process.env.FRONTEND_URL || 'https://invenOne.it.kr'}/devices/${device.asset_number}` // 링크만 포함
       : JSON.stringify(qrData); // 전체 데이터 포함
 
     // 2025-08-13: Enhanced format handling with additional options
@@ -111,7 +111,7 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
         qr_data: linkOnly === 'true' ? {
           type: 'device',
           asset_number: device.asset_number,
-          direct_link: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/devices/${device.asset_number}`,
+          direct_link: `${process.env.FRONTEND_URL || 'https://invenOne.it.kr'}/devices/${device.asset_number}`,
           link_only: true,
           generated_at: new Date().toISOString()
         } : qrData, 
