@@ -10,29 +10,35 @@
         <p>사용자: {{ authStore.user ? authStore.user.email : '없음' }}</p>
       </div>
       
-      <div class="p-4 bg-blue-100 rounded">
-        <h2 class="font-semibold">테스트 액션:</h2>
-        <div class="space-y-2">
-          <button 
-            @click="testIndexRedirect" 
-            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            메인 페이지 리다이렉트 테스트
-          </button>
-          <button 
-            @click="testDashboardAccess" 
-            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            대시보드 접근 테스트
-          </button>
-          <button 
-            @click="clearAuth" 
-            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            인증 정보 초기화
-          </button>
-        </div>
-      </div>
+             <div class="p-4 bg-blue-100 rounded">
+         <h2 class="font-semibold">테스트 액션:</h2>
+         <div class="space-y-2">
+           <button 
+             @click="testIndexRedirect" 
+             class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+           >
+             메인 페이지 리다이렉트 테스트
+           </button>
+           <button 
+             @click="testDashboardAccess" 
+             class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+           >
+             대시보드 접근 테스트
+           </button>
+           <button 
+             @click="clearAuth" 
+             class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+           >
+             인증 정보 초기화
+           </button>
+           <button 
+             @click="testBrowserClose" 
+             class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+           >
+             브라우저 종료 감지 테스트
+           </button>
+         </div>
+       </div>
       
       <div class="p-4 bg-yellow-100 rounded">
         <h2 class="font-semibold">테스트 결과:</h2>
@@ -85,6 +91,17 @@ const clearAuth = () => {
   addResult('인증 정보 초기화...')
   authStore.logout()
   addResult('인증 정보가 초기화되었습니다.')
+}
+
+const testBrowserClose = () => {
+  addResult('브라우저 종료 감지 테스트 시작...')
+  addResult('현재 세션 스토리지 상태:')
+  addResult(`- auth_token: ${sessionStorage.getItem('auth_token') ? '존재' : '없음'}`)
+  addResult(`- auth_user: ${sessionStorage.getItem('auth_user') ? '존재' : '없음'}`)
+  addResult('localStorage 상태:')
+  addResult(`- auth_token: ${localStorage.getItem('auth_token') ? '존재' : '없음'}`)
+  addResult(`- auth_user: ${localStorage.getItem('auth_user') ? '존재' : '없음'}`)
+  addResult('브라우저를 닫고 다시 열면 세션 스토리지가 비워집니다.')
 }
 
 onMounted(() => {
