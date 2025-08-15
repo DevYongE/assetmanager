@@ -33,35 +33,48 @@
         </div>
       </div>
       
-      <div class="p-4 bg-yellow-100 rounded">
-        <h2 class="font-semibold">생성 방식별 기능:</h2>
-        <div class="space-y-2">
-          <div class="p-2 bg-white rounded">
-            <h3 class="font-medium">1. 단일 QR 생성</h3>
-            <p class="text-sm text-gray-600">- 개별 장비/직원 QR 코드 생성</p>
-            <p class="text-sm text-gray-600">- QR 타입 선택 (장비/직원)</p>
-            <p class="text-sm text-gray-600">- 장비 선택 및 QR 설정</p>
-          </div>
-          <div class="p-2 bg-white rounded">
-            <h3 class="font-medium">2. 일괄 QR 생성</h3>
-            <p class="text-sm text-gray-600">- 여러 장비/직원 QR 코드 일괄 생성</p>
-            <p class="text-sm text-gray-600">- 생성 대상 선택 (전체/선택/필터)</p>
-            <p class="text-sm text-gray-600">- 출력 형식 선택 (ZIP/PDF/개별)</p>
-          </div>
-          <div class="p-2 bg-white rounded">
-            <h3 class="font-medium">3. 템플릿 기반 생성</h3>
-            <p class="text-sm text-gray-600">- 사용자 정의 템플릿으로 QR 생성</p>
-            <p class="text-sm text-gray-600">- 템플릿 선택 및 미리보기</p>
-            <p class="text-sm text-gray-600">- 템플릿별 필드 설정</p>
-          </div>
-          <div class="p-2 bg-white rounded">
-            <h3 class="font-medium">4. 사용자 정의 생성</h3>
-            <p class="text-sm text-gray-600">- 직접 입력한 데이터로 QR 생성</p>
-            <p class="text-sm text-gray-600">- JSON 형식 데이터 입력</p>
-            <p class="text-sm text-gray-600">- 데이터 검증 및 생성</p>
-          </div>
-        </div>
-      </div>
+             <div class="p-4 bg-yellow-100 rounded">
+         <h2 class="font-semibold">생성 방식별 기능:</h2>
+         <div class="space-y-2">
+           <div class="p-2 bg-white rounded">
+             <h3 class="font-medium">1. 단일 QR 생성</h3>
+             <p class="text-sm text-gray-600">- 개별 장비/직원 QR 코드 생성</p>
+             <p class="text-sm text-gray-600">- QR 타입 선택 (장비/직원)</p>
+             <p class="text-sm text-gray-600">- 장비 선택 및 QR 설정</p>
+           </div>
+           <div class="p-2 bg-white rounded">
+             <h3 class="font-medium">2. 일괄 QR 생성</h3>
+             <p class="text-sm text-gray-600">- 여러 장비/직원 QR 코드 일괄 생성</p>
+             <p class="text-sm text-gray-600">- 생성 대상 선택 (전체/선택/필터)</p>
+             <p class="text-sm text-gray-600">- 출력 형식 선택 (ZIP/PDF/개별)</p>
+           </div>
+           <div class="p-2 bg-white rounded">
+             <h3 class="font-medium">3. 템플릿 기반 생성</h3>
+             <p class="text-sm text-gray-600">- 사용자 정의 템플릿으로 QR 생성</p>
+             <p class="text-sm text-gray-600">- 템플릿 선택 및 미리보기</p>
+             <p class="text-sm text-gray-600">- 템플릿별 필드 설정</p>
+           </div>
+           <div class="p-2 bg-white rounded">
+             <h3 class="font-medium">4. 사용자 정의 생성</h3>
+             <p class="text-sm text-gray-600">- 직접 입력한 데이터로 QR 생성</p>
+             <p class="text-sm text-gray-600">- JSON 형식 데이터 입력</p>
+             <p class="text-sm text-gray-600">- 데이터 검증 및 생성</p>
+           </div>
+         </div>
+       </div>
+       
+       <div class="p-4 bg-orange-100 rounded">
+         <h2 class="font-semibold">새로운 기능: 옵션 모달</h2>
+         <div class="space-y-2">
+           <div class="p-2 bg-white rounded">
+             <h3 class="font-medium">상단 버튼 클릭 시 옵션 선택</h3>
+             <p class="text-sm text-gray-600">- "전체 장비 다운로드" 버튼 클릭 시 다운로드 옵션 모달</p>
+             <p class="text-sm text-gray-600">- "전체 장비 프린트" 버튼 클릭 시 프린트 옵션 모달</p>
+             <p class="text-sm text-gray-600">- "일괄 QR 생성" 버튼 클릭 시 일괄 생성 옵션 모달</p>
+             <p class="text-sm text-gray-600">- 각 모달에서 라디오 버튼으로 옵션 선택 가능</p>
+           </div>
+         </div>
+       </div>
       
       <div class="p-4 bg-purple-100 rounded">
         <h2 class="font-semibold">테스트 결과:</h2>

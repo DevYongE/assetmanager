@@ -20,34 +20,276 @@
           장비와 직원을 위한 고품질 QR 코드를 생성하세요
         </p>
         
-        <!-- 전체 장비 액션 버튼 -->
-        <div class="hero-actions">
-          <BaseButton
-            label="전체 장비 다운로드"
-            variant="success"
-            size="md"
-            :loading="downloadingAll"
-            :icon="'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3'"
-            @click="downloadAllDevices"
-          />
-          <BaseButton
-            label="전체 장비 프린트"
-            variant="primary"
-            size="md"
-            :loading="printingAll"
-            :icon="'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM9 17v2M15 17v2M9 9h6M9 13h6'"
-            @click="printAllDevices"
-          />
-          <!-- 2025-08-13: 일괄 QR 생성 버튼 추가 -->
-          <BaseButton
-            label="일괄 QR 생성"
-            variant="accent"
-            size="md"
-            :loading="bulkGenerating"
-            :icon="'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'"
-            @click="bulkGenerateQR"
-          />
-        </div>
+                 <!-- 전체 장비 액션 버튼 -->
+         <div class="hero-actions">
+           <BaseButton
+             label="전체 장비 다운로드"
+             variant="success"
+             size="md"
+             :loading="downloadingAll"
+             :icon="'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3'"
+             @click="showDownloadOptions = true"
+           />
+           <BaseButton
+             label="전체 장비 프린트"
+             variant="primary"
+             size="md"
+             :loading="printingAll"
+             :icon="'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM9 17v2M15 17v2M9 9h6M9 13h6'"
+             @click="showPrintOptions = true"
+           />
+           <!-- 2025-08-13: 일괄 QR 생성 버튼 추가 -->
+           <BaseButton
+             label="일괄 QR 생성"
+             variant="accent"
+             size="md"
+             :loading="bulkGenerating"
+             :icon="'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'"
+             @click="showBulkOptions = true"
+           />
+         </div>
+
+         <!-- 다운로드 옵션 모달 -->
+         <div v-if="showDownloadOptions" class="options-modal">
+           <div class="options-content">
+             <div class="options-header">
+               <h3>전체 장비 다운로드 옵션</h3>
+               <button @click="showDownloadOptions = false" class="close-btn">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                   <line x1="18" y1="6" x2="6" y2="18"/>
+                   <line x1="6" y1="6" x2="18" y2="18"/>
+                 </svg>
+               </button>
+             </div>
+             <div class="options-body">
+               <div class="option-group">
+                 <label class="option-label">다운로드 형식</label>
+                 <div class="option-options">
+                   <label class="radio-option">
+                     <input type="radio" v-model="downloadFormat" value="png" />
+                     <span class="radio-custom"></span>
+                     PNG 이미지
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="downloadFormat" value="svg" />
+                     <span class="radio-custom"></span>
+                     SVG 벡터
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="downloadFormat" value="zip" />
+                     <span class="radio-custom"></span>
+                     ZIP 압축파일
+                   </label>
+                 </div>
+               </div>
+               <div class="option-group">
+                 <label class="option-label">QR 코드 링크 포함</label>
+                 <div class="option-options">
+                   <label class="radio-option">
+                     <input type="radio" v-model="downloadLinkType" value="include" />
+                     <span class="radio-custom"></span>
+                     포함 (스캔 시 장비 페이지로 이동)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="downloadLinkType" value="linkOnly" />
+                     <span class="radio-custom"></span>
+                     링크로 바로 연결 (QR에 링크만 포함)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="downloadLinkType" value="none" />
+                     <span class="radio-custom"></span>
+                     미포함 (기본 QR 데이터만)
+                   </label>
+                 </div>
+                 <p class="option-description">
+                   링크를 포함하면 QR 코드를 스캔했을 때 해당 장비의 상세 페이지로 바로 이동할 수 있습니다. "링크로 바로 연결" 옵션은 QR 코드에 링크만 포함하여 즉시 접속이 가능합니다.
+                 </p>
+               </div>
+             </div>
+             <div class="options-footer">
+               <BaseButton
+                 label="취소"
+                 variant="secondary"
+                 size="sm"
+                 @click="showDownloadOptions = false"
+               />
+               <BaseButton
+                 label="다운로드 시작"
+                 variant="success"
+                 size="sm"
+                 :loading="downloadingAll"
+                 @click="executeDownload"
+               />
+             </div>
+           </div>
+         </div>
+
+         <!-- 프린트 옵션 모달 -->
+         <div v-if="showPrintOptions" class="options-modal">
+           <div class="options-content">
+             <div class="options-header">
+               <h3>전체 장비 프린트 옵션</h3>
+               <button @click="showPrintOptions = false" class="close-btn">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                   <line x1="18" y1="6" x2="6" y2="18"/>
+                   <line x1="6" y1="6" x2="18" y2="18"/>
+                 </svg>
+               </button>
+             </div>
+             <div class="options-body">
+               <div class="option-group">
+                 <label class="option-label">프린트 레이아웃</label>
+                 <div class="option-options">
+                   <label class="radio-option">
+                     <input type="radio" v-model="printLayout" value="grid" />
+                     <span class="radio-custom"></span>
+                     그리드 레이아웃 (여러 개씩)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="printLayout" value="individual" />
+                     <span class="radio-custom"></span>
+                     개별 레이아웃 (한 개씩)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="printLayout" value="compact" />
+                     <span class="radio-custom"></span>
+                     컴팩트 레이아웃 (밀집 배치)
+                   </label>
+                 </div>
+               </div>
+               <div class="option-group">
+                 <label class="option-label">QR 코드 크기</label>
+                 <div class="option-options">
+                   <label class="radio-option">
+                     <input type="radio" v-model="printQRSize" value="small" />
+                     <span class="radio-custom"></span>
+                     작게 (150px)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="printQRSize" value="medium" />
+                     <span class="radio-custom"></span>
+                     보통 (200px)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="printQRSize" value="large" />
+                     <span class="radio-custom"></span>
+                     크게 (250px)
+                   </label>
+                 </div>
+               </div>
+             </div>
+             <div class="options-footer">
+               <BaseButton
+                 label="취소"
+                 variant="secondary"
+                 size="sm"
+                 @click="showPrintOptions = false"
+               />
+               <BaseButton
+                 label="프린트 시작"
+                 variant="primary"
+                 size="sm"
+                 :loading="printingAll"
+                 @click="executePrint"
+               />
+             </div>
+           </div>
+         </div>
+
+         <!-- 일괄 생성 옵션 모달 -->
+         <div v-if="showBulkOptions" class="options-modal">
+           <div class="options-content">
+             <div class="options-header">
+               <h3>일괄 QR 생성 옵션</h3>
+               <button @click="showBulkOptions = false" class="close-btn">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                   <line x1="18" y1="6" x2="6" y2="18"/>
+                   <line x1="6" y1="6" x2="18" y2="18"/>
+                 </svg>
+               </button>
+             </div>
+             <div class="options-body">
+               <div class="option-group">
+                 <label class="option-label">생성 대상</label>
+                 <div class="option-options">
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkTarget" value="all" />
+                     <span class="radio-custom"></span>
+                     전체 장비 ({{ filteredDevices.length }}개)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkTarget" value="selected" />
+                     <span class="radio-custom"></span>
+                     선택된 장비
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkTarget" value="filtered" />
+                     <span class="radio-custom"></span>
+                     필터된 장비
+                   </label>
+                 </div>
+               </div>
+               <div class="option-group">
+                 <label class="option-label">출력 형식</label>
+                 <div class="option-options">
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkFormat" value="zip" />
+                     <span class="radio-custom"></span>
+                     ZIP 압축파일
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkFormat" value="pdf" />
+                     <span class="radio-custom"></span>
+                     PDF 문서
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkFormat" value="individual" />
+                     <span class="radio-custom"></span>
+                     개별 파일
+                   </label>
+                 </div>
+               </div>
+               <div class="option-group">
+                 <label class="option-label">QR 코드 링크 포함</label>
+                 <div class="option-options">
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkLinkType" value="include" />
+                     <span class="radio-custom"></span>
+                     포함 (스캔 시 장비 페이지로 이동)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkLinkType" value="linkOnly" />
+                     <span class="radio-custom"></span>
+                     링크로 바로 연결 (QR에 링크만 포함)
+                   </label>
+                   <label class="radio-option">
+                     <input type="radio" v-model="bulkLinkType" value="none" />
+                     <span class="radio-custom"></span>
+                     미포함 (기본 QR 데이터만)
+                   </label>
+                 </div>
+                 <p class="option-description">
+                   링크를 포함하면 QR 코드를 스캔했을 때 해당 장비의 상세 페이지로 바로 이동할 수 있습니다. "링크로 바로 연결" 옵션은 QR 코드에 링크만 포함하여 즉시 접속이 가능합니다.
+                 </p>
+               </div>
+             </div>
+             <div class="options-footer">
+               <BaseButton
+                 label="취소"
+                 variant="secondary"
+                 size="sm"
+                 @click="showBulkOptions = false"
+               />
+               <BaseButton
+                 label="일괄 생성 시작"
+                 variant="accent"
+                 size="sm"
+                 :loading="bulkGenerating"
+                 @click="executeBulkGeneration"
+               />
+             </div>
+           </div>
+         </div>
       </div>
     </div>
 
@@ -581,6 +823,22 @@ const customGenerating = ref(false)
 const validationStatus = ref<'idle' | 'valid' | 'invalid'>('idle')
 const validationMessage = ref('데이터를 입력하세요')
 
+// 2025-01-27: 옵션 모달 관련 상태 추가
+const showDownloadOptions = ref(false)
+const showPrintOptions = ref(false)
+const showBulkOptions = ref(false)
+
+// 2025-01-27: 다운로드 옵션 관련 상태
+const downloadFormat = ref<'png' | 'svg' | 'zip'>('png')
+const downloadLinkType = ref<'include' | 'linkOnly' | 'none'>('include')
+
+// 2025-01-27: 프린트 옵션 관련 상태
+const printLayout = ref<'grid' | 'individual' | 'compact'>('grid')
+const printQRSize = ref<'small' | 'medium' | 'large'>('medium')
+
+// 2025-01-27: 일괄 생성 옵션 관련 상태
+const bulkLinkType = ref<'include' | 'linkOnly' | 'none'>('include')
+
 // 2025-01-27: QR 링크 타입에 따른 includeLink 값 계산
 const includeLink = computed(() => {
   return qrLinkType.value === 'include' || qrLinkType.value === 'linkOnly'
@@ -800,6 +1058,229 @@ const bulkGenerateQR = async () => {
     const deviceIds = availableDevices.map(device => device.id)
     // 2025-08-13: Include link parameter for bulk generation
     const response = await qrApi.bulkDeviceQR(deviceIds, 'json', false, includeLink.value)
+    
+    console.log('일괄 QR 생성 결과:', response)
+    alert(`일괄 QR 생성 완료!\n총 ${response.total_requested}개 중 ${response.total_generated}개 생성됨\n성공률: ${response.success_rate}`)
+    
+  } catch (error) {
+    console.error('일괄 QR 생성 실패:', error)
+    alert('일괄 QR 생성에 실패했습니다.')
+  } finally {
+    bulkGenerating.value = false
+  }
+}
+
+// 2025-01-27: 옵션 모달 실행 함수들 추가
+const executeDownload = async () => {
+  showDownloadOptions.value = false
+  
+  // 2025-01-27: Exclude disposed devices from bulk operations
+  const availableDevices = devices.value.filter(device => device.purpose !== '폐기')
+  
+  if (availableDevices.length === 0) {
+    alert('다운로드할 장비가 없습니다.')
+    return
+  }
+  
+  downloadingAll.value = true
+  try {
+    // 각 장비의 QR 코드를 개별적으로 다운로드
+    for (const device of availableDevices) {
+      try {
+        const includeLinkForDownload = downloadLinkType.value === 'include' || downloadLinkType.value === 'linkOnly'
+        const linkOnlyForDownload = downloadLinkType.value === 'linkOnly'
+        const qrResponse = await qrApi.getDeviceQR(device.asset_number, downloadFormat.value, includeLinkForDownload, linkOnlyForDownload)
+        
+        if (qrResponse instanceof Blob) {
+          const url = URL.createObjectURL(qrResponse)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `qr-${device.asset_number}.${downloadFormat.value}`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          
+          // 다운로드 간격을 두어 브라우저가 처리할 시간을 줍니다
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      } catch (error) {
+        console.error(`장비 ${device.asset_number} QR 다운로드 실패:`, error)
+      }
+    }
+    
+    alert('전체 장비 QR 코드가 성공적으로 다운로드되었습니다.')
+  } catch (error) {
+    console.error('전체 장비 다운로드 실패:', error)
+    alert('전체 장비 다운로드에 실패했습니다.')
+  } finally {
+    downloadingAll.value = false
+  }
+}
+
+const executePrint = async () => {
+  showPrintOptions.value = false
+  
+  // 2025-01-27: Exclude disposed devices from bulk operations
+  const availableDevices = devices.value.filter(device => device.purpose !== '폐기')
+  
+  if (availableDevices.length === 0) {
+    alert('프린트할 장비가 없습니다.')
+    return
+  }
+  
+  printingAll.value = true
+  try {
+    // 모든 장비의 QR 코드를 생성하고 프린트 페이지 열기
+    const printWindow = window.open('', '', 'width=800,height=600')
+    if (printWindow) {
+      let printContent = `
+        <html>
+          <head>
+            <title>전체 장비 QR 코드</title>
+            <style>
+              body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: white;
+              }
+              .qr-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                max-width: 100%;
+              }
+              .qr-item {
+                text-align: center;
+                padding: 15px;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                page-break-inside: avoid;
+              }
+              .qr-code {
+                margin-bottom: 10px;
+              }
+              .qr-code img {
+                max-width: ${printQRSize.value === 'small' ? '150px' : printQRSize.value === 'large' ? '250px' : '200px'};
+                height: auto;
+              }
+              .device-number {
+                font-weight: bold;
+                font-size: 14px;
+                margin-bottom: 5px;
+                color: #333;
+              }
+              .device-info {
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 5px;
+              }
+              .employee-info {
+                font-size: 11px;
+                color: #888;
+              }
+              @media print {
+                .qr-item {
+                  border: 1px solid #ccc;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <h1 style="text-align: center; margin-bottom: 30px;">전체 장비 QR 코드</h1>
+            <div class="qr-grid">
+      `
+      
+      // 각 장비의 QR 코드를 생성하여 HTML에 추가
+      for (const device of availableDevices) {
+        try {
+          const includeLinkForPrint = bulkLinkType.value === 'include' || bulkLinkType.value === 'linkOnly'
+          const linkOnlyForPrint = bulkLinkType.value === 'linkOnly'
+          const qrResponse = await qrApi.getDeviceQR(device.asset_number, 'png', includeLinkForPrint, linkOnlyForPrint)
+          let qrUrl = ''
+          
+          if (typeof qrResponse === 'object' && 'qrUrl' in qrResponse) {
+            qrUrl = (qrResponse as any).qrUrl
+          } else {
+            const blob = qrResponse as Blob
+            qrUrl = URL.createObjectURL(blob)
+          }
+          
+          printContent += `
+            <div class="qr-item">
+              <div class="qr-code">
+                <img src="${qrUrl}" alt="QR Code for ${device.asset_number}" />
+              </div>
+              <div class="device-number">${device.asset_number}</div>
+              <div class="device-info">${device.manufacturer} ${device.model_name}</div>
+              <div class="employee-info">담당자: ${device.employees?.name || '미배정'}</div>
+            </div>
+          `
+        } catch (error) {
+          console.error(`장비 ${device.asset_number} QR 생성 실패:`, error)
+          printContent += `
+            <div class="qr-item">
+              <div class="device-number">${device.asset_number}</div>
+              <div class="device-info">QR 생성 실패</div>
+            </div>
+          `
+        }
+      }
+      
+      printContent += `
+            </div>
+          </body>
+        </html>
+      `
+      
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      
+      // 프린트 다이얼로그 열기
+      setTimeout(() => {
+        printWindow.print()
+      }, 1000)
+    }
+  } catch (error) {
+    console.error('전체 장비 프린트 실패:', error)
+    alert('전체 장비 프린트에 실패했습니다.')
+  } finally {
+    printingAll.value = false
+  }
+}
+
+const executeBulkGeneration = async () => {
+  showBulkOptions.value = false
+  
+  let targetDevices: any[] = []
+  
+  switch (bulkTarget.value) {
+    case 'all':
+      targetDevices = filteredDevices.value
+      break
+    case 'selected':
+      if (!selectedDevice.value) {
+        alert('선택된 장비가 없습니다.')
+        return
+      }
+      targetDevices = [selectedDevice.value]
+      break
+    case 'filtered':
+      targetDevices = filteredDevices.value
+      break
+  }
+  
+  if (targetDevices.length === 0) {
+    alert('생성할 장비가 없습니다.')
+    return
+  }
+  
+  bulkGenerating.value = true
+  try {
+    const deviceIds = targetDevices.map(device => device.id)
+    const includeLinkForBulk = bulkLinkType.value === 'include' || bulkLinkType.value === 'linkOnly'
+    const response = await qrApi.bulkDeviceQR(deviceIds, 'json', false, includeLinkForBulk)
     
     console.log('일괄 QR 생성 결과:', response)
     alert(`일괄 QR 생성 완료!\n총 ${response.total_requested}개 중 ${response.total_generated}개 생성됨\n성공률: ${response.success_rate}`)
@@ -1851,6 +2332,176 @@ onMounted(() => {
   color: #64748b;
   margin-top: 0.5rem;
   line-height: 1.4;
+}
+
+/* 2025-01-27: 옵션 모달 스타일 추가 */
+.options-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.options-content {
+  background: white;
+  border-radius: 20px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.options-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 20px 20px 0 0;
+}
+
+.options-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #1e293b;
+  transform: scale(1.1);
+}
+
+.options-body {
+  padding: 2rem;
+}
+
+.option-group {
+  margin-bottom: 2rem;
+}
+
+.option-group:last-child {
+  margin-bottom: 0;
+}
+
+.option-label {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.option-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.option-options .radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #64748b;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.option-options .radio-option:hover {
+  background: rgba(139, 92, 246, 0.05);
+  color: #1e293b;
+}
+
+.option-options .radio-option input[type="radio"] {
+  display: none;
+}
+
+.option-options .radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.option-options .radio-option input[type="radio"]:checked + .radio-custom {
+  border-color: #a855f7;
+  background: #a855f7;
+}
+
+.option-options .radio-option input[type="radio"]:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+}
+
+.option-description {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.75rem;
+  line-height: 1.4;
+  padding: 0.75rem;
+  background: rgba(139, 92, 246, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #a855f7;
+}
+
+.options-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 0 0 20px 20px;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* 애니메이션 */
