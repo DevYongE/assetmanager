@@ -608,8 +608,8 @@ const disposedDevicesList = computed(() => {
 // Methods
 // Search handler
 const handleSearch = () => {
-  // 검색은 computed property에서 자동으로 처리됨
-  // 필요시 추가 로직 구현
+  // 검색어가 변경되면 API를 다시 호출
+  loadDevices()
 }
 
 // Load devices
@@ -622,6 +622,9 @@ const loadDevices = async () => {
     const params: any = {}
     if (assignmentFilter.value) {
       params.assignment_status = assignmentFilter.value
+    }
+    if (searchQuery.value.trim()) {
+      params.search = searchQuery.value.trim()
     }
     
     const [devicesResponse, employeesResponse] = await Promise.all([

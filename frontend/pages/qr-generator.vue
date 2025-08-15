@@ -236,18 +236,23 @@
             <label class="setting-label">QR 코드 링크 포함</label>
             <div class="setting-options">
               <label class="radio-option">
-                <input type="radio" v-model="includeLink" :value="true" />
+                <input type="radio" v-model="qrLinkType" value="include" />
                 <span class="radio-custom"></span>
                 포함 (스캔 시 장비 페이지로 이동)
               </label>
               <label class="radio-option">
-                <input type="radio" v-model="includeLink" :value="false" />
+                <input type="radio" v-model="qrLinkType" value="linkOnly" />
+                <span class="radio-custom"></span>
+                링크로 바로 연결 (QR에 링크만 포함)
+              </label>
+              <label class="radio-option">
+                <input type="radio" v-model="qrLinkType" value="none" />
                 <span class="radio-custom"></span>
                 미포함 (기본 QR 데이터만)
               </label>
             </div>
             <p class="setting-description">
-              링크를 포함하면 QR 코드를 스캔했을 때 해당 장비의 상세 페이지로 바로 이동할 수 있습니다.
+              링크를 포함하면 QR 코드를 스캔했을 때 해당 장비의 상세 페이지로 바로 이동할 수 있습니다. "링크로 바로 연결" 옵션은 QR 코드에 링크만 포함하여 즉시 접속이 가능합니다.
             </p>
           </div>
         </div>
@@ -353,13 +358,23 @@ const selectedDevice = ref<any>(null)
 const qrFormat = ref<'png' | 'svg' | 'json'>('png') // 2024-12-19: 'json' 타입 추가
 const qrSize = ref(256)
 const qrQuality = ref<'L' | 'M' | 'Q' | 'H'>('M') // 2025-08-13: QR 품질 설정 추가
-const includeLink = ref(true) // 2025-08-13: QR 링크 포함 설정 추가 (기본값: true)
+const qrLinkType = ref<'include' | 'linkOnly' | 'none'>('include') // 2025-01-27: QR 링크 타입 설정 (기본값: include)
 const generating = ref(false)
 const deviceQRUrl = ref('')
 const qrMetadata = ref<any>(null) // 2025-08-13: QR 메타데이터 추가
 const downloadingAll = ref(false)
 const printingAll = ref(false)
 const bulkGenerating = ref(false) // 2025-08-13: 일괄 생성 상태 추가
+
+// 2025-01-27: QR 링크 타입에 따른 includeLink 값 계산
+const includeLink = computed(() => {
+  return qrLinkType.value === 'include' || qrLinkType.value === 'linkOnly'
+})
+
+// 2025-01-27: 링크만 포함하는지 여부 계산
+const linkOnly = computed(() => {
+  return qrLinkType.value === 'linkOnly'
+})
 
 // 장비 데이터
 const devices = ref<any[]>([])
@@ -405,7 +420,7 @@ const generateQR = async () => {
   try {
     // 2025-01-27: Use asset_number consistently for QR generation
     // 2025-08-13: Include link parameter for direct navigation
-    const response = await qrApi.getDeviceQR(selectedDevice.value.asset_number, qrFormat.value, includeLink.value)
+    const response = await qrApi.getDeviceQR(selectedDevice.value.asset_number, qrFormat.value, includeLink.value, linkOnly.value)
     
     if (qrFormat.value === 'json') {
       // JSON 응답인 경우
@@ -429,7 +444,8 @@ const generateQR = async () => {
           department: selectedDevice.value.employees?.department || '',
           purpose: selectedDevice.value.purpose
         },
-        direct_link: includeLink.value ? `${window.location.origin}/devices/${selectedDevice.value.asset_number}` : null
+        direct_link: includeLink.value ? `${window.location.origin}/devices/${selectedDevice.value.asset_number}` : null,
+        link_type: qrLinkType.value // 2025-01-27: 링크 타입 정보 추가
       }
     }
   } catch (error) {

@@ -98,13 +98,23 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
       l: includeLink === 'true' ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/devices/${device.asset_number}` : null // direct link
     };
 
-    const qrString = JSON.stringify(qrData);
+    // 2025-01-27: Enhanced QR string generation with link type support
+    const { linkOnly = 'false' } = req.query;
+    const qrString = linkOnly === 'true' 
+      ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/devices/${device.asset_number}` // 링크만 포함
+      : JSON.stringify(qrData); // 전체 데이터 포함
 
     // 2025-08-13: Enhanced format handling with additional options
     if (format === 'json') {
       // Return QR data as JSON with metadata
       const response = { 
-        qr_data: qrData, 
+        qr_data: linkOnly === 'true' ? {
+          type: 'device',
+          asset_number: device.asset_number,
+          direct_link: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/devices/${device.asset_number}`,
+          link_only: true,
+          generated_at: new Date().toISOString()
+        } : qrData, 
         qr_string: qrString,
         metadata: {
           generated_at: new Date().toISOString(),
@@ -117,7 +127,8 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
             department: device.employees?.department || '',
             purpose: device.purpose
           },
-          direct_link: qrData.l // 2025-08-13: Include direct link in metadata
+          direct_link: qrData.l, // 2025-08-13: Include direct link in metadata
+          link_type: linkOnly === 'true' ? 'link_only' : 'full_data' // 2025-01-27: 링크 타입 정보 추가
         }
       };
       res.json(response);

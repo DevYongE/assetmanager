@@ -102,6 +102,7 @@
                 type="text"
                 placeholder="직원 이름, 부서, 직급으로 검색..."
                 class="search-input"
+                @input="handleSearch"
               />
             </div>
             <select v-model="filterDepartment" class="filter-select">
@@ -282,26 +283,26 @@ const loadEmployees = async () => {
     loading.value = true
     error.value = null
     
-    console.log('🔍 [EMPLOYEES] Loading employees...')
-    const response = await employeesApi.getAll()
+    // 검색 파라미터 추가
+    const params: any = {}
+    if (searchQuery.value.trim()) {
+      params.search = searchQuery.value.trim()
+    }
+    
+    console.log('🔍 [EMPLOYEES] Loading employees with params:', params)
+    const response = await employeesApi.getAll(params)
     console.log('📝 [EMPLOYEES] API response:', response)
-    console.log('📝 [EMPLOYEES] Response type:', typeof response)
-    console.log('📝 [EMPLOYEES] Response keys:', Object.keys(response))
-    console.log('📝 [EMPLOYEES] Response employees:', response.employees)
-    console.log('📝 [EMPLOYEES] Response employees type:', typeof response.employees)
-    console.log('📝 [EMPLOYEES] Response employees length:', response.employees?.length)
     
     if (response.employees && Array.isArray(response.employees)) {
       employees.value = response.employees
-      console.log('📝 [EMPLOYEES] Set employees.value:', employees.value)
-      console.log('📝 [EMPLOYEES] employees.value length:', employees.value.length)
+      console.log('📝 [EMPLOYEES] Set employees.value:', employees.value.length, 'employees')
     } else {
       console.error('❌ [EMPLOYEES] Invalid response format:', response)
       employees.value = []
     }
   } catch (err: any) {
-    error.value = err.message || '직원 목록을 불러올 수 없습니다'
     console.error('Failed to load employees:', err)
+    error.value = err.message || '직원 정보를 불러오는데 실패했습니다'
   } finally {
     loading.value = false
   }
@@ -340,6 +341,12 @@ const onEmployeeSaved = async () => {
 
 const viewEmployeeDetail = (employeeId: string) => {
   navigateTo(`/employees/${employeeId}`)
+}
+
+// Search handler
+const handleSearch = () => {
+  // 검색어가 변경되면 API를 다시 호출
+  loadEmployees()
 }
 
 // Load data on mount

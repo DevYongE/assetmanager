@@ -376,8 +376,9 @@ export const useApi = () => {
   // =============================================================================
   const employees = {
     // 전체 직원 목록 조회
-    async getAll(): Promise<{ employees: Employee[] }> {
-      return apiCall<{ employees: Employee[] }>('/employees')
+    async getAll(params?: Record<string, string>): Promise<{ employees: Employee[] }> {
+      const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
+      return apiCall<{ employees: Employee[] }>(`/employees${queryString}`)
     },
 
     // 특정 직원 조회
@@ -498,11 +499,12 @@ export const useApi = () => {
   // =============================================================================
   const qr = {
     // 장비 QR 코드 생성 (ID 또는 자산번호)
-    async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' = 'json', includeLink: boolean = true): Promise<QRCodeResponse | Blob> {
+    async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' = 'json', includeLink: boolean = true, linkOnly: boolean = false): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
-        return apiCall<QRCodeResponse>(`/qr/device/${identifier}?includeLink=${includeLink}`)
+        // 2025-01-27: Enhanced QR generation with link type support
+        return apiCall<QRCodeResponse>(`/qr/device/${identifier}?includeLink=${includeLink}&linkOnly=${linkOnly}`)
       } else {
-        return apiCallForBlob(`/qr/device/${identifier}?format=${format}&includeLink=${includeLink}`)
+        return apiCallForBlob(`/qr/device/${identifier}?format=${format}&includeLink=${includeLink}&linkOnly=${linkOnly}`)
       }
     },
 

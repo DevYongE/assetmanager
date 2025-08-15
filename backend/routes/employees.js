@@ -7,6 +7,7 @@ const router = express.Router();
 // Get all employees for the authenticated user's company
 router.get('/', authenticateToken, async (req, res) => {
   try {
+    const { search } = req.query; // 검색 쿼리 파라미터 추가
     // 2025-01-27: Check user permissions using permissions table
     const { data: permissions, error: permError } = await supabase
       .rpc('check_user_permission', {
@@ -38,7 +39,18 @@ router.get('/', authenticateToken, async (req, res) => {
       query = query.eq('admin_id', req.user.id);
     }
     
-    const { data: employees, error } = await query.order('created_at', { ascending: false });
+    let { data: employees, error } = await query.order('created_at', { ascending: false });
+
+    // 2025-01-27: 검색 기능 추가
+    if (search && search.trim() !== '') {
+      const searchTerm = search.trim().toLowerCase();
+      employees = employees.filter(employee => 
+        employee.name?.toLowerCase().includes(searchTerm) ||
+        employee.department?.toLowerCase().includes(searchTerm) ||
+        employee.position?.toLowerCase().includes(searchTerm) ||
+        employee.email?.toLowerCase().includes(searchTerm)
+      );
+    }
     
     console.log('📝 [BACKEND] Supabase response:', { data: employees, error });
 

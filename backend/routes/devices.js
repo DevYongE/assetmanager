@@ -157,7 +157,7 @@ const upload = multer({
 // Get all devices for current user
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { assignment_status } = req.query; // 'assigned', 'unassigned', or undefined for all
+    const { assignment_status, search } = req.query; // 'assigned', 'unassigned', or undefined for all
     
     // 2025-01-27: Check user permissions using permissions table
     const { data: permissions, error: permError } = await supabase
@@ -224,8 +224,21 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     }
     
-    const { data: devices, error } = await query
+    let { data: devices, error } = await query
       .order('created_at', { ascending: false });
+
+    // 2025-01-27: 검색 기능 추가
+    if (search && search.trim() !== '') {
+      const searchTerm = search.trim().toLowerCase();
+      devices = devices.filter(device => 
+        device.asset_number?.toLowerCase().includes(searchTerm) ||
+        device.manufacturer?.toLowerCase().includes(searchTerm) ||
+        device.model_name?.toLowerCase().includes(searchTerm) ||
+        device.serial_number?.toLowerCase().includes(searchTerm) ||
+        device.employees?.name?.toLowerCase().includes(searchTerm) ||
+        device.purpose?.toLowerCase().includes(searchTerm)
+      );
+    }
 
     if (error) {
       console.error('Get devices error:', error);
