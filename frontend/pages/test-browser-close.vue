@@ -6,8 +6,8 @@
       <div class="p-4 bg-gray-100 rounded">
         <h2 class="font-semibold">현재 상태:</h2>
         <p>인증됨: {{ authStore.isAuthenticated ? '예' : '아니오' }}</p>
-        <p>세션 스토리지 토큰: {{ sessionStorage.getItem('auth_token') ? '존재' : '없음' }}</p>
-        <p>로컬 스토리지 토큰: {{ localStorage.getItem('auth_token') ? '존재' : '없음' }}</p>
+        <p>세션 스토리지 토큰: {{ getSessionStorageToken() ? '존재' : '없음' }}</p>
+        <p>로컬 스토리지 토큰: {{ getLocalStorageToken() ? '존재' : '없음' }}</p>
       </div>
       
       <div class="p-4 bg-blue-100 rounded">
@@ -61,6 +61,21 @@
 
 const authStore = useAuthStore()
 const eventLogs = ref<string[]>([])
+
+// 2025-01-27: localStorage/sessionStorage 접근을 위한 헬퍼 함수 추가
+const getSessionStorageToken = () => {
+  if (process.client) {
+    return sessionStorage.getItem('auth_token')
+  }
+  return null
+}
+
+const getLocalStorageToken = () => {
+  if (process.client) {
+    return localStorage.getItem('auth_token')
+  }
+  return null
+}
 
 const addLog = (message: string) => {
   const timestamp = new Date().toLocaleTimeString()

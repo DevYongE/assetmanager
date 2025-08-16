@@ -95,6 +95,16 @@
 
 const testResults = ref<string[]>([])
 
+// 2025-01-27: 누락된 변수들 추가 (테스트용 더미 데이터)
+const generationMode = ref<string>('단일 QR 생성')
+const qrType = ref<string>('장비')
+const selectedDevice = ref<any>({
+  id: 1,
+  asset_number: 'TEST-001',
+  manufacturer: '테스트 제조사',
+  model_name: '테스트 모델'
+})
+
 const addResult = (message: string) => {
   testResults.value.push(`[${new Date().toLocaleTimeString()}] ${message}`)
 }

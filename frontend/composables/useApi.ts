@@ -499,7 +499,8 @@ export const useApi = () => {
   // =============================================================================
   const qr = {
     // 장비 QR 코드 생성 (ID 또는 자산번호)
-    async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' = 'json', includeLink: boolean = true, linkOnly: boolean = false): Promise<QRCodeResponse | Blob> {
+    // 2025-01-27: zip 형식 지원 추가
+    async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' | 'zip' = 'json', includeLink: boolean = true, linkOnly: boolean = false): Promise<QRCodeResponse | Blob> {
       if (format === 'json') {
         // 2025-01-27: Enhanced QR generation with link type support
         return apiCall<QRCodeResponse>(`/qr/device/${identifier}?includeLink=${includeLink}&linkOnly=${linkOnly}`)
@@ -518,7 +519,8 @@ export const useApi = () => {
     },
 
     // 일괄 장비 QR 코드 생성
-    async bulkDeviceQR(deviceIds: string[], format: 'png' | 'json' = 'json', useTest: boolean = false, includeLink: boolean = true): Promise<any> {
+    // 2025-01-27: zip, pdf, individual 형식 지원 추가
+    async bulkDeviceQR(deviceIds: string[], format: 'png' | 'json' | 'zip' | 'pdf' | 'individual' = 'json', useTest: boolean = false, includeLink: boolean = true): Promise<any> {
       const endpoint = useTest ? '/qr/bulk/test' : '/qr/bulk/devices'
       return apiCall(endpoint, {
         method: 'POST',
@@ -558,6 +560,36 @@ export const useApi = () => {
         method: 'POST',
         body: JSON.stringify({ qr_string: qrString })
       })
+    },
+
+    // 2025-01-27: 템플릿 기반 QR 생성 함수 추가
+    async generateFromTemplate(templateData: any, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
+      if (format === 'json') {
+        return apiCall<QRCodeResponse>('/qr/template', {
+          method: 'POST',
+          body: JSON.stringify(templateData)
+        })
+      } else {
+        return apiCallForBlob(`/qr/template?format=${format}`, {
+          method: 'POST',
+          body: JSON.stringify(templateData)
+        })
+      }
+    },
+
+    // 2025-01-27: 사용자 정의 QR 생성 함수 추가
+    async generateCustom(customData: string, format: 'png' | 'svg' | 'json' = 'json'): Promise<QRCodeResponse | Blob> {
+      if (format === 'json') {
+        return apiCall<QRCodeResponse>('/qr/custom', {
+          method: 'POST',
+          body: JSON.stringify({ data: customData })
+        })
+      } else {
+        return apiCallForBlob(`/qr/custom?format=${format}`, {
+          method: 'POST',
+          body: JSON.stringify({ data: customData })
+        })
+      }
     }
   }
 
