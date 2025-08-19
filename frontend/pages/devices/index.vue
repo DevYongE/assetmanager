@@ -559,13 +559,13 @@ const filteredDevices = computed(() => {
   // 2025-01-27: 폐기된 장비는 메인 리스트에서 제외
   let filtered = devices.value.filter(device => device.purpose !== '폐기')
 
-  // Search filter
+  // Search filter - null-safe 검색
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(device => 
-      device.asset_number.toLowerCase().includes(query) ||
-      device.manufacturer.toLowerCase().includes(query) ||
-      device.model_name.toLowerCase().includes(query)
+      (device.asset_number && device.asset_number.toLowerCase().includes(query)) ||
+      (device.manufacturer && device.manufacturer.toLowerCase().includes(query)) ||
+      (device.model_name && device.model_name.toLowerCase().includes(query))
     )
   }
 

@@ -52,6 +52,22 @@ export default defineNuxtConfig({
   },
   
   // =============================================================================
+  // SSR 설정 - Hydration Mismatch 방지
+  // =============================================================================
+  ssr: true,  // 전역 SSR은 유지
+  
+  // 특정 페이지 CSR 강제 (routeRules로 처리)
+  routeRules: {
+    // 인증이 필요한 페이지들은 CSR로 처리하여 hydration mismatch 방지
+    '/dashboard': { ssr: false },
+    '/devices/**': { ssr: false },
+    '/employees/**': { ssr: false },
+    '/profile': { ssr: false },
+    '/qr-scanner': { ssr: false },
+    '/qr-generator': { ssr: false }
+  },
+  
+  // =============================================================================
   // CSS 설정
   // =============================================================================
   // 전역 CSS 파일 로드

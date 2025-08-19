@@ -404,8 +404,29 @@ const startQRScanning = () => {
           }, 500)
         }
         
-        if (error && error.name !== 'NotFoundException') {
-          console.error('QR scanning error:', error)
+        // 완전히 억제: NotFoundException과 관련된 모든 에러 로그 방지
+        if (error) {
+          const errorName = error.name || ''
+          const errorMessage = error.message || ''
+          
+          // NotFoundException, ZXingError, NoMultiFormatReadersException 등 일반적인 QR 스캔 실패 에러들 무시
+          const ignoredErrors = [
+            'NotFoundException', 
+            'NotFound', 
+            'NoMultiFormat', 
+            'no code found',
+            'no barcode found',
+            'No MultiFormat Readers'
+          ]
+          
+          const shouldIgnore = ignoredErrors.some(ignore => 
+            errorName.toLowerCase().includes(ignore.toLowerCase()) ||
+            errorMessage.toLowerCase().includes(ignore.toLowerCase())
+          )
+          
+          if (!shouldIgnore) {
+            console.error('QR scanning error:', error)
+          }
         }
       }
     )

@@ -102,7 +102,6 @@
                 type="text"
                 placeholder="직원 이름, 부서, 직급으로 검색..."
                 class="search-input"
-                @input="handleSearch"
               />
             </div>
             <select v-model="filterDepartment" class="filter-select">
@@ -257,14 +256,14 @@ const filteredEmployees = computed(() => {
   console.log('🔍 [EMPLOYEES] Computing filteredEmployees, employees.value:', employees.value)
   let filtered = employees.value
 
-  // Search filter
+  // Search filter - null-safe 클라이언트 검색
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(emp => 
-      emp.name.toLowerCase().includes(query) ||
-      emp.department.toLowerCase().includes(query) ||
-      emp.position.toLowerCase().includes(query) ||
-      emp.email.toLowerCase().includes(query)
+      (emp.name && emp.name.toLowerCase().includes(query)) ||
+      (emp.department && emp.department.toLowerCase().includes(query)) ||
+      (emp.position && emp.position.toLowerCase().includes(query)) ||
+      (emp.email && emp.email.toLowerCase().includes(query))
     )
   }
 
@@ -283,14 +282,8 @@ const loadEmployees = async () => {
     loading.value = true
     error.value = null
     
-    // 검색 파라미터 추가
-    const params: any = {}
-    if (searchQuery.value.trim()) {
-      params.search = searchQuery.value.trim()
-    }
-    
-    console.log('🔍 [EMPLOYEES] Loading employees with params:', params)
-    const response = await employeesApi.getAll(params)
+    console.log('🔍 [EMPLOYEES] Loading all employees')
+    const response = await employeesApi.getAll()
     console.log('📝 [EMPLOYEES] API response:', response)
     
     if (response.employees && Array.isArray(response.employees)) {
@@ -343,11 +336,8 @@ const viewEmployeeDetail = (employeeId: string) => {
   navigateTo(`/employees/${employeeId}`)
 }
 
-// Search handler
-const handleSearch = () => {
-  // 검색어가 변경되면 API를 다시 호출
-  loadEmployees()
-}
+// Search handler 제거 - 클라이언트 사이드 검색으로 변경
+// handleSearch 함수는 더 이상 필요하지 않음 (computed에서 실시간 처리)
 
 // Load data on mount
 onMounted(() => {

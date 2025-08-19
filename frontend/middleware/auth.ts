@@ -1,8 +1,14 @@
 export default defineNuxtRouteMiddleware((to, from) => {
   const authStore = useAuthStore()
   
-  // Skip middleware on server
+  // Skip middleware on server to prevent hydration mismatch
+  // 서버에서는 인증 체크를 하지 않고 클라이언트에서만 수행
   if (import.meta.server) return
+  
+  // Initialize auth store if not already done
+  if (process.client && !authStore.user && !authStore.token) {
+    authStore.initializeAuth()
+  }
   
   // Check if user is authenticated
   if (!authStore.isAuthenticated) {
