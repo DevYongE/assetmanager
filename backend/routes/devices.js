@@ -1268,6 +1268,7 @@ router.get('/export/excel', authenticateToken, async (req, res) => {
       'Employee Name': device.employees?.name || '',
       'Department': device.employees?.department || '',
       'Position': device.employees?.position || '',
+      'Type': device.device_type || '',
       'Manufacturer': device.manufacturer || '',
       'Model Name': device.model_name || '',
       'Serial Number': device.serial_number || '',
@@ -1277,6 +1278,8 @@ router.get('/export/excel', authenticateToken, async (req, res) => {
       'GPU': device.gpu || '',
       'OS': device.os || '',
       'Monitor': device.monitor || '',
+      'ISSUE_DATE': new Date(device.issue_date).toLocaleDateString() || '',
+      'INSPECTION_DATE': new Date(device.inspection_date).toLocaleDateString() || '',
       'Created At': new Date(device.created_at).toLocaleDateString()
     }));
 

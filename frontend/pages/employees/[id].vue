@@ -33,13 +33,13 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                직원 목록
+                직원 관리
               </NuxtLink>
               <span class="breadcrumb-separator">/</span>
-              <span class="breadcrumb-current">{{ employee.name }}</span>
+              <span class="breadcrumb-current">{{ employee?.name || '로딩 중...' }}</span>
             </div>
-            <h1 class="page-title">직원 상세 정보</h1>
-            <p class="page-subtitle">{{ employee.department }} - {{ employee.position }}</p>
+            <h1 class="page-title">{{ employee?.name ? `${employee.name}님 정보` : '직원 정보' }}</h1>
+            <p class="page-subtitle">{{ employee?.department && employee?.position ? `${employee.department} - ${employee.position}` : '정보 로딩 중...' }}</p>
           </div>
           <div class="header-actions">
             <button @click="editEmployee" class="btn-gradient edit-btn">
@@ -216,6 +216,14 @@
         </div>
       </div>
     </div>
+
+    <!-- 2025-01-27: 직원 수정 모달 -->
+    <EmployeeModal 
+      v-if="showEditModal"
+      :employee="employee"
+      @close="closeEditModal"
+      @saved="onEmployeeUpdated"
+    />
   </div>
 </template>
 
@@ -224,6 +232,9 @@ definePageMeta({
   layout: 'default',
   middleware: 'auth'
 })
+
+// 2025-01-27: EmployeeModal 컴포넌트 import
+import EmployeeModal from '~/components/EmployeeModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -264,10 +275,25 @@ const loadEmployee = async () => {
   }
 }
 
+// 2025-01-27: 직원 수정 모달 상태 추가
+const showEditModal = ref(false)
+
 // Edit employee
 const editEmployee = () => {
-  // TODO: 직원 수정 모달 또는 페이지로 이동
   console.log('Edit employee:', employee.value?.id)
+  showEditModal.value = true
+}
+
+// 2025-01-27: 모달 닫기 함수
+const closeEditModal = () => {
+  showEditModal.value = false
+}
+
+// 2025-01-27: 직원 수정 완료 후 처리
+const onEmployeeUpdated = async () => {
+  console.log('✅ Employee updated, reloading data')
+  closeEditModal()
+  await loadEmployee() // 데이터 다시 로드
 }
 
 // View device detail
