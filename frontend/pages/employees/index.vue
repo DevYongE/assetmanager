@@ -85,6 +85,19 @@
               <p class="stat-label">이번 달 신규</p>
             </div>
           </div>
+          
+          <!-- 2025-01-27: 퇴사 직원 통계 추가 -->
+          <div class="stat-card">
+            <div class="stat-icon resigned-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-value">{{ resignedEmployees }}</h3>
+              <p class="stat-label">퇴사 직원</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -181,7 +194,9 @@
               {{ employee.device_count || 0 }}개 장비
             </div>
             <div class="employee-status">
-              <span class="status-badge active">활성</span>
+              <!-- 2025-01-27: 퇴사 상태 표시 -->
+              <span v-if="employee.status === 'resigned'" class="status-badge resigned">퇴사</span>
+              <span v-else class="status-badge active">활성</span>
             </div>
           </div>
         </div>
@@ -250,6 +265,11 @@ const recentEmployees = computed(() => {
     const created = new Date(emp.created_at)
     return created.getMonth() === thisMonth && created.getFullYear() === thisYear
   }).length
+})
+
+// 2025-01-27: 퇴사 직원 통계 추가
+const resignedEmployees = computed(() => {
+  return employees.value.filter(emp => emp.status === 'resigned').length
 })
 
 const filteredEmployees = computed(() => {
@@ -503,6 +523,12 @@ onMounted(() => {
   color: white;
 }
 
+/* 2025-01-27: 퇴사 직원 통계 아이콘 스타일 */
+.resigned-icon {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
 .stat-content {
   flex: 1;
 }
@@ -738,6 +764,12 @@ onMounted(() => {
 
 .status-badge.active {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+/* 2025-01-27: 퇴사 상태 배지 스타일 추가 */
+.status-badge.resigned {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
 }
 

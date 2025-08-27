@@ -407,6 +407,21 @@ export const useApi = () => {
       return apiCall<{ message: string }>(`/employees/${id}`, {
         method: 'DELETE'
       })
+    },
+
+    // 2025-01-27: 직원 퇴사 처리
+    async resign(id: string): Promise<{ 
+      message: string; 
+      employee: Employee; 
+      returnedDevices: Device[] 
+    }> {
+      return apiCall<{ 
+        message: string; 
+        employee: Employee; 
+        returnedDevices: Device[] 
+      }>(`/employees/${id}/resign`, {
+        method: 'POST'
+      })
     }
   }
 

@@ -42,12 +42,32 @@
             <p class="page-subtitle">{{ employee?.department && employee?.position ? `${employee.department} - ${employee.position}` : '정보 로딩 중...' }}</p>
           </div>
           <div class="header-actions">
+            <!-- 2025-01-27: 퇴사 상태 표시 -->
+            <div v-if="employee?.status === 'resigned'" class="resigned-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              퇴사
+            </div>
+            
             <button @click="editEmployee" class="btn-gradient edit-btn">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               수정
+            </button>
+            
+            <!-- 2025-01-27: 퇴사 버튼 (재직 중인 직원만 표시) -->
+            <button 
+              v-if="employee?.status !== 'resigned'" 
+              @click="showResignModal = true" 
+              class="btn-danger resign-btn"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              퇴사 처리
             </button>
           </div>
         </div>
@@ -98,10 +118,15 @@
                 <label class="info-label">이메일</label>
                 <span class="info-value">{{ employee.email }}</span>
               </div>
-              <div class="info-item">
-                <label class="info-label">등록일</label>
-                <span class="info-value">{{ formatDate(employee.created_at) }}</span>
-              </div>
+                             <div class="info-item">
+                 <label class="info-label">등록일</label>
+                 <span class="info-value">{{ formatDate(employee.created_at) }}</span>
+               </div>
+               <!-- 2025-01-27: 퇴사일 표시 (퇴사한 직원만) -->
+               <div v-if="employee.status === 'resigned' && employee.resigned_at" class="info-item">
+                 <label class="info-label">퇴사일</label>
+                 <span class="info-value">{{ formatDate(employee.resigned_at) }}</span>
+               </div>
             </div>
           </div>
         </div>
@@ -224,6 +249,75 @@
       @close="closeEditModal"
       @saved="onEmployeeUpdated"
     />
+    
+    <!-- 2025-01-27: 퇴사 처리 모달 -->
+    <div v-if="showResignModal" class="modal-overlay" @click="closeResignModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3 class="modal-title">퇴사 처리</h3>
+          <button @click="closeResignModal" class="modal-close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+              <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="warning-message">
+            <div class="warning-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2"/>
+                <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
+                <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <h4 class="warning-title">{{ employee?.name }}님의 퇴사를 처리하시겠습니까?</h4>
+            <p class="warning-description">
+              퇴사 처리 시 다음 작업이 수행됩니다:
+            </p>
+            <ul class="warning-list">
+              <li>직원 상태가 '퇴사'로 변경됩니다</li>
+              <li>연결된 모든 장비가 자동으로 반납 처리됩니다</li>
+              <li>이 작업은 되돌릴 수 없습니다</li>
+            </ul>
+          </div>
+          
+          <div v-if="devices.length > 0" class="device-return-section">
+            <h5 class="device-return-title">반납될 장비 목록</h5>
+            <div class="device-return-list">
+              <div 
+                v-for="device in devices" 
+                :key="device.id"
+                class="device-return-item"
+              >
+                <div class="device-return-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2"/>
+                    <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="device-return-info">
+                  <span class="device-return-name">{{ device.asset_number }}</span>
+                  <span class="device-return-model">{{ device.manufacturer }} {{ device.model_name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button @click="closeResignModal" class="btn-secondary cancel-btn">
+            취소
+          </button>
+          <button @click="processResignation" class="btn-danger confirm-btn" :disabled="processingResignation">
+            <div v-if="processingResignation" class="loading-spinner-small"></div>
+            {{ processingResignation ? '처리 중...' : '퇴사 처리' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -278,6 +372,10 @@ const loadEmployee = async () => {
 // 2025-01-27: 직원 수정 모달 상태 추가
 const showEditModal = ref(false)
 
+// 2025-01-27: 퇴사 처리 관련 상태 추가
+const showResignModal = ref(false)
+const processingResignation = ref(false)
+
 // Edit employee
 const editEmployee = () => {
   console.log('Edit employee:', employee.value?.id)
@@ -294,6 +392,34 @@ const onEmployeeUpdated = async () => {
   console.log('✅ Employee updated, reloading data')
   closeEditModal()
   await loadEmployee() // 데이터 다시 로드
+}
+
+// 2025-01-27: 퇴사 처리 관련 함수들
+const closeResignModal = () => {
+  showResignModal.value = false
+}
+
+const processResignation = async () => {
+  if (!employee.value) return
+  
+  try {
+    processingResignation.value = true
+    
+    // 2025-01-27: 백엔드 퇴사 처리 API 사용
+    const result = await employeesApi.resign(employee.value.id)
+    
+    console.log('✅ Employee resignation processed successfully:', result)
+    
+    // 모달 닫기 및 데이터 새로고침
+    closeResignModal()
+    await loadEmployee()
+    
+  } catch (error) {
+    console.error('❌ Failed to process resignation:', error)
+    // 에러 처리 (실제로는 토스트 메시지 등으로 표시)
+  } finally {
+    processingResignation.value = false
+  }
 }
 
 // View device detail
@@ -455,6 +581,263 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
+}
+
+/* 2025-01-27: 퇴사 처리 관련 스타일 */
+.resigned-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.resign-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.resign-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+}
+
+/* 퇴사 처리 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.warning-message {
+  margin-bottom: 24px;
+}
+
+.warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #fef3c7;
+  border-radius: 12px;
+  color: #f59e0b;
+  margin-bottom: 16px;
+}
+
+.warning-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+}
+
+.warning-description {
+  color: #6b7280;
+  margin: 0 0 16px 0;
+}
+
+.warning-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.warning-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 8px;
+  color: #6b7280;
+}
+
+.warning-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.device-return-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+}
+
+.device-return-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.device-return-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.device-return-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.device-return-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  color: #6b7280;
+}
+
+.device-return-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.device-return-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.device-return-model {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 24px 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-secondary {
+  padding: 12px 20px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.btn-danger {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .content-grid {

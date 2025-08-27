@@ -250,6 +250,100 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// 2025-01-27: 퇴사 처리 API 추가
+router.post('/:id/resign', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 2025-01-27: Check if user has update permission for employees
+    const { data: hasUpdatePermission, error: permError } = await supabase
+      .rpc('check_user_permission', {
+        p_user_id: req.user.id,
+        p_resource_type: 'employees',
+        p_resource_id: id,
+        p_action: 'update'
+      });
+    
+    if (permError) {
+      console.error('Permission check error:', permError);
+      return res.status(500).json({ error: 'Failed to check user permissions' });
+    }
+    
+    if (!hasUpdatePermission) {
+      return res.status(403).json({ error: '퇴사 처리 권한이 없습니다.' });
+    }
+
+    // Check if employee exists and belongs to the user's company
+    const { data: existingEmployee, error: checkError } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('id', id)
+      .eq('admin_id', req.user.id)
+      .single();
+
+    if (checkError || !existingEmployee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Check if employee is already resigned
+    if (existingEmployee.status === 'resigned') {
+      return res.status(400).json({ error: 'Employee is already resigned' });
+    }
+
+    // Start transaction: Update employee status and return all devices
+    const { data: employee, error: updateError } = await supabase
+      .from('employees')
+      .update({
+        status: 'resigned',
+        resigned_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('admin_id', req.user.id)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      console.error('Update employee status error:', updateError);
+      return res.status(500).json({ error: 'Failed to update employee status' });
+    }
+
+    // Return all devices assigned to this employee
+    let devices = [];
+    try {
+      const { data: returnedDevices, error: deviceError } = await supabase
+        .from('personal_devices')
+        .update({
+          employee_id: null
+        })
+        .eq('employee_id', id)
+        .select('*');
+
+      if (deviceError) {
+        console.error('Return devices error:', deviceError);
+        // 장비 반납 실패해도 직원 퇴사는 처리
+        console.log('⚠️ Device return failed, but employee resignation will continue');
+      } else {
+        devices = returnedDevices || [];
+      }
+    } catch (deviceUpdateError) {
+      console.error('Device update exception:', deviceUpdateError);
+      // 장비 반납 실패해도 직원 퇴사는 처리
+      console.log('⚠️ Device update exception, but employee resignation will continue');
+    }
+
+    console.log(`✅ Employee ${employee.name} resigned successfully. ${devices?.length || 0} devices returned.`);
+
+    res.json({
+      message: 'Employee resigned successfully',
+      employee,
+      returnedDevices: devices || []
+    });
+  } catch (error) {
+    console.error('Resign employee error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Delete employee
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {

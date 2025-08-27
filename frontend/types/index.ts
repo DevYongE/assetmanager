@@ -36,6 +36,8 @@ export interface Employee {
   company_name: string
   email?: string // 2025-01-27: 이메일 필드 추가 (선택사항)
   device_count?: number // 2025-01-27: 장비 개수 필드 추가
+  status?: string // 2025-01-27: 근무 상태 필드 추가 (active/resigned)
+  resigned_at?: string // 2025-01-27: 퇴사일 필드 추가
   created_at: string
 }
 
