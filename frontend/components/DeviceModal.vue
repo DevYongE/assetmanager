@@ -85,15 +85,7 @@
           </p>
         </div>
 
-        <!-- 조사일자 -->
-        <div>
-          <label class="form-label">조사일자</label>
-          <input 
-            v-model="form.inspection_date" 
-            type="date" 
-            class="form-input"
-          />
-        </div>
+
 
         <!-- 용도 -->
         <div>
@@ -600,11 +592,14 @@ const loadEmployees = async () => {
 
 // Initialize form
 const initializeForm = () => {
+  // 2025-01-27: 현재 날짜를 YYYY-MM-DD 형식으로 가져오기 (조사일자 자동 설정용)
+  const today = new Date().toISOString().split('T')[0]
+  
   if (props.device) {
     Object.assign(form, {
       employee_id: props.device.employee_id,
       asset_number: props.device.asset_number,
-      inspection_date: props.device.inspection_date || '',
+      inspection_date: today, // 2025-01-27: 수정 시에도 현재 날짜로 자동 설정 (UI에서 제거됨)
       purpose: props.device.purpose || '',
       device_type: props.device.device_type || '',
       manufacturer: props.device.manufacturer || '',
@@ -631,7 +626,7 @@ const initializeForm = () => {
     Object.assign(form, {
       employee_id: '',
       asset_number: '',
-      inspection_date: '',
+      inspection_date: today, // 2025-01-27: 새 장비 추가 시 현재 날짜로 자동 설정 (UI에서 제거됨)
       purpose: '',
       device_type: '',
       manufacturer: '',

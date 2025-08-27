@@ -406,6 +406,9 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // 2025-01-27: Add admin_id to device creation to fix not-null constraint violation
     // 2025-01-27: Fix date field validation to prevent empty string errors
+    // 2025-01-27: 조사일자를 현재 날짜로 자동 설정 (UI에서 제거됨)
+    const today = new Date().toISOString().split('T')[0];
+    
     const deviceData = {
       admin_id: req.user.id, // 2025-01-27: Add admin_id from authenticated user
       employee_id: verifiedEmployeeId,
@@ -419,7 +422,7 @@ router.post('/', authenticateToken, async (req, res) => {
       gpu: gpu || null,
       os: os || null,
       monitor: monitor || null,
-      inspection_date: inspection_date || null,
+      inspection_date: today, // 2025-01-27: 자동으로 현재 날짜 설정 (UI에서 제거됨)
       purpose: purpose || null,
       device_type: device_type || null,
       monitor_size: monitor_size || null,
@@ -630,7 +633,9 @@ router.put('/:identifier', authenticateToken, async (req, res) => {
     if (gpu !== undefined) updates.gpu = gpu || null;
     if (os !== undefined) updates.os = os || null;
     if (monitor !== undefined) updates.monitor = monitor || null;
-    if (inspection_date !== undefined) updates.inspection_date = inspection_date || null;
+    // 2025-01-27: 조사일자를 항상 현재 날짜로 자동 설정 (UI에서 제거됨)
+    const today = new Date().toISOString().split('T')[0];
+    updates.inspection_date = today;
     if (purpose !== undefined) updates.purpose = purpose || null;
     if (device_type !== undefined) updates.device_type = device_type || null;
     if (monitor_size !== undefined) updates.monitor_size = monitor_size || null;
