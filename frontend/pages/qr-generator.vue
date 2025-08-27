@@ -915,15 +915,25 @@ const generateQR = async () => {
   
   generating.value = true
   try {
+    console.log('🔍 [QR DEBUG] Starting QR generation for device:', selectedDevice.value.asset_number);
+    console.log('🔍 [QR DEBUG] QR generation parameters:', {
+      format: qrFormat.value,
+      includeLink: includeLink.value,
+      linkOnly: linkOnly.value
+    });
+    
     // 2025-01-27: Use asset_number consistently for QR generation
     // 2025-08-13: Include link parameter for direct navigation
     const response = await qrApi.getDeviceQR(selectedDevice.value.asset_number, qrFormat.value, includeLink.value, linkOnly.value)
+    
+    console.log('🔍 [QR DEBUG] QR generation response:', response);
     
     if (qrFormat.value === 'json') {
       // JSON 응답인 경우
       const qrResponse = response as any
       deviceQRUrl.value = qrResponse.qrUrl || qrResponse.data?.qrUrl
       qrMetadata.value = qrResponse.metadata // 2025-08-13: 메타데이터 저장
+      console.log('🔍 [QR DEBUG] JSON QR response processed:', { deviceQRUrl: deviceQRUrl.value, qrMetadata: qrMetadata.value });
     } else {
       // Blob 응답인 경우 (PNG/SVG)
       const blob = response as Blob
@@ -944,9 +954,27 @@ const generateQR = async () => {
         direct_link: includeLink.value ? `${window.location.origin}/devices/${selectedDevice.value.asset_number}` : null,
         link_type: qrLinkType.value // 2025-01-27: 링크 타입 정보 추가
       }
+      console.log('🔍 [QR DEBUG] Blob QR response processed:', { deviceQRUrl: deviceQRUrl.value, qrMetadata: qrMetadata.value });
     }
-  } catch (error) {
-    console.error('QR 생성 실패:', error)
+  } catch (error: any) {
+    console.error('🔍 [QR DEBUG] QR 생성 실패:', error);
+    console.error('🔍 [QR DEBUG] Error details:', {
+      message: error.message,
+      status: error.status,
+      response: error.response
+    });
+    
+    // 사용자에게 더 구체적인 에러 메시지 제공
+    let errorMessage = 'QR 코드 생성에 실패했습니다.';
+    if (error.status === 404) {
+      errorMessage = '장비를 찾을 수 없습니다.';
+    } else if (error.status === 403) {
+      errorMessage = '이 장비에 대한 접근 권한이 없습니다.';
+    } else if (error.status === 400) {
+      errorMessage = '폐기된 장비는 QR 코드를 생성할 수 없습니다.';
+    }
+    
+    alert(errorMessage);
   } finally {
     generating.value = false
   }

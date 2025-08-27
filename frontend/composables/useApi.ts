@@ -516,11 +516,23 @@ export const useApi = () => {
     // 장비 QR 코드 생성 (ID 또는 자산번호)
     // 2025-01-27: zip 형식 지원 추가
     async getDeviceQR(identifier: string, format: 'png' | 'svg' | 'json' | 'zip' = 'json', includeLink: boolean = true, linkOnly: boolean = false): Promise<QRCodeResponse | Blob> {
+      // 2025-01-27: Debug logging for QR generation
+      console.log('🔍 [QR DEBUG] getDeviceQR called with:', {
+        identifier,
+        format,
+        includeLink,
+        linkOnly
+      });
+      
       if (format === 'json') {
         // 2025-01-27: Enhanced QR generation with link type support
-        return apiCall<QRCodeResponse>(`/qr/device/${identifier}?includeLink=${includeLink}&linkOnly=${linkOnly}`)
+        const endpoint = `/qr/device/${identifier}?includeLink=${includeLink}&linkOnly=${linkOnly}`;
+        console.log('🔍 [QR DEBUG] JSON endpoint:', endpoint);
+        return apiCall<QRCodeResponse>(endpoint)
       } else {
-        return apiCallForBlob(`/qr/device/${identifier}?format=${format}&includeLink=${includeLink}&linkOnly=${linkOnly}`)
+        const endpoint = `/qr/device/${identifier}?format=${format}&includeLink=${includeLink}&linkOnly=${linkOnly}`;
+        console.log('🔍 [QR DEBUG] Blob endpoint:', endpoint);
+        return apiCallForBlob(endpoint)
       }
     },
 

@@ -61,17 +61,34 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
 
     const { data: device, error } = await query.single();
 
-    if (error || !device) {
+    // 2025-01-27: Enhanced error handling with debug logging
+    console.log('🔍 [QR DEBUG] Device query result:', { device, error });
+    
+    if (error) {
+      console.error('🔍 [QR DEBUG] Database error:', error);
+      return res.status(500).json({ error: 'Database error occurred' });
+    }
+    
+    if (!device) {
+      console.log('🔍 [QR DEBUG] Device not found for identifier:', identifier);
       return res.status(404).json({ error: 'Device not found' });
     }
 
     // 2025-01-27: Exclude disposed devices from QR generation
     if (device.purpose === '폐기') {
+      console.log('🔍 [QR DEBUG] Attempted to generate QR for disposed device:', device.asset_number);
       return res.status(400).json({ error: 'QR codes cannot be generated for disposed devices' });
     }
 
     // Check if device belongs to user's employee
+    console.log('🔍 [QR DEBUG] Checking device ownership:', {
+      device_employee_admin_id: device.employees?.admin_id,
+      current_user_id: req.user.id,
+      device_asset_number: device.asset_number
+    });
+    
     if (device.employees && device.employees.admin_id !== req.user.id) {
+      console.log('🔍 [QR DEBUG] Access denied - device belongs to different admin');
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -100,9 +117,17 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
 
     // 2025-01-27: Enhanced QR string generation with link type support
     const { linkOnly = 'false' } = req.query;
+    
+    // 2025-01-27: Debug logging for QR generation
+    console.log('🔍 [QR DEBUG] Request query:', req.query);
+    console.log('🔍 [QR DEBUG] linkOnly value:', linkOnly);
+    console.log('🔍 [QR DEBUG] includeLink value:', includeLink);
+    
     const qrString = linkOnly === 'true' 
       ? `${process.env.FRONTEND_URL || 'https://invenOne.it.kr'}/devices/${device.asset_number}` // 링크만 포함
       : JSON.stringify(qrData); // 전체 데이터 포함
+    
+    console.log('🔍 [QR DEBUG] Generated QR string:', qrString);
 
     // 2025-08-13: Enhanced format handling with additional options
     if (format === 'json') {
