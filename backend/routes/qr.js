@@ -80,13 +80,15 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'QR codes cannot be generated for disposed devices' });
     }
 
-    // Check if device belongs to user's employee
+    // Check if device belongs to user's employee or is unassigned
     console.log('🔍 [QR DEBUG] Checking device ownership:', {
       device_employee_admin_id: device.employees?.admin_id,
       current_user_id: req.user.id,
-      device_asset_number: device.asset_number
+      device_asset_number: device.asset_number,
+      has_employee: !!device.employees
     });
     
+    // Allow QR generation for unassigned devices or devices assigned to user's employees
     if (device.employees && device.employees.admin_id !== req.user.id) {
       console.log('🔍 [QR DEBUG] Access denied - device belongs to different admin');
       return res.status(403).json({ error: 'Access denied' });
