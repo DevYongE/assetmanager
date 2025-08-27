@@ -138,7 +138,7 @@
       </div>
     </div>
 
-    <!-- 검색 오버레이 -->
+    <!-- 2025-01-27: 통합 검색 오버레이 -->
     <div v-if="isSearchOpen" class="search-overlay" @click="closeSearch">
       <div class="search-modal" @click.stop>
         <div class="search-input-wrapper">
@@ -151,8 +151,10 @@
             v-model="searchQuery"
             type="text"
             class="search-input"
-            placeholder="검색어를 입력하세요..."
+            placeholder="직원명, 장비 자산번호, 장비 타입, 제조사로 검색..."
+            @input="handleSearch"
             @keydown.esc="closeSearch"
+            @keydown.enter="handleSearchEnter"
           />
           <button class="search-close" @click="closeSearch">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -160,6 +162,58 @@
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
+        </div>
+        
+        <!-- 검색 결과 드롭다운 -->
+        <div v-if="searchResults.length > 0" class="search-results">
+          <div class="search-results-header">
+            <span class="search-results-title">검색 결과 ({{ searchResults.length }})</span>
+          </div>
+          <div class="search-results-list">
+            <div 
+              v-for="result in searchResults" 
+              :key="result.id"
+              class="search-result-item"
+              @click="handleResultClick(result)"
+            >
+              <div class="result-icon" :class="result.type">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path v-if="result.type === 'device'" d="M3 9h6v12H3z"/>
+                  <path v-if="result.type === 'device'" d="M9 3h12v18H9z"/>
+                  <path v-if="result.type === 'employee'" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle v-if="result.type === 'employee'" cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div class="result-content">
+                <div class="result-title">{{ result.title }}</div>
+                <div class="result-subtitle">{{ result.subtitle }}</div>
+                <div class="result-type">{{ result.typeLabel }}</div>
+              </div>
+              <div class="result-arrow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9,18 15,12 9,6"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 검색 결과가 없을 때 -->
+        <div v-else-if="searchQuery && !isSearching" class="search-no-results">
+          <div class="no-results-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </div>
+          <h3 class="no-results-title">검색 결과가 없습니다</h3>
+          <p class="no-results-description">다른 검색어를 시도해보세요</p>
+        </div>
+        
+        <!-- 검색 중일 때 -->
+        <div v-else-if="isSearching" class="search-loading">
+          <div class="loading-spinner"></div>
+          <span class="loading-text">검색 중...</span>
         </div>
       </div>
     </div>
@@ -192,6 +246,11 @@ const isSearchOpen = ref(false)
 const searchQuery = ref('')
 const notificationCount = ref(0)
 const user = ref<any>(null)
+
+// 2025-01-27: 통합 검색 관련 상태 추가
+const searchResults = ref<any[]>([])
+const isSearching = ref(false)
+const searchTimeout = ref<NodeJS.Timeout | null>(null)
 
 // Refs
 const userMenuRef = ref<HTMLElement>()
@@ -250,10 +309,122 @@ const toggleSearch = () => {
   }
 }
 
+// 2025-01-27: 통합 검색 함수들
+const handleSearch = () => {
+  // 이전 타이머가 있으면 취소
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+  
+  // 검색어가 없으면 결과 초기화
+  if (!searchQuery.value.trim()) {
+    searchResults.value = []
+    return
+  }
+  
+  // 300ms 후에 검색 실행 (디바운싱)
+  searchTimeout.value = setTimeout(() => {
+    performSearch()
+  }, 300)
+}
+
+const performSearch = async () => {
+  if (!searchQuery.value.trim()) return
+  
+  isSearching.value = true
+  searchResults.value = []
+  
+  try {
+    const api = useApi()
+    const query = searchQuery.value.trim()
+    
+    // 장비 검색
+    const devicesResponse = await api.devices.getAll()
+    const devices = devicesResponse.devices || []
+    
+    // 직원 검색
+    const employeesResponse = await api.employees.getAll()
+    const employees = employeesResponse.employees || []
+    
+    const results: any[] = []
+    
+    // 장비 검색 결과 추가
+    devices.forEach(device => {
+      const searchableText = [
+        device.asset_number,
+        device.manufacturer,
+        device.model_name,
+        device.device_type,
+        device.purpose
+      ].join(' ').toLowerCase()
+      
+      if (searchableText.includes(query.toLowerCase())) {
+        results.push({
+          id: device.id,
+          type: 'device',
+          typeLabel: '장비',
+          title: `${device.manufacturer || '제조사 미지정'} ${device.model_name || '모델명 미지정'}`,
+          subtitle: `자산번호: ${device.asset_number}`,
+          path: `/devices/${device.asset_number}`
+        })
+      }
+    })
+    
+    // 직원 검색 결과 추가
+    employees.forEach(employee => {
+      const searchableText = [
+        employee.name,
+        employee.email,
+        employee.department,
+        employee.position
+      ].join(' ').toLowerCase()
+      
+      if (searchableText.includes(query.toLowerCase())) {
+        results.push({
+          id: employee.id,
+          type: 'employee',
+          typeLabel: '직원',
+          title: employee.name,
+          subtitle: `${employee.department || '부서 미지정'} • ${employee.position || '직책 미지정'}`,
+          path: `/employees/${employee.id}`
+        })
+      }
+    })
+    
+    // 최대 10개 결과로 제한
+    searchResults.value = results.slice(0, 10)
+    
+  } catch (error) {
+    console.error('검색 실패:', error)
+    searchResults.value = []
+  } finally {
+    isSearching.value = false
+  }
+}
+
+const handleSearchEnter = () => {
+  if (searchResults.value.length > 0) {
+    handleResultClick(searchResults.value[0])
+  }
+}
+
+const handleResultClick = (result: any) => {
+  closeSearch()
+  navigateTo(result.path)
+}
+
 // 검색 닫기
 const closeSearch = () => {
   isSearchOpen.value = false
   searchQuery.value = ''
+  searchResults.value = []
+  isSearching.value = false
+  
+  // 타이머 정리
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+    searchTimeout.value = null
+  }
 }
 
 // 알림 토글
@@ -320,6 +491,11 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeydown)
+  
+  // 2025-01-27: 검색 타이머 정리
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
 })
 </script>
 
@@ -771,6 +947,168 @@ onUnmounted(() => {
 .search-close:hover {
   background: rgba(239, 68, 68, 0.2);
   transform: scale(1.05);
+}
+
+/* 2025-01-27: 검색 결과 스타일 */
+.search-results {
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.search-results-header {
+  padding: 0.75rem 1rem;
+  background: rgba(139, 92, 246, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.search-results-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #a855f7;
+}
+
+.search-results-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.result-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.result-icon.device {
+  background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+}
+
+.result-icon.employee {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-subtitle {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-type {
+  font-size: 0.75rem;
+  color: #a855f7;
+  font-weight: 500;
+}
+
+.result-arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.search-result-item:hover .result-arrow {
+  color: #a855f7;
+  transform: translateX(4px);
+}
+
+/* 검색 결과 없음 */
+.search-no-results {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.no-results-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 16px;
+  margin-bottom: 1rem;
+  color: #a855f7;
+}
+
+.no-results-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.no-results-description {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* 검색 로딩 */
+.search-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(139, 92, 246, 0.2);
+  border-top: 3px solid #a855f7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #64748b;
+  font-size: 0.875rem;
 }
 
 /* 반응형 */

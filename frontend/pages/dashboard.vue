@@ -60,110 +60,12 @@
 
     <!-- 메인 컨텐츠 -->
     <div class="main-content">
-      <!-- 빠른 액션 -->
-      <div class="section-card">
-        <h2 class="section-title">빠른 액션</h2>
-        <div class="quick-actions">
-          <div class="action-card" @click="navigateTo('/qr-generator')">
-            <div class="action-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9h6v12H3z"/>
-                <path d="M9 3h12v18H9z"/>
-                <path d="M15 9h6"/>
-                <path d="M15 15h6"/>
-                <path d="M9 9h6"/>
-                <path d="M9 15h6"/>
-              </svg>
-            </div>
-            <h3 class="action-title">QR 코드 생성</h3>
-            <p class="action-description">장비와 직원용 QR 코드를 생성하세요</p>
-          </div>
-          
-          <div class="action-card" @click="navigateTo('/qr-scanner')">
-            <div class="action-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9h6v12H3z"/>
-                <path d="M9 3h12v18H9z"/>
-                <path d="M15 9h6"/>
-                <path d="M15 15h6"/>
-                <path d="M9 9h6"/>
-                <path d="M9 15h6"/>
-              </svg>
-            </div>
-            <h3 class="action-title">QR 코드 스캔</h3>
-            <p class="action-description">QR 코드를 스캔하여 정보를 확인하세요</p>
-          </div>
-          
-          <div class="action-card" @click="navigateTo('/devices')">
-            <div class="action-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
-            </div>
-            <h3 class="action-title">장비 관리</h3>
-            <p class="action-description">장비 정보를 추가하고 관리하세요</p>
-          </div>
-          
-          <div class="action-card" @click="navigateTo('/employees')">
-            <div class="action-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-            <h3 class="action-title">직원 관리</h3>
-            <p class="action-description">직원 정보를 추가하고 관리하세요</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 최근 활동 -->
-      <div class="section-card">
-        <h2 class="section-title">최근 활동</h2>
-        <div class="recent-activities">
-          <div v-if="recentActivities.length === 0" class="empty-state">
-            <div class="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12,6 12,12 16,14"/>
-              </svg>
-            </div>
-            <h3 class="empty-title">아직 활동이 없습니다</h3>
-            <p class="empty-description">새로운 장비를 추가하거나 QR 코드를 생성해보세요</p>
-          </div>
-          
-          <div v-else class="activity-list">
-            <div 
-              v-for="activity in recentActivities" 
-              :key="activity.id"
-              class="activity-item"
-            >
-              <div class="activity-icon" :class="activity.type">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path v-if="activity.type === 'device'" d="M3 9h6v12H3z"/>
-                  <path v-if="activity.type === 'device'" d="M9 3h12v18H9z"/>
-                  <path v-if="activity.type === 'employee'" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle v-if="activity.type === 'employee'" cx="12" cy="7" r="4"/>
-                  <path v-if="activity.type === 'qr'" d="M3 9h6v12H3z"/>
-                  <path v-if="activity.type === 'qr'" d="M9 3h12v18H9z"/>
-                </svg>
-              </div>
-              <div class="activity-content">
-                <h4 class="activity-title">{{ activity.title }}</h4>
-                <p class="activity-description">{{ activity.description }}</p>
-                <span class="activity-time">{{ formatTime(activity.createdAt) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 장비 상태 요약 -->
-      <div class="section-card">
+      <!-- 2025-01-27: 대시보드 레이아웃 재구성 - 장비 상태 요약을 상단에 배치 -->
+      
+      <!-- 장비 상태 요약 (상단 전체 너비) -->
+      <div class="section-card full-width">
         <h2 class="section-title">장비 상태 요약</h2>
-        <div class="device-status-grid">
+        <div class="device-status-grid-wide">
           <div class="status-card active">
             <div class="status-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -222,55 +124,163 @@
         </div>
       </div>
 
-      <!-- 최근 추가된 장비 -->
-      <div class="section-card">
-        <h2 class="section-title">최근 추가된 장비</h2>
-        <div class="recent-devices">
-          <div v-if="recentDevices.length === 0" class="empty-state">
-            <div class="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- 2025-01-27: 장비 타입별 요약으로 변경 -->
+      <!-- 장비 타입별 요약 -->
+      <div class="section-card full-width">
+        <h2 class="section-title">장비 타입별 요약</h2>
+        <div class="device-type-summary">
+          <div class="device-type-card laptop">
+            <div class="device-type-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                 <line x1="8" y1="21" x2="16" y2="21"/>
                 <line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </div>
-            <h3 class="empty-title">아직 장비가 없습니다</h3>
-            <p class="empty-description">첫 번째 장비를 추가해보세요</p>
-            <BaseButton
-              label="장비 추가"
-              variant="accent"
-              :icon="'M12 5v14M5 12h14'"
-              @click="navigateTo('/devices')"
-            />
+            <div class="device-type-info">
+              <span class="device-type-number">{{ stats.laptopCount || 0 }}</span>
+              <span class="device-type-label">노트북</span>
+            </div>
           </div>
           
-          <div v-else class="device-list">
-            <div 
-              v-for="device in recentDevices" 
-              :key="device.id"
-              class="device-item"
-              @click="navigateTo(`/devices/${device.asset_number}`)"
-            >
-              <div class="device-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="device-type-card desktop">
+            <div class="device-type-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+                <rect x="6" y="7" width="12" height="8"/>
+              </svg>
+            </div>
+            <div class="device-type-info">
+              <span class="device-type-number">{{ stats.desktopCount || 0 }}</span>
+              <span class="device-type-label">데스크탑</span>
+            </div>
+          </div>
+          
+          <div class="device-type-card monitor">
+            <div class="device-type-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div class="device-type-info">
+              <span class="device-type-number">{{ stats.monitorCount || 0 }}</span>
+              <span class="device-type-label">모니터</span>
+            </div>
+          </div>
+          
+          <div class="device-type-card other">
+            <div class="device-type-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="9" cy="9" r="2"/>
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+              </svg>
+            </div>
+            <div class="device-type-info">
+              <span class="device-type-number">{{ stats.otherCount || 0 }}</span>
+              <span class="device-type-label">기타</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 섹션 (최근 활동 + 최근 장비) -->
+      <div class="bottom-section">
+        <!-- 최근 활동 -->
+        <div class="section-card">
+          <h2 class="section-title">최근 활동</h2>
+          <div class="recent-activities">
+            <div v-if="recentActivities.length === 0" class="empty-state">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+              </div>
+              <h3 class="empty-title">아직 활동이 없습니다</h3>
+              <p class="empty-description">새로운 장비를 추가하거나 QR 코드를 생성해보세요</p>
+            </div>
+            
+            <div v-else class="activity-list">
+              <div 
+                v-for="activity in recentActivities" 
+                :key="activity.id"
+                class="activity-item"
+              >
+                <div class="activity-icon" :class="activity.type">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path v-if="activity.type === 'device'" d="M3 9h6v12H3z"/>
+                    <path v-if="activity.type === 'device'" d="M9 3h12v18H9z"/>
+                    <path v-if="activity.type === 'employee'" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle v-if="activity.type === 'employee'" cx="12" cy="7" r="4"/>
+                    <path v-if="activity.type === 'qr'" d="M3 9h6v12H3z"/>
+                    <path v-if="activity.type === 'qr'" d="M9 3h12v18H9z"/>
+                  </svg>
+                </div>
+                <div class="activity-content">
+                  <h4 class="activity-title">{{ activity.title }}</h4>
+                  <p class="activity-description">{{ activity.description }}</p>
+                  <span class="activity-time">{{ formatTime(activity.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 최근 추가된 장비 -->
+        <div class="section-card">
+          <h2 class="section-title">최근 추가된 장비</h2>
+          <div class="recent-devices">
+            <div v-if="recentDevices.length === 0" class="empty-state">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                   <line x1="8" y1="21" x2="16" y2="21"/>
                   <line x1="12" y1="17" x2="12" y2="21"/>
                 </svg>
               </div>
-              <div class="device-info">
-                <h4 class="device-name">
-                  {{ (device.manufacturer || '제조사 미지정') + ' ' + (device.model_name || '모델명 미지정') }}
-                </h4>
-                <p class="device-number">{{ device.asset_number }}</p>
-                <span class="device-status" :class="getDeviceStatus(device)">
-                  {{ getStatusText(getDeviceStatus(device)) }}
-                </span>
-              </div>
-              <div class="device-arrow">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9,18 15,12 9,6"/>
-                </svg>
+              <h3 class="empty-title">아직 장비가 없습니다</h3>
+              <p class="empty-description">첫 번째 장비를 추가해보세요</p>
+              <BaseButton
+                label="장비 추가"
+                variant="accent"
+                :icon="'M12 5v14M5 12h14'"
+                @click="navigateTo('/devices')"
+              />
+            </div>
+            
+            <div v-else class="device-list">
+              <div 
+                v-for="device in recentDevices" 
+                :key="device.id"
+                class="device-item"
+                @click="navigateTo(`/devices/${device.asset_number}`)"
+              >
+                <div class="device-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                </div>
+                <div class="device-info">
+                  <h4 class="device-name">
+                    {{ (device.manufacturer || '제조사 미지정') + ' ' + (device.model_name || '모델명 미지정') }}
+                  </h4>
+                  <p class="device-number">{{ device.asset_number }}</p>
+                  <span class="device-status" :class="getDeviceStatus(device)">
+                    {{ getStatusText(getDeviceStatus(device)) }}
+                  </span>
+                </div>
+                <div class="device-arrow">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9,18 15,12 9,6"/>
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
@@ -305,7 +315,12 @@ const stats = ref({
   activeDevices: 0,
   inactiveDevices: 0,
   maintenanceDevices: 0,
-  retiredDevices: 0
+  retiredDevices: 0,
+  // 2025-01-27: 장비 타입별 통계 추가
+  laptopCount: 0,
+  desktopCount: 0,
+  monitorCount: 0,
+  otherCount: 0
 })
 
 const recentActivities = ref<any[]>([])
@@ -360,30 +375,63 @@ const loadDashboardData = async () => {
       activeDevices: dashboardStats.active_devices || 0,
       inactiveDevices: dashboardStats.inactive_devices || 0,
       maintenanceDevices: dashboardStats.maintenance_devices || 0,
-      retiredDevices: dashboardStats.retired_devices || 0
+      retiredDevices: dashboardStats.retired_devices || 0,
+      // 2025-01-27: 장비 타입별 통계 추가 (기본값)
+      laptopCount: 0,
+      desktopCount: 0,
+      monitorCount: 0,
+      otherCount: 0
     }
     
     // 장비 데이터 로드 (최근 5개)
     const devicesResponse = await api.devices.getAll()
     const devices = devicesResponse.devices || []
     
+    // 2025-01-27: 장비 타입별 통계 계산
+    const typeCounts = {
+      laptop: 0,
+      desktop: 0,
+      monitor: 0,
+      other: 0
+    }
+    
+    devices.forEach(device => {
+      const deviceType = device.device_type?.toLowerCase() || 'other'
+      if (deviceType.includes('laptop') || deviceType.includes('노트북')) {
+        typeCounts.laptop++
+      } else if (deviceType.includes('desktop') || deviceType.includes('데스크탑')) {
+        typeCounts.desktop++
+      } else if (deviceType.includes('monitor') || deviceType.includes('모니터')) {
+        typeCounts.monitor++
+      } else {
+        typeCounts.other++
+      }
+    })
+    
+    // 타입별 통계 업데이트
+    stats.value.laptopCount = typeCounts.laptop
+    stats.value.desktopCount = typeCounts.desktop
+    stats.value.monitorCount = typeCounts.monitor
+    stats.value.otherCount = typeCounts.other
+    
     // 최근 장비 (최근 5개)
     recentDevices.value = devices
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5)
     
+    // 2025-01-27: 최근 활동을 4개로 제한
     // 최근 활동 API 호출
     try {
       const activitiesResponse = await api.dashboard.getRecentActivities()
-      recentActivities.value = activitiesResponse.activities || []
+      recentActivities.value = (activitiesResponse.activities || []).slice(0, 4)
     } catch (activitiesError) {
       console.warn('최근 활동 로드 실패, 기본 데이터 사용:', activitiesError)
       
-      // 최근 활동 생성 (장비 기반)
+      // 최근 활동 생성 (장비 기반) - 최대 4개로 제한
       const recentActivitiesData = []
       
-      // 최근 장비들을 기반으로 활동 생성
-      for (const device of recentDevices.value.slice(0, 3)) {
+      // 최근 장비들을 기반으로 활동 생성 (최대 4개)
+      for (const device of recentDevices.value.slice(0, 4)) {
         recentActivitiesData.push({
           id: device.id,
           type: 'device',
@@ -406,8 +454,13 @@ const loadDashboardData = async () => {
       activeDevices: 0,
       inactiveDevices: 0,
       maintenanceDevices: 0,
-          retiredDevices: 0
-  }
+      retiredDevices: 0,
+      // 2025-01-27: 장비 타입별 통계 기본값
+      laptopCount: 0,
+      desktopCount: 0,
+      monitorCount: 0,
+      otherCount: 0
+    }
   
   recentActivities.value = []
   recentDevices.value = []
@@ -532,8 +585,20 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* 전체 너비 섹션 */
+.section-card.full-width {
+  width: 100%;
+}
+
+/* 하단 섹션 (최근 활동 + 최근 장비) */
+.bottom-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
 }
 
@@ -701,6 +766,80 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
+}
+
+/* 2025-01-27: 장비 상태 요약 - 상단 전체 너비용 */
+.device-status-grid-wide {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+/* 2025-01-27: 장비 타입별 요약 */
+.device-type-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.device-type-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.device-type-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.device-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+.device-type-card.laptop .device-type-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.device-type-card.desktop .device-type-icon {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.device-type-card.monitor .device-type-icon {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.device-type-card.other .device-type-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.device-type-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.device-type-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.device-type-label {
+  font-size: 1rem;
+  color: #64748b;
+  line-height: 1.4;
 }
 
 .status-card {
@@ -912,6 +1051,18 @@ onMounted(() => {
   .hero-stats {
     grid-template-columns: repeat(3, 1fr);
   }
+  
+  .device-status-grid-wide {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .device-type-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .bottom-section {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -924,7 +1075,6 @@ onMounted(() => {
   }
   
   .main-content {
-    grid-template-columns: 1fr;
     padding: 0 1rem;
   }
   
@@ -932,12 +1082,12 @@ onMounted(() => {
     padding: 1.5rem;
   }
   
-  .quick-actions {
+  .device-status-grid-wide {
     grid-template-columns: 1fr;
   }
   
-  .device-status-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .device-type-summary {
+    grid-template-columns: 1fr;
   }
   
   .hero-section {
@@ -946,7 +1096,11 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
-  .device-status-grid {
+  .device-status-grid-wide {
+    grid-template-columns: 1fr;
+  }
+  
+  .device-type-summary {
     grid-template-columns: 1fr;
   }
 }
