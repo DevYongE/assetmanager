@@ -15,6 +15,7 @@
     <div class="login-container">
       <!-- 로고 섹션 -->
       <div class="logo-section">
+        <!-- 2025-01-27: InvenOne 로고로 변경 -->
         <div class="logo-icon">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 9h6v12H3z"/>
@@ -25,10 +26,10 @@
             <path d="M9 15h6"/>
           </svg>
         </div>
-                 <h1 class="logo-title">
-           <span class="gradient-text">QR Asset</span>
-         </h1>
-         <p class="logo-subtitle">스마트한 자산 관리 솔루션</p>
+        <h1 class="logo-title">
+          <span class="gradient-text">InvenOne</span>
+        </h1>
+        <p class="logo-subtitle">스마트한 자산 관리 솔루션</p>
       </div>
 
       <!-- 로그인 폼 -->
@@ -320,32 +321,66 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
-  border-radius: 24px;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 28px;
   margin-bottom: 2rem;
   color: white;
-  box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 20px 25px -5px rgba(102, 126, 234, 0.3);
   animation: pulse-glow 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-icon::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3); }
-  50% { box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.3), 0 0 30px rgba(139, 92, 246, 0.5); }
+  0%, 100% { box-shadow: 0 20px 25px -5px rgba(102, 126, 234, 0.3); }
+  50% { box-shadow: 0 20px 25px -5px rgba(102, 126, 234, 0.3), 0 0 30px rgba(102, 126, 234, 0.5); }
 }
 
 .logo-title {
-  font-size: 3rem;
-  font-weight: 800;
+  font-size: 3.5rem;
+  font-weight: 900;
   margin-bottom: 1rem;
-  line-height: 1.2;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .logo-subtitle {
   font-size: 1.125rem;
   color: #64748b;
   line-height: 1.6;
+}
+
+/* 2025-01-27: InvenOne 로고 그라데이션 스타일 */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* 로그인 폼 컨테이너 */
