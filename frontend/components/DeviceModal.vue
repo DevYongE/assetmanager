@@ -186,7 +186,7 @@
               <div v-for="(memory, index) in memoryDevices" :key="index" class="flex gap-2 items-center">
                 <div class="relative flex-[3]">
             <input 
-                    v-model.number="memory.capacity" 
+                    v-model="memory.capacity" 
                     type="number" 
                     min="1"
                     max="9999"
@@ -249,7 +249,7 @@
                   </select>
                   <div class="relative flex-[3]">
             <input 
-                      v-model.number="storage.capacity" 
+                      v-model="storage.capacity" 
                       type="number" 
                       min="1"
                       max="9999"
@@ -437,7 +437,11 @@ const removeStorageDevice = (index: number) => {
 // 2025-01-27: 메모리 데이터를 문자열로 변환하는 함수
 const formatMemoryString = () => {
   return memoryDevices.value
-    .filter(device => device.capacity.trim())
+    .filter(device => {
+      if (!device.capacity) return false
+      const capacityStr = String(device.capacity).trim()
+      return capacityStr !== '' && capacityStr !== '0'
+    })
     .map(device => `${device.capacity}${device.unit}`)
     .join(' / ')
 }
@@ -445,7 +449,11 @@ const formatMemoryString = () => {
 // 2025-01-27: 저장장치 데이터를 문자열로 변환하는 함수
 const formatStorageString = () => {
   return storageDevices.value
-    .filter(device => device.capacity.trim())
+    .filter(device => {
+      if (!device.capacity) return false
+      const capacityStr = String(device.capacity).trim()
+      return capacityStr !== '' && capacityStr !== '0'
+    })
     .map(device => `${device.type} ${device.capacity}${device.unit}`)
     .join(' / ')
 }
