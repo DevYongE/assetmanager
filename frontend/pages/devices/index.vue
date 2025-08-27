@@ -254,6 +254,19 @@
               <option value="assigned">할당됨</option>
               <option value="unassigned">미할당</option>
             </select>
+            <!-- 2025-01-27: 장비 타입 필터 추가 -->
+            <select 
+              v-model="deviceTypeFilter" 
+              @change="loadDevices"
+              class="filter-select"
+            >
+              <option value="">모든 타입</option>
+              <option value="노트북">노트북</option>
+              <option value="데스크탑">데스크탑</option>
+              <option value="모니터">모니터</option>
+              <option value="프린터">프린터</option>
+              <option value="기타">기타</option>
+            </select>
           </div>
         </div>
       </div>
@@ -521,6 +534,7 @@ const selectedDevice = ref<any | null>(null)
 const fileInput = ref<HTMLInputElement>()
 const viewMode = ref<'card' | 'list'>('card')
 const assignmentFilter = ref('') // 할당 상태 필터
+const deviceTypeFilter = ref('') // 2025-01-27: 장비 타입 필터 추가
 
 // Computed properties
 const manufacturers = computed(() => {
@@ -597,6 +611,11 @@ const filteredDevices = computed(() => {
     }
   }
 
+  // 2025-01-27: 장비 타입 필터
+  if (deviceTypeFilter.value) {
+    filtered = filtered.filter(device => device.device_type === deviceTypeFilter.value)
+  }
+
   return filtered
 })
 
@@ -625,6 +644,10 @@ const loadDevices = async () => {
     }
     if (searchQuery.value.trim()) {
       params.search = searchQuery.value.trim()
+    }
+    // 2025-01-27: 장비 타입 필터 추가
+    if (deviceTypeFilter.value) {
+      params.device_type = deviceTypeFilter.value
     }
     
     const [devicesResponse, employeesResponse] = await Promise.all([
@@ -958,6 +981,9 @@ onMounted(() => {
 
 .filter-group {
   position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .filter-select {
@@ -1308,7 +1334,7 @@ onMounted(() => {
 
 .search-input-group {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 16px;
   align-items: center;
 }

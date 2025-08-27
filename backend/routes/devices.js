@@ -157,7 +157,7 @@ const upload = multer({
 // Get all devices for current user
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { assignment_status, search } = req.query; // 'assigned', 'unassigned', or undefined for all
+    const { assignment_status, search, device_type } = req.query; // 'assigned', 'unassigned', device_type, or undefined for all
     
     // 2025-01-27: Check user permissions using permissions table
     const { data: permissions, error: permError } = await supabase
@@ -237,6 +237,13 @@ router.get('/', authenticateToken, async (req, res) => {
         device.serial_number?.toLowerCase().includes(searchTerm) ||
         device.employees?.name?.toLowerCase().includes(searchTerm) ||
         device.purpose?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // 2025-01-27: 장비 타입 필터링 추가
+    if (device_type && device_type.trim() !== '') {
+      devices = devices.filter(device => 
+        device.device_type === device_type.trim()
       );
     }
 
