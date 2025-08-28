@@ -146,7 +146,7 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
         qr_data: linkOnly === 'true' ? {
           type: 'device',
           asset_number: device.asset_number,
-          direct_link: `${process.env.FRONTEND_URL || 'https://invenOne.it.kr'}/devices/${device.asset_number}`,
+          direct_link: `${process.env.FRONTEND_URL || 'https://invenone.it.kr'}/devices/${device.asset_number}`,
           link_only: true,
           generated_at: new Date().toISOString()
         } : qrData, 
