@@ -45,33 +45,44 @@
           </div>
 
           <!-- 뷰 전환 버튼 -->
-          <div class="view-toggle">
-            <button 
-              @click="viewMode = 'card'"
-              :class="['view-btn', { active: viewMode === 'card' }]"
-              title="카드 뷰"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-              </svg>
-            </button>
-            <button 
-              @click="viewMode = 'list'"
-              :class="['view-btn', { active: viewMode === 'list' }]"
-              title="리스트 뷰"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="8" y1="6" x2="21" y2="6"/>
-                <line x1="8" y1="12" x2="21" y2="12"/>
-                <line x1="8" y1="18" x2="21" y2="18"/>
-                <line x1="3" y1="6" x2="3.01" y2="6"/>
-                <line x1="3" y1="12" x2="3.01" y2="12"/>
-                <line x1="3" y1="18" x2="3.01" y2="18"/>
-              </svg>
-            </button>
+          <div class="view-controls">
+            <div class="view-toggle">
+              <button 
+                @click="viewMode = 'card'"
+                :class="['view-btn', { active: viewMode === 'card' }]"
+                title="카드 뷰"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                </svg>
+              </button>
+              <button 
+                @click="viewMode = 'list'"
+                :class="['view-btn', { active: viewMode === 'list' }]"
+                title="리스트 뷰"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6"/>
+                  <line x1="8" y1="12" x2="21" y2="12"/>
+                  <line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/>
+                  <line x1="3" y1="12" x2="3.01" y2="12"/>
+                  <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- 2025-01-27: 카드형일 때 밀도 선택 -->
+            <div v-if="viewMode === 'card'" class="card-density-selector">
+              <select v-model="cardDensity" @change="saveViewPreferences" class="density-select">
+                <option value="5">5개/행</option>
+                <option value="7">7개/행</option>
+                <option value="10">10개/행</option>
+              </select>
+            </div>
           </div>
 
           <!-- 액션 버튼들 -->
@@ -272,7 +283,7 @@
       </div>
 
       <!-- 카드 뷰 -->
-      <div v-if="viewMode === 'card' && filteredDevices.length" class="devices-grid">
+      <div v-if="viewMode === 'card' && filteredDevices.length" :class="['devices-grid', `density-${cardDensity}`]">
         <div 
           v-for="device in filteredDevices" 
           :key="device.id"
@@ -535,6 +546,8 @@ const fileInput = ref<HTMLInputElement>()
 const viewMode = ref<'card' | 'list'>('card')
 const assignmentFilter = ref('') // 할당 상태 필터
 const deviceTypeFilter = ref('') // 2025-01-27: 장비 타입 필터 추가
+// 2025-01-27: 카드 밀도 관리
+const cardDensity = ref<number>(5) // 기본 5개/행
 
 // Computed properties
 const manufacturers = computed(() => {
@@ -848,8 +861,37 @@ const viewDeviceDetail = (deviceId: string) => {
   navigateTo(`/devices/${deviceId}`)
 }
 
+// 2025-01-27: 뷰 설정 저장/불러오기
+const saveViewPreferences = () => {
+  if (process.client) {
+    localStorage.setItem('devices-view-mode', viewMode.value)
+    localStorage.setItem('devices-card-density', cardDensity.value.toString())
+  }
+}
+
+const loadViewPreferences = () => {
+  if (process.client) {
+    const savedViewMode = localStorage.getItem('devices-view-mode')
+    const savedCardDensity = localStorage.getItem('devices-card-density')
+    
+    if (savedViewMode && ['card', 'list'].includes(savedViewMode)) {
+      viewMode.value = savedViewMode as 'card' | 'list'
+    }
+    
+    if (savedCardDensity && ['5', '7', '10'].includes(savedCardDensity)) {
+      cardDensity.value = parseInt(savedCardDensity)
+    }
+  }
+}
+
+// 뷰 모드 변경 시 설정 저장
+watch([viewMode, cardDensity], () => {
+  saveViewPreferences()
+})
+
 // Load data on mount
 onMounted(() => {
+  loadViewPreferences()
   loadDevices()
 })
 </script>
@@ -1004,6 +1046,13 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* 2025-01-27: 뷰 컨트롤 스타일 */
+.view-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 /* 뷰 전환 버튼 */
 .view-toggle {
   display: flex;
@@ -1013,6 +1062,29 @@ onMounted(() => {
   padding: 4px;
   gap: 4px;
   align-self: flex-start;
+}
+
+.card-density-selector {
+  display: flex;
+  align-items: center;
+}
+
+.density-select {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #1f2937;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  cursor: pointer;
+}
+
+.density-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .view-btn {
@@ -1394,10 +1466,55 @@ onMounted(() => {
   color: #1f2937;
 }
 
+/* 2025-01-27: 카드 밀도에 따른 그리드 스타일 */
 .devices-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
+}
+
+.devices-grid.density-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.devices-grid.density-7 {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.devices-grid.density-10 {
+  grid-template-columns: repeat(10, 1fr);
+}
+
+/* 밀도가 높을 때 카드 크기 조정 */
+.devices-grid.density-7 .device-card,
+.devices-grid.density-10 .device-card {
+  padding: 16px;
+}
+
+.devices-grid.density-10 .device-card {
+  padding: 12px;
+}
+
+.devices-grid.density-7 .device-asset-number,
+.devices-grid.density-10 .device-asset-number {
+  font-size: 16px;
+}
+
+.devices-grid.density-10 .device-asset-number {
+  font-size: 14px;
+}
+
+.devices-grid.density-7 .device-model,
+.devices-grid.density-10 .device-model {
+  font-size: 12px;
+}
+
+.devices-grid.density-7 .detail-item,
+.devices-grid.density-10 .detail-item {
+  font-size: 11px;
+}
+
+.devices-grid.density-10 .detail-item {
+  font-size: 10px;
 }
 
 .device-card {
@@ -1663,6 +1780,28 @@ onMounted(() => {
 }
 
 /* 반응형 디자인 */
+@media (max-width: 1200px) {
+  /* 카드 밀도 조정 */
+  .devices-grid.density-10 {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  
+  .devices-grid.density-7 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .devices-grid.density-10,
+  .devices-grid.density-7 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .devices-grid.density-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .devices-container {
     padding: 16px;
@@ -1683,14 +1822,9 @@ onMounted(() => {
     justify-content: center;
   }
   
-  .assignment-filter {
-    order: -1;
-    margin-bottom: 12px;
-  }
-
-  .view-toggle {
-    order: -1;
-    margin-bottom: 12px;
+  .view-controls {
+    justify-content: center;
+    width: 100%;
   }
   
   .stats-grid {
@@ -1701,8 +1835,10 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
   
-  .devices-grid {
-    grid-template-columns: 1fr;
+  .devices-grid.density-10,
+  .devices-grid.density-7,
+  .devices-grid.density-5 {
+    grid-template-columns: repeat(2, 1fr);
   }
   
   .device-card {
@@ -1732,6 +1868,12 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
+  .devices-grid.density-10,
+  .devices-grid.density-7,
+  .devices-grid.density-5 {
+    grid-template-columns: 1fr;
+  }
+  
   .list-header {
     grid-template-columns: 100px 80px 100px 70px 1fr 80px 100px 70px 70px;
     min-width: 700px;

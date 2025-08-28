@@ -123,12 +123,54 @@
                 {{ dept }}
               </option>
             </select>
+            
+            <!-- 2025-01-27: 뷰 전환 및 카드 밀도 선택 추가 -->
+            <div class="view-controls">
+              <!-- 뷰 전환 버튼 -->
+              <div class="view-toggle">
+                <button 
+                  @click="viewMode = 'card'"
+                  :class="['view-btn', { active: viewMode === 'card' }]"
+                  title="카드 뷰"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                  </svg>
+                </button>
+                <button 
+                  @click="viewMode = 'list'"
+                  :class="['view-btn', { active: viewMode === 'list' }]"
+                  title="리스트 뷰"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- 카드형일 때 밀도 선택 -->
+              <div v-if="viewMode === 'card'" class="card-density-selector">
+                <select v-model="cardDensity" @change="saveViewPreferences" class="density-select">
+                  <option value="5">5개/행</option>
+                  <option value="7">7개/행</option>
+                  <option value="10">10개/행</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 직원 그리드 -->
-      <div v-if="filteredEmployees.length" class="employees-grid">
+      <!-- 2025-01-27: 카드 뷰 -->
+      <div v-if="viewMode === 'card' && filteredEmployees.length" :class="['employees-grid', `density-${cardDensity}`]">
         <div 
           v-for="employee in filteredEmployees" 
           :key="employee.id"
@@ -202,6 +244,77 @@
         </div>
       </div>
 
+      <!-- 2025-01-27: 리스트 뷰 -->
+      <div v-else-if="viewMode === 'list' && filteredEmployees.length" class="employees-list">
+        <div class="list-header">
+          <div class="list-header-cell">이름</div>
+          <div class="list-header-cell">부서</div>
+          <div class="list-header-cell">직급</div>
+          <div class="list-header-cell">이메일</div>
+          <div class="list-header-cell">회사명</div>
+          <div class="list-header-cell">장비수</div>
+          <div class="list-header-cell">상태</div>
+          <div class="list-header-cell">작업</div>
+        </div>
+        
+        <div 
+          v-for="employee in filteredEmployees" 
+          :key="employee.id"
+          class="list-row"
+          @click="viewEmployeeDetail(employee.id)"
+        >
+          <div class="list-cell name">
+            <div class="employee-avatar-small">
+              <span class="avatar-text-small">{{ employee.name.charAt(0) }}</span>
+            </div>
+            <strong>{{ employee.name }}</strong>
+          </div>
+          <div class="list-cell department">
+            {{ employee.department }}
+          </div>
+          <div class="list-cell position">
+            {{ employee.position }}
+          </div>
+          <div class="list-cell email">
+            {{ employee.email || '-' }}
+          </div>
+          <div class="list-cell company">
+            {{ employee.company_name || '-' }}
+          </div>
+          <div class="list-cell device-count">
+            {{ employee.device_count || 0 }}개
+          </div>
+          <div class="list-cell status">
+            <span v-if="employee.status === 'resigned'" class="status-badge resigned">퇴사</span>
+            <span v-else class="status-badge active">활성</span>
+          </div>
+          <div class="list-cell actions">
+            <div class="action-buttons">
+              <button 
+                @click.stop="editEmployee(employee)"
+                class="action-btn edit-btn"
+                title="수정"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button 
+                @click.stop="deleteEmployee(employee.id)"
+                class="action-btn delete-btn"
+                title="삭제"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 빈 상태 -->
       <div v-else class="empty-state">
         <div class="empty-icon">
@@ -247,6 +360,10 @@ const searchQuery = ref('')
 const filterDepartment = ref('')
 const showAddModal = ref(false)
 const selectedEmployee = ref<any | null>(null)
+
+// 2025-01-27: 뷰 모드 및 카드 밀도 관리
+const viewMode = ref<'card' | 'list'>('list') // 기본은 리스트형
+const cardDensity = ref<number>(5) // 기본 5개/행
 
 // Computed properties
 const departments = computed(() => {
@@ -356,11 +473,37 @@ const viewEmployeeDetail = (employeeId: string) => {
   navigateTo(`/employees/${employeeId}`)
 }
 
-// Search handler 제거 - 클라이언트 사이드 검색으로 변경
-// handleSearch 함수는 더 이상 필요하지 않음 (computed에서 실시간 처리)
+// 2025-01-27: 뷰 설정 저장/불러오기
+const saveViewPreferences = () => {
+  if (process.client) {
+    localStorage.setItem('employees-view-mode', viewMode.value)
+    localStorage.setItem('employees-card-density', cardDensity.value.toString())
+  }
+}
+
+const loadViewPreferences = () => {
+  if (process.client) {
+    const savedViewMode = localStorage.getItem('employees-view-mode')
+    const savedCardDensity = localStorage.getItem('employees-card-density')
+    
+    if (savedViewMode && ['card', 'list'].includes(savedViewMode)) {
+      viewMode.value = savedViewMode as 'card' | 'list'
+    }
+    
+    if (savedCardDensity && ['5', '7', '10'].includes(savedCardDensity)) {
+      cardDensity.value = parseInt(savedCardDensity)
+    }
+  }
+}
+
+// 뷰 모드 변경 시 설정 저장
+watch([viewMode, cardDensity], () => {
+  saveViewPreferences()
+})
 
 // Load data on mount
 onMounted(() => {
+  loadViewPreferences()
   loadEmployees()
 })
 </script>
@@ -563,6 +706,71 @@ onMounted(() => {
   display: flex;
   gap: 16px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+/* 2025-01-27: 뷰 컨트롤 스타일 */
+.view-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.view-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.view-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.card-density-selector {
+  display: flex;
+  align-items: center;
+}
+
+.density-select {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #1f2937;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  cursor: pointer;
+}
+
+.density-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .search-input-wrapper {
@@ -616,10 +824,55 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* 2025-01-27: 카드 밀도에 따른 그리드 스타일 */
 .employees-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
+}
+
+.employees-grid.density-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.employees-grid.density-7 {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.employees-grid.density-10 {
+  grid-template-columns: repeat(10, 1fr);
+}
+
+/* 밀도가 높을 때 카드 크기 조정 */
+.employees-grid.density-7 .employee-card,
+.employees-grid.density-10 .employee-card {
+  padding: 16px;
+}
+
+.employees-grid.density-10 .employee-card {
+  padding: 12px;
+}
+
+.employees-grid.density-7 .employee-name,
+.employees-grid.density-10 .employee-name {
+  font-size: 16px;
+}
+
+.employees-grid.density-10 .employee-name {
+  font-size: 14px;
+}
+
+.employees-grid.density-7 .employee-position,
+.employees-grid.density-10 .employee-position {
+  font-size: 12px;
+}
+
+.employees-grid.density-7 .detail-item,
+.employees-grid.density-10 .detail-item {
+  font-size: 11px;
+}
+
+.employees-grid.density-10 .detail-item {
+  font-size: 10px;
 }
 
 .employee-card {
@@ -807,7 +1060,158 @@ onMounted(() => {
   padding: 12px 24px;
 }
 
+/* 2025-01-27: 리스트 뷰 스타일 */
+.employees-list {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.list-header {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1.2fr 0.8fr 0.8fr 1fr;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.list-header-cell {
+  text-align: left;
+}
+
+.list-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1.2fr 0.8fr 0.8fr 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.list-row:hover {
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+  padding-left: 12px;
+  padding-right: 12px;
+  margin-left: -12px;
+  margin-right: -12px;
+}
+
+.list-row:last-child {
+  border-bottom: none;
+}
+
+.list-cell {
+  text-align: left;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.list-cell.name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.employee-avatar-small {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.avatar-text-small {
+  font-size: 14px;
+}
+
+.list-cell strong {
+  font-weight: 600;
+}
+
+.list-cell .status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.list-cell .action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.list-cell .action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.list-cell .edit-btn {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.list-cell .edit-btn:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: scale(1.05);
+}
+
+.list-cell .delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.list-cell .delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.05);
+}
+
 /* 반응형 디자인 */
+@media (max-width: 1200px) {
+  /* 카드 밀도 조정 */
+  .employees-grid.density-10 {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  
+  .employees-grid.density-7 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .employees-grid.density-10,
+  .employees-grid.density-7 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .employees-grid.density-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .employees-container {
     padding: 16px;
@@ -831,12 +1235,65 @@ onMounted(() => {
     flex-direction: column;
   }
   
-  .employees-grid {
-    grid-template-columns: 1fr;
+  .view-controls {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .employees-grid.density-10,
+  .employees-grid.density-7,
+  .employees-grid.density-5 {
+    grid-template-columns: repeat(2, 1fr);
   }
   
   .employee-card {
     padding: 20px;
+  }
+  
+  /* 리스트 뷰 반응형 */
+  .employees-list {
+    padding: 16px;
+    overflow-x: auto;
+  }
+  
+  .list-header {
+    grid-template-columns: 120px 80px 80px 120px 100px 60px 60px 80px;
+    min-width: 700px;
+  }
+  
+  .list-row {
+    grid-template-columns: 120px 80px 80px 120px 100px 60px 60px 80px;
+    min-width: 700px;
+  }
+  
+  .list-header-cell,
+  .list-cell {
+    font-size: 12px;
+    padding: 0 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .employees-grid.density-10,
+  .employees-grid.density-7,
+  .employees-grid.density-5 {
+    grid-template-columns: 1fr;
+  }
+  
+  .list-header {
+    grid-template-columns: 100px 70px 70px 100px 80px 50px 50px 70px;
+    min-width: 590px;
+  }
+  
+  .list-row {
+    grid-template-columns: 100px 70px 70px 100px 80px 50px 50px 70px;
+    min-width: 590px;
+  }
+  
+  .list-header-cell,
+  .list-cell {
+    font-size: 11px;
+    padding: 0 2px;
   }
 }
 </style> 
