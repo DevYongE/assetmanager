@@ -9,6 +9,10 @@
       </div>
       <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">QR 스캐너</h1>
       <p class="text-sm md:text-base text-gray-600">QR 코드를 스캔하여 장비 정보를 수정하세요</p>
+      <!-- 2025-01-27: 지원되는 QR 코드 형태 안내 -->
+      <div class="mt-2 text-xs text-gray-500">
+        💡 JSON 형태 및 URL 링크 형태의 QR 코드를 모두 지원합니다
+      </div>
       
       <!-- 2025-01-27: 리다이렉트 상태 표시 -->
       <div v-if="isRedirectedFromLogin" class="mt-2">
@@ -139,7 +143,7 @@
           <div class="max-w-sm md:max-w-md mx-auto">
             <textarea
               v-model="manualQRInput"
-              placeholder="QR 코드 데이터를 여기에 붙여넣으세요..."
+              placeholder="JSON 형태 QR 코드 또는 URL 링크를 여기에 붙여넣으세요...&#10;&#10;예시:&#10;• JSON: {&quot;t&quot;:&quot;d&quot;,&quot;i&quot;:&quot;device-123&quot;,...}&#10;• URL: https://example.com/devices/AS-001"
               class="w-full h-20 md:h-24 resize-none px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm md:text-base"
             ></textarea>
             <div class="mt-2 flex justify-center space-x-2">
@@ -462,7 +466,7 @@ const startQRScanning = () => {
   }
 }
 
-// Process QR string with enhanced validation
+// Process QR string with enhanced validation - 2025-01-27: 링크 형태 QR 코드 지원 추가
 const processQRString = async (qrString: string) => {
   try {
     processing.value = true
@@ -475,18 +479,42 @@ const processQRString = async (qrString: string) => {
 
     console.log('🔍 [QR SCANNER] Processing QR string:', qrString.substring(0, 100) + '...')
 
-    // Try to decode QR string
-    const decodedResult = await api.qr.decode(qrString)
-    
-    console.log('🔍 [QR SCANNER] Decoded result:', decodedResult)
-    
-    if (!decodedResult.is_valid) {
-      scanStats.value.failedScans++
-      throw new Error('유효하지 않은 QR 코드입니다.')
+    // 2025-01-27: 링크 형태 QR 코드 먼저 확인
+    if (qrString.startsWith('http://') || qrString.startsWith('https://')) {
+      console.log('🔍 [QR SCANNER] Detected URL QR code, processing directly...')
+      await processDirectLink(qrString)
+      scanStats.value.successfulScans++
+      return
     }
 
-    await processQRData(decodedResult.data)
-    scanStats.value.successfulScans++
+    // JSON 형태 QR 코드 시도
+    try {
+      // Try to decode QR string
+      const decodedResult = await api.qr.decode(qrString)
+      
+      console.log('🔍 [QR SCANNER] Decoded result:', decodedResult)
+      
+      if (!decodedResult.is_valid) {
+        scanStats.value.failedScans++
+        throw new Error('유효하지 않은 QR 코드입니다.')
+      }
+
+      await processQRData(decodedResult.data)
+      scanStats.value.successfulScans++
+    } catch (decodeErr: any) {
+      console.log('🔍 [QR SCANNER] JSON decode failed, trying as plain text...')
+      
+      // JSON이 아닌 경우 텍스트로 처리 시도
+      try {
+        const parsedData = JSON.parse(qrString)
+        // JSON 파싱 성공 시 직접 processQRData 호출
+        await processQRData(parsedData)
+        scanStats.value.successfulScans++
+      } catch (parseErr) {
+        // JSON도 아니고 URL도 아닌 경우
+        throw new Error('지원되지 않는 QR 코드 형식입니다. JSON 또는 URL 형태의 QR 코드만 지원됩니다.')
+      }
+    }
     
   } catch (err: any) {
     console.error('QR string processing error:', err)
@@ -496,6 +524,52 @@ const processQRString = async (qrString: string) => {
   } finally {
     processing.value = false
     stopCamera()
+  }
+}
+
+// 2025-01-27: 링크 형태 QR 코드 직접 처리 함수
+const processDirectLink = async (url: string) => {
+  try {
+    processing.value = true
+    processingMessage.value = '링크를 분석하는 중...'
+
+    console.log('🔍 [QR SCANNER] Processing direct link:', url)
+
+    // URL 유효성 검사
+    let urlObj: URL
+    try {
+      urlObj = new URL(url)
+    } catch {
+      throw new Error('유효하지 않은 URL입니다.')
+    }
+
+    // 현재 도메인과 비교
+    const currentDomain = window.location.origin
+    
+    if (url.startsWith(currentDomain)) {
+      // 같은 도메인 - 내부 네비게이션
+      const path = url.replace(currentDomain, '')
+      console.log('🔍 [QR SCANNER] Navigating to internal path:', path)
+      
+      processingMessage.value = '페이지로 이동하는 중...'
+      await router.push(path)
+      
+    } else {
+      // 외부 도메인 - 사용자 확인 후 새 탭에서 열기
+      processingMessage.value = '외부 링크를 확인하는 중...'
+      
+      const confirmed = confirm(`외부 링크로 이동하시겠습니까?\n\n${url}\n\n새 탭에서 열립니다.`)
+      if (confirmed) {
+        window.open(url, '_blank', 'noopener,noreferrer')
+        console.log('🔍 [QR SCANNER] Opened external link in new tab:', url)
+      } else {
+        console.log('🔍 [QR SCANNER] User cancelled external link navigation')
+      }
+    }
+
+  } catch (err: any) {
+    console.error('Direct link processing error:', err)
+    throw err
   }
 }
 
@@ -585,7 +659,7 @@ const processQRData = async (qrData: any) => {
   }
 }
 
-// Process manual QR input with enhanced validation
+// Process manual QR input with enhanced validation - 2025-01-27: 링크 형태 지원 추가
 const processManualQR = async () => {
   if (!manualQRInput.value.trim()) return
 
@@ -593,12 +667,21 @@ const processManualQR = async () => {
     processing.value = true
     processingMessage.value = 'QR 코드를 분석하는 중...'
 
+    const inputValue = manualQRInput.value.trim()
+
+    // 2025-01-27: 링크 형태 QR 코드 먼저 확인
+    if (inputValue.startsWith('http://') || inputValue.startsWith('https://')) {
+      console.log('🔍 [QR SCANNER] Manual input detected as URL, processing directly...')
+      await processDirectLink(inputValue)
+      return
+    }
+
     // Try to parse as JSON (both simplified and full format)
     let qrData: any
     try {
-      qrData = JSON.parse(manualQRInput.value.trim())
+      qrData = JSON.parse(inputValue)
     } catch {
-      throw new Error('유효하지 않은 QR 코드 형식입니다.')
+      throw new Error('유효하지 않은 QR 코드 형식입니다. JSON 또는 URL 형태여야 합니다.')
     }
 
     // Validate the parsed data
@@ -666,30 +749,41 @@ const validateQR = async () => {
   }
 }
 
-// Load test QR data for debugging
+// Load test QR data for debugging - 2025-01-27: 링크 형태 테스트 추가
 const loadTestQR = () => {
-  const testQRData = {
-    t: 'd', // type: device (simplified)
-    i: 'test-device-123',
-    a: 'AS-TEST-001', // asset_number
-    m: 'Samsung', // manufacturer
-    n: 'Galaxy Tab S9', // model_name
-    s: 'TEST123456', // serial_number
-    e: '테스트 사용자', // employee name
-    c: 'Test Company', // company
-    g: new Date().toISOString().split('T')[0], // generated date
-    dt: 'Tablet', // device type
-    cpu: 'Snapdragon 8 Gen 2', // CPU
-    mem: '8GB', // memory
-    str: '256GB', // storage
-    os: 'Android 13', // OS
-    ca: new Date().toISOString().split('T')[0], // created date
-    v: '2.0', // version
-    l: `${window.location.origin}/devices/AS-TEST-001` // 2025-08-13: Direct link for testing
-  }
+  // 랜덤으로 JSON 형태 또는 링크 형태 테스트 데이터 선택
+  const testType = Math.random() > 0.5 ? 'json' : 'link'
   
-  manualQRInput.value = JSON.stringify(testQRData, null, 2)
-  console.log('🔍 [QR SCANNER] Loaded test QR data with direct link')
+  if (testType === 'link') {
+    // 링크 형태 테스트 QR
+    const testURL = `${window.location.origin}/devices/AS-TEST-001`
+    manualQRInput.value = testURL
+    console.log('🔍 [QR SCANNER] Loaded test URL QR data:', testURL)
+  } else {
+    // JSON 형태 테스트 QR
+    const testQRData = {
+      t: 'd', // type: device (simplified)
+      i: 'test-device-123',
+      a: 'AS-TEST-001', // asset_number
+      m: 'Samsung', // manufacturer
+      n: 'Galaxy Tab S9', // model_name
+      s: 'TEST123456', // serial_number
+      e: '테스트 사용자', // employee name
+      c: 'Test Company', // company
+      g: new Date().toISOString().split('T')[0], // generated date
+      dt: 'Tablet', // device type
+      cpu: 'Snapdragon 8 Gen 2', // CPU
+      mem: '8GB', // memory
+      str: '256GB', // storage
+      os: 'Android 13', // OS
+      ca: new Date().toISOString().split('T')[0], // created date
+      v: '2.0', // version
+      l: `${window.location.origin}/devices/AS-TEST-001` // 2025-08-13: Direct link for testing
+    }
+    
+    manualQRInput.value = JSON.stringify(testQRData, null, 2)
+    console.log('🔍 [QR SCANNER] Loaded test JSON QR data with direct link')
+  }
 }
 
 // Enhanced mobile-specific optimizations
