@@ -247,18 +247,48 @@
       <!-- 2025-01-27: 리스트 뷰 -->
       <div v-else-if="viewMode === 'list' && filteredEmployees.length" class="employees-list">
         <div class="list-header">
-          <div class="list-header-cell">이름</div>
-          <div class="list-header-cell">부서</div>
-          <div class="list-header-cell">직급</div>
+          <div class="list-header-cell sortable" @click="sortBy('name')">
+            이름
+            <svg v-if="sortField === 'name'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('department')">
+            부서
+            <svg v-if="sortField === 'department'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('position')">
+            직급
+            <svg v-if="sortField === 'position'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div class="list-header-cell">이메일</div>
-          <div class="list-header-cell">회사명</div>
-          <div class="list-header-cell">장비수</div>
-          <div class="list-header-cell">상태</div>
+          <div class="list-header-cell sortable" @click="sortBy('company_name')">
+            회사명
+            <svg v-if="sortField === 'company_name'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('device_count')">
+            장비수
+            <svg v-if="sortField === 'device_count'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('status')">
+            상태
+            <svg v-if="sortField === 'status'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div class="list-header-cell">작업</div>
         </div>
         
         <div 
-          v-for="employee in filteredEmployees" 
+          v-for="employee in sortedEmployees" 
           :key="employee.id"
           class="list-row"
           @click="viewEmployeeDetail(employee.id)"
@@ -367,6 +397,10 @@ const statusFilter = ref('')
 const viewMode = ref<'card' | 'list'>('list') // 기본은 리스트형
 const cardDensity = ref<number>(5) // 기본 5개/행
 
+// 2025-01-27: 정렬 관리
+const sortField = ref<string>('')
+const sortDirection = ref<'asc' | 'desc'>('asc')
+
 // Computed properties
 const departments = computed(() => {
   const depts = new Set(employees.value.map(emp => emp.department))
@@ -430,6 +464,44 @@ const filteredEmployees = computed(() => {
 
   console.log('📝 [EMPLOYEES] Filtered result:', filtered)
   return filtered
+})
+
+// 2025-01-27: 정렬된 직원 목록
+const sortedEmployees = computed(() => {
+  if (!sortField.value) {
+    return filteredEmployees.value
+  }
+
+  const sorted = [...filteredEmployees.value].sort((a, b) => {
+    let aValue = a[sortField.value]
+    let bValue = b[sortField.value]
+
+    // null/undefined 처리
+    if (!aValue && !bValue) return 0
+    if (!aValue) return 1
+    if (!bValue) return -1
+
+    // 숫자 필드 처리 (device_count)
+    if (sortField.value === 'device_count') {
+      aValue = parseInt(aValue) || 0
+      bValue = parseInt(bValue) || 0
+      return sortDirection.value === 'asc' ? aValue - bValue : bValue - aValue
+    }
+
+    // 문자열 필드 처리
+    aValue = String(aValue).toLowerCase()
+    bValue = String(bValue).toLowerCase()
+
+    if (aValue < bValue) {
+      return sortDirection.value === 'asc' ? -1 : 1
+    }
+    if (aValue > bValue) {
+      return sortDirection.value === 'asc' ? 1 : -1
+    }
+    return 0
+  })
+
+  return sorted
 })
 
 // Methods
@@ -526,6 +598,18 @@ const filterByResignedEmployees = () => {
   statusFilter.value = 'resigned'
   searchQuery.value = ''
   filterDepartment.value = ''
+}
+
+// 2025-01-27: 정렬 함수
+const sortBy = (field: string) => {
+  if (sortField.value === field) {
+    // 같은 필드를 클릭하면 방향 전환
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // 새로운 필드를 클릭하면 해당 필드로 오름차순 정렬
+    sortField.value = field
+    sortDirection.value = 'asc'
+  }
 }
 
 // 2025-01-27: 뷰 설정 저장/불러오기
@@ -1286,6 +1370,15 @@ onMounted(() => {
 
 .list-header-cell.sortable:hover .sort-icon {
   transform: scale(1.2);
+}
+
+/* 정렬 아이콘 회전 */
+.sort-icon.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.list-header-cell.sortable:hover .sort-icon.rotate-180 {
+  transform: rotate(180deg) scale(1.2);
 }
 
 /* 반응형 디자인 */

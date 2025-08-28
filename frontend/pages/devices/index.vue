@@ -369,19 +369,54 @@
       <!-- 리스트 뷰 -->
       <div v-else-if="viewMode === 'list' && filteredDevices.length" class="devices-list">
         <div class="list-header">
-          <div class="list-header-cell">자산번호</div>
-          <div class="list-header-cell">조사일자</div>
-          <div class="list-header-cell">담당자</div>
-          <div class="list-header-cell">용도</div>
-          <div class="list-header-cell">제조사/모델</div>
+          <div class="list-header-cell sortable" @click="sortBy('asset_number')">
+            자산번호
+            <svg v-if="sortField === 'asset_number'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('inspection_date')">
+            조사일자
+            <svg v-if="sortField === 'inspection_date'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('employee_name')">
+            담당자
+            <svg v-if="sortField === 'employee_name'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('purpose')">
+            용도
+            <svg v-if="sortField === 'purpose'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('manufacturer')">
+            제조사/모델
+            <svg v-if="sortField === 'manufacturer'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div class="list-header-cell">시리얼번호</div>
-          <div class="list-header-cell">회사명</div>
-          <div class="list-header-cell">상태</div>
+          <div class="list-header-cell sortable" @click="sortBy('company_name')">
+            회사명
+            <svg v-if="sortField === 'company_name'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="list-header-cell sortable" @click="sortBy('assignment_status')">
+            상태
+            <svg v-if="sortField === 'assignment_status'" :class="['sort-icon', sortDirection === 'desc' ? 'rotate-180' : '']" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div class="list-header-cell">작업</div>
         </div>
         
         <div 
-          v-for="device in filteredDevices" 
+          v-for="device in sortedDevices" 
           :key="device.id"
           class="list-row"
         >
@@ -549,6 +584,10 @@ const deviceTypeFilter = ref('') // 2025-01-27: 장비 타입 필터 추가
 // 2025-01-27: 카드 밀도 관리
 const cardDensity = ref<number>(5) // 기본 5개/행
 
+// 2025-01-27: 정렬 관리
+const sortField = ref<string>('')
+const sortDirection = ref<'asc' | 'desc'>('asc')
+
 // Computed properties
 const manufacturers = computed(() => {
   const mfgs = new Set(devices.value.map(device => device.manufacturer))
@@ -630,6 +669,73 @@ const filteredDevices = computed(() => {
   }
 
   return filtered
+})
+
+// 2025-01-27: 정렬된 장비 목록
+const sortedDevices = computed(() => {
+  if (!sortField.value) {
+    return filteredDevices.value
+  }
+
+  const sorted = [...filteredDevices.value].sort((a, b) => {
+    let aValue = a[sortField.value]
+    let bValue = b[sortField.value]
+
+    // 특별 처리: 담당자 이름
+    if (sortField.value === 'employee_name') {
+      const aEmployee = getDeviceEmployeeInfo(a)
+      const bEmployee = getDeviceEmployeeInfo(b)
+      aValue = aEmployee?.name || '미할당'
+      bValue = bEmployee?.name || '미할당'
+    }
+    
+    // 특별 처리: 회사명
+    if (sortField.value === 'company_name') {
+      aValue = getDeviceCompanyName(a)
+      bValue = getDeviceCompanyName(b)
+    }
+    
+    // 특별 처리: 할당 상태
+    if (sortField.value === 'assignment_status') {
+      aValue = a.employee_id ? '할당됨' : '미할당'
+      bValue = b.employee_id ? '할당됨' : '미할당'
+    }
+    
+    // 특별 처리: 제조사/모델 (복합 필드)
+    if (sortField.value === 'manufacturer') {
+      aValue = `${a.manufacturer || ''} ${a.model_name || ''}`.trim()
+      bValue = `${b.manufacturer || ''} ${b.model_name || ''}`.trim()
+    }
+
+    // null/undefined 처리
+    if (!aValue && !bValue) return 0
+    if (!aValue) return 1
+    if (!bValue) return -1
+
+    // 날짜 필드 처리 (inspection_date)
+    if (sortField.value === 'inspection_date') {
+      const aDate = new Date(aValue)
+      const bDate = new Date(bValue)
+      if (isNaN(aDate.getTime()) && isNaN(bDate.getTime())) return 0
+      if (isNaN(aDate.getTime())) return 1
+      if (isNaN(bDate.getTime())) return -1
+      return sortDirection.value === 'asc' ? aDate.getTime() - bDate.getTime() : bDate.getTime() - aDate.getTime()
+    }
+
+    // 문자열 필드 처리
+    aValue = String(aValue).toLowerCase()
+    bValue = String(bValue).toLowerCase()
+
+    if (aValue < bValue) {
+      return sortDirection.value === 'asc' ? -1 : 1
+    }
+    if (aValue > bValue) {
+      return sortDirection.value === 'asc' ? 1 : -1
+    }
+    return 0
+  })
+
+  return sorted
 })
 
 // 2025-01-27: 폐기된 장비 목록
@@ -965,6 +1071,18 @@ const applyFiltersFromQuery = () => {
   // 기존 상태 필터 지원 (하위 호환)
   if (route.query.status) {
     assignmentFilter.value = route.query.status as string
+  }
+}
+
+// 2025-01-27: 정렬 함수
+const sortBy = (field: string) => {
+  if (sortField.value === field) {
+    // 같은 필드를 클릭하면 방향 전환
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // 새로운 필드를 클릭하면 해당 필드로 오름차순 정렬
+    sortField.value = field
+    sortDirection.value = 'asc'
   }
 }
 
@@ -2178,6 +2296,15 @@ onMounted(() => {
 
 .list-header-cell.sortable:hover .sort-icon {
   transform: scale(1.2);
+}
+
+/* 정렬 아이콘 회전 */
+.sort-icon.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.list-header-cell.sortable:hover .sort-icon.rotate-180 {
+  transform: rotate(180deg) scale(1.2);
 }
 
 /* 반응형 모달 */
