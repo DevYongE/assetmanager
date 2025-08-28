@@ -58,7 +58,7 @@
           </svg>
         </button>
 
-        <!-- 알림 버튼 -->
+        <!-- 알림 버튼 
         <button class="header-button notification-button" @click="toggleNotifications">
           <div class="notification-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -69,7 +69,7 @@
               {{ notificationCount > 99 ? '99+' : notificationCount }}
             </span>
           </div>
-        </button>
+        </button>-->
 
         <!-- 사용자 메뉴 -->
         <div class="user-menu" ref="userMenuRef">

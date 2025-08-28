@@ -46,7 +46,7 @@
       <!-- 통계 카드 -->
       <div class="stats-section">
         <div class="stats-grid">
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="filterByAllEmployees">
             <div class="stat-icon employee-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -59,7 +59,7 @@
             </div>
           </div>
 
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="showDepartmentFilter">
             <div class="stat-icon department-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2"/>
@@ -72,7 +72,7 @@
             </div>
           </div>
 
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="filterByRecentEmployees">
             <div class="stat-icon new-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -87,7 +87,7 @@
           </div>
           
           <!-- 2025-01-27: 퇴사 직원 통계 추가 -->
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="filterByResignedEmployees">
             <div class="stat-icon resigned-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -353,13 +353,15 @@ import EmployeeModal from '~/components/EmployeeModal.vue'
 const { employees: employeesApi } = useApi()
 
 // Reactive data
-const employees = ref<any[]>([])
+const employees = ref<any[]>([])  
 const loading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const filterDepartment = ref('')
 const showAddModal = ref(false)
 const selectedEmployee = ref<any | null>(null)
+// 2025-01-27: 상태 필터 추가
+const statusFilter = ref('')
 
 // 2025-01-27: 뷰 모드 및 카드 밀도 관리
 const viewMode = ref<'card' | 'list'>('list') // 기본은 리스트형
@@ -407,6 +409,23 @@ const filteredEmployees = computed(() => {
   // Department filter
   if (filterDepartment.value) {
     filtered = filtered.filter(emp => emp.department === filterDepartment.value)
+  }
+
+  // 2025-01-27: 상태 필터 추가
+  if (statusFilter.value) {
+    if (statusFilter.value === 'active') {
+      filtered = filtered.filter(emp => emp.status !== 'resigned')
+    } else if (statusFilter.value === 'resigned') {
+      filtered = filtered.filter(emp => emp.status === 'resigned')
+    } else if (statusFilter.value === 'recent') {
+      const now = new Date()
+      const thisMonth = now.getMonth()
+      const thisYear = now.getFullYear()
+      filtered = filtered.filter(emp => {
+        const created = new Date(emp.created_at)
+        return created.getMonth() === thisMonth && created.getFullYear() === thisYear
+      })
+    }
   }
 
   console.log('📝 [EMPLOYEES] Filtered result:', filtered)
@@ -471,6 +490,42 @@ const onEmployeeSaved = async () => {
 
 const viewEmployeeDetail = (employeeId: string) => {
   navigateTo(`/employees/${employeeId}`)
+}
+
+// 2025-01-27: 통계 카드 클릭 시 필터링 함수들
+const filterByAllEmployees = () => {
+  // 모든 필터 초기화
+  searchQuery.value = ''
+  filterDepartment.value = ''
+  statusFilter.value = ''
+}
+
+const showDepartmentFilter = () => {
+  // 부서 필터를 순환하거나 첫 번째 부서로 설정
+  if (!filterDepartment.value && departments.value.length > 0) {
+    filterDepartment.value = departments.value[0]
+  } else {
+    const currentIndex = departments.value.indexOf(filterDepartment.value)
+    const nextIndex = (currentIndex + 1) % departments.value.length
+    filterDepartment.value = departments.value[nextIndex] || ''
+  }
+  // 다른 필터 초기화
+  searchQuery.value = ''
+  statusFilter.value = ''
+}
+
+const filterByRecentEmployees = () => {
+  // 이번 달 신규 직원 필터
+  statusFilter.value = 'recent'
+  searchQuery.value = ''
+  filterDepartment.value = ''
+}
+
+const filterByResignedEmployees = () => {
+  // 퇴사 직원 필터
+  statusFilter.value = 'resigned'
+  searchQuery.value = ''
+  filterDepartment.value = ''
 }
 
 // 2025-01-27: 뷰 설정 저장/불러오기
@@ -639,6 +694,23 @@ onMounted(() => {
 .stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* 2025-01-27: 클릭 가능한 통계 카드 스타일 */
+.stat-card.clickable-stat {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-stat:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 70px rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.stat-card.clickable-stat:active {
+  transform: translateY(-2px);
+  transition: all 0.1s ease;
 }
 
 .stat-icon {
@@ -1189,6 +1261,33 @@ onMounted(() => {
   transform: scale(1.05);
 }
 
+/* 2025-01-27: 정렬 가능한 헤더 스타일 */
+.list-header-cell.sortable {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.list-header-cell.sortable:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  color: #667eea;
+}
+
+.sort-icon {
+  color: #667eea;
+  transition: transform 0.2s ease;
+}
+
+.list-header-cell.sortable:hover .sort-icon {
+  transform: scale(1.2);
+}
+
 /* 반응형 디자인 */
 @media (max-width: 1200px) {
   /* 카드 밀도 조정 */
@@ -1233,6 +1332,10 @@ onMounted(() => {
   
   .search-input-group {
     flex-direction: column;
+  }
+
+  .search-input-group .filter-select {
+    min-width: 140px;
   }
   
   .view-controls {

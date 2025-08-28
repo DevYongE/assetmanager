@@ -12,7 +12,7 @@
       </p>
         </div>
         <div class="hero-stats">
-          <div class="stat-card">
+          <div class="stat-card clickable" @click="navigateTo('/devices')">
             <div class="stat-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
@@ -26,7 +26,7 @@
             </div>
           </div>
           
-          <div class="stat-card">
+          <div class="stat-card clickable" @click="navigateTo('/employees')">
             <div class="stat-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -39,7 +39,7 @@
             </div>
           </div>
           
-          <div class="stat-card">
+          <div class="stat-card clickable" @click="navigateToDevicesWithStatus('assigned')">
             <div class="stat-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 12l2 2 4-4"/>
@@ -60,129 +60,132 @@
 
     <!-- 메인 컨텐츠 -->
     <div class="main-content">
-      <!-- 2025-01-27: 대시보드 레이아웃 재구성 - 장비 상태 요약을 상단에 배치 -->
-      
-      <!-- 장비 상태 요약 (상단 전체 너비) -->
-      <div class="section-card full-width">
-        <h2 class="section-title">장비 상태 요약</h2>
-        <div class="device-status-grid-wide">
-          <div class="status-card active">
-            <div class="status-icon">
+      <!-- 2025-01-27: 장비 상태 요약 완전 재디자인 -->
+      <!-- 장비 상태 요약 -->
+      <div class="unified-section-card">
+        <h2 class="unified-section-title">장비 상태 요약</h2>
+        <div class="unified-cards-grid">
+          <div class="unified-card active" @click="navigateToDevicesWithStatus('assigned')">
+            <div class="unified-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 12l2 2 4-4"/>
-                <path d="M21 12c-1 0-2-1-2-2s1-2 2-2 2 1 2 2-1 2-2 2z"/>
-                <path d="M3 12c1 0 2-1 2-2s-1-2-2-2-2 1-2 2 1 2 2 2z"/>
-                <path d="M12 3c0 1-1 2-2 2s-2-1-2-2 1-2 2-2 2 1 2 2z"/>
-                <path d="M12 21c0-1 1-2 2-2s2 1 2 2-1 2-2 2-2-1-2-2z"/>
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2"/>
+                <path d="M12 20v2"/>
+                <path d="M4.93 4.93l1.41 1.41"/>
+                <path d="M17.66 17.66l1.41 1.41"/>
+                <path d="M2 12h2"/>
+                <path d="M20 12h2"/>
+                <path d="M4.93 19.07l1.41-1.41"/>
+                <path d="M17.66 6.34l1.41-1.41"/>
               </svg>
             </div>
-            <div class="status-info">
-              <span class="status-number">{{ stats.activeDevices }}</span>
-              <span class="status-label">사용 중</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.activeDevices }}</div>
+              <div class="unified-label">사용 중</div>
             </div>
           </div>
           
-          <div class="status-card inactive">
-            <div class="status-icon">
+          <div class="unified-card inactive" @click="navigateToDevicesWithStatus('unassigned')">
+            <div class="unified-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
                 <line x1="9" y1="9" x2="15" y2="15"/>
               </svg>
             </div>
-            <div class="status-info">
-              <span class="status-number">{{ stats.inactiveDevices }}</span>
-              <span class="status-label">미사용</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.inactiveDevices }}</div>
+              <div class="unified-label">미사용</div>
             </div>
           </div>
           
-          <div class="status-card maintenance">
-            <div class="status-icon">
+          <div class="unified-card maintenance" @click="navigateToDevicesWithStatus('maintenance')">
+            <div class="unified-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
               </svg>
             </div>
-            <div class="status-info">
-              <span class="status-number">{{ stats.maintenanceDevices }}</span>
-              <span class="status-label">정비 중</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.maintenanceDevices }}</div>
+              <div class="unified-label">정비 중</div>
             </div>
           </div>
           
-          <div class="status-card retired">
-            <div class="status-icon">
+          <div class="unified-card retired" @click="navigateToDevicesWithStatus('disposed')">
+            <div class="unified-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 6h18"/>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
                 <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
               </svg>
             </div>
-            <div class="status-info">
-              <span class="status-number">{{ stats.retiredDevices }}</span>
-              <span class="status-label">폐기</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.retiredDevices }}</div>
+              <div class="unified-label">폐기</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 2025-01-27: 장비 타입별 요약으로 변경 -->
+      <!-- 2025-01-27: 장비 타입별 요약 완전 재디자인 -->
       <!-- 장비 타입별 요약 -->
-      <div class="section-card full-width">
-        <h2 class="section-title">장비 타입별 요약</h2>
-        <div class="device-type-summary">
-          <div class="device-type-card laptop">
-            <div class="device-type-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="unified-section-card">
+        <h2 class="unified-section-title">장비 타입별 요약</h2>
+        <div class="unified-cards-grid">
+          <div class="unified-card laptop" @click="navigateToDevicesWithType('노트북')">
+            <div class="unified-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                 <line x1="8" y1="21" x2="16" y2="21"/>
                 <line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </div>
-            <div class="device-type-info">
-              <span class="device-type-number">{{ stats.laptopCount || 0 }}</span>
-              <span class="device-type-label">노트북</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.laptopCount || 0 }}</div>
+              <div class="unified-label">노트북</div>
             </div>
           </div>
           
-          <div class="device-type-card desktop">
-            <div class="device-type-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="unified-card desktop" @click="navigateToDevicesWithType('데스크탑')">
+            <div class="unified-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                 <line x1="8" y1="21" x2="16" y2="21"/>
                 <line x1="12" y1="17" x2="12" y2="21"/>
                 <rect x="6" y="7" width="12" height="8"/>
               </svg>
             </div>
-            <div class="device-type-info">
-              <span class="device-type-number">{{ stats.desktopCount || 0 }}</span>
-              <span class="device-type-label">데스크탑</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.desktopCount || 0 }}</div>
+              <div class="unified-label">데스크탑</div>
             </div>
           </div>
           
-          <div class="device-type-card monitor">
-            <div class="device-type-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="unified-card monitor" @click="navigateToDevicesWithType('모니터')">
+            <div class="unified-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                 <line x1="8" y1="21" x2="16" y2="21"/>
                 <line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </div>
-            <div class="device-type-info">
-              <span class="device-type-number">{{ stats.monitorCount || 0 }}</span>
-              <span class="device-type-label">모니터</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.monitorCount || 0 }}</div>
+              <div class="unified-label">모니터</div>
             </div>
           </div>
           
-          <div class="device-type-card other">
-            <div class="device-type-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="unified-card other" @click="navigateToDevicesWithType('기타')">
+            <div class="unified-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <circle cx="9" cy="9" r="2"/>
                 <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
               </svg>
             </div>
-            <div class="device-type-info">
-              <span class="device-type-number">{{ stats.otherCount || 0 }}</span>
-              <span class="device-type-label">기타</span>
+            <div class="unified-info">
+              <div class="unified-number">{{ stats.otherCount || 0 }}</div>
+              <div class="unified-label">기타</div>
             </div>
           </div>
         </div>
@@ -357,6 +360,33 @@ const formatTime = (dateString: string) => {
   if (diffInDays < 7) return `${diffInDays}일 전`
   
   return date.toLocaleDateString('ko-KR')
+}
+
+// 2025-01-27: 장비 상태로 장비 관리 페이지 이동
+const navigateToDevicesWithStatus = (status: string) => {
+  let queryParams = ''
+  
+  if (status === 'assigned') {
+    // 사용 중: 직원이 할당된 장비
+    queryParams = '?assignment=assigned'
+  } else if (status === 'unassigned') {
+    // 미사용: 직원이 할당되지 않은 장비
+    queryParams = '?assignment=unassigned'
+  } else if (status === 'maintenance') {
+    // 정비 중: 용도가 '정비중'인 장비
+    queryParams = '?purpose=정비중'
+  } else if (status === 'disposed') {
+    // 폐기: 용도가 '폐기'인 장비
+    queryParams = '?purpose=폐기'
+  }
+  
+  navigateTo(`/devices${queryParams}`)
+}
+
+// 2025-01-27: 장비 타입으로 장비 관리 페이지 이동
+const navigateToDevicesWithType = (deviceType: string) => {
+  const queryParams = `?device_type=${encodeURIComponent(deviceType)}`
+  navigateTo(`/devices${queryParams}`)
 }
 
 // 데이터 로드
@@ -547,6 +577,23 @@ onMounted(() => {
 .stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* 2025-01-27: 클릭 가능한 통계 카드 스타일 */
+.stat-card.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 35px -5px rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.stat-card.clickable:active {
+  transform: translateY(-2px);
+  transition: all 0.1s ease;
 }
 
 .stat-icon {
@@ -761,7 +808,205 @@ onMounted(() => {
   color: #94a3b8;
 }
 
-/* 장비 상태 요약 */
+/* 2025-01-27: 통일된 대시보드 섹션 스타일 */
+.unified-section-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+}
+
+.unified-section-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
+}
+
+.unified-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  text-align: left;
+}
+
+/* 통일된 카드 그리드 */
+.unified-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.unified-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.unified-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.unified-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.unified-card:hover::before {
+  opacity: 1;
+}
+
+/* 상태별 색상 */
+.unified-card.active {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.unified-card.active::before {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+}
+
+.unified-card.inactive {
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+.unified-card.inactive::before {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.1) 0%, rgba(100, 116, 139, 0.05) 100%);
+}
+
+.unified-card.maintenance {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.unified-card.maintenance::before {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+}
+
+.unified-card.retired {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.unified-card.retired::before {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+}
+
+/* 타입별 색상 */
+.unified-card.laptop {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.unified-card.laptop::before {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+}
+
+.unified-card.desktop {
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.unified-card.desktop::before {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.unified-card.monitor {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.unified-card.monitor::before {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+}
+
+.unified-card.other {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.unified-card.other::before {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+}
+
+.unified-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* 상태별 아이콘 색상 */
+.unified-card.active .unified-icon {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.unified-card.inactive .unified-icon {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+.unified-card.maintenance .unified-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.unified-card.retired .unified-icon {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* 타입별 아이콘 색상 */
+.unified-card.laptop .unified-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.unified-card.desktop .unified-icon {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.unified-card.monitor .unified-icon {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.unified-card.other .unified-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.unified-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.unified-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.unified-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* 장비 상태 요약 (기존 스타일 - 사용하지 않음) */
 .device-status-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1052,11 +1297,7 @@ onMounted(() => {
     grid-template-columns: repeat(3, 1fr);
   }
   
-  .device-status-grid-wide {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .device-type-summary {
+  .unified-cards-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   
@@ -1082,11 +1323,7 @@ onMounted(() => {
     padding: 1.5rem;
   }
   
-  .device-status-grid-wide {
-    grid-template-columns: 1fr;
-  }
-  
-  .device-type-summary {
+  .unified-cards-grid {
     grid-template-columns: 1fr;
   }
   
@@ -1096,11 +1333,7 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
-  .device-status-grid-wide {
-    grid-template-columns: 1fr;
-  }
-  
-  .device-type-summary {
+  .unified-cards-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -161,7 +161,7 @@
       <!-- 통계 카드 -->
       <div class="stats-section">
         <div class="stats-grid">
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="filterByAllDevices">
             <div class="stat-icon device-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
@@ -175,7 +175,7 @@
             </div>
           </div>
 
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="showManufacturerFilter">
             <div class="stat-icon manufacturer-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -189,7 +189,7 @@
             </div>
           </div>
 
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="filterByAssignedDevices">
             <div class="stat-icon assigned-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -202,7 +202,7 @@
             </div>
           </div>
 
-          <div class="stat-card">
+          <div class="stat-card clickable-stat" @click="filterByRecentDevices">
             <div class="stat-icon new-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -217,7 +217,7 @@
           </div>
 
           <!-- 2025-01-27: 폐기된 장비 통계 추가 -->
-          <div class="stat-card disposed-card" @click="showDisposedModal = true">
+          <div class="stat-card disposed-card clickable-stat" @click="showDisposedModal = true">
             <div class="stat-icon disposed-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -861,6 +861,59 @@ const viewDeviceDetail = (deviceId: string) => {
   navigateTo(`/devices/${deviceId}`)
 }
 
+// 2025-01-27: 통계 카드 클릭 시 필터링 함수들
+const filterByAllDevices = () => {
+  // 모든 필터 초기화
+  searchQuery.value = ''
+  filterEmployee.value = ''
+  filterManufacturer.value = ''
+  filterStatus.value = ''
+  assignmentFilter.value = ''
+  deviceTypeFilter.value = ''
+}
+
+const showManufacturerFilter = () => {
+  // 제조사 필터를 순환하거나 첫 번째 제조사로 설정
+  if (!filterManufacturer.value && manufacturers.value.length > 0) {
+    filterManufacturer.value = manufacturers.value[0]
+  } else {
+    const currentIndex = manufacturers.value.indexOf(filterManufacturer.value)
+    const nextIndex = (currentIndex + 1) % manufacturers.value.length
+    filterManufacturer.value = manufacturers.value[nextIndex] || ''
+  }
+  // 다른 필터 초기화
+  searchQuery.value = ''
+  filterEmployee.value = ''
+  filterStatus.value = ''
+  assignmentFilter.value = ''
+  deviceTypeFilter.value = ''
+}
+
+const filterByAssignedDevices = () => {
+  // 할당된 장비 필터
+  assignmentFilter.value = 'assigned'
+  filterStatus.value = 'assigned'
+  // 다른 필터 초기화
+  searchQuery.value = ''
+  filterEmployee.value = ''
+  filterManufacturer.value = ''
+  deviceTypeFilter.value = ''
+}
+
+const filterByRecentDevices = () => {
+  // 이번 달 신규 장비 필터 (검색어로 처리)
+  const currentDate = new Date()
+  const year = currentDate.getFullYear()
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0')
+  searchQuery.value = `${year}-${month}`
+  // 다른 필터 초기화
+  filterEmployee.value = ''
+  filterManufacturer.value = ''
+  filterStatus.value = ''
+  assignmentFilter.value = ''
+  deviceTypeFilter.value = ''
+}
+
 // 2025-01-27: 뷰 설정 저장/불러오기
 const saveViewPreferences = () => {
   if (process.client) {
@@ -889,9 +942,36 @@ watch([viewMode, cardDensity], () => {
   saveViewPreferences()
 })
 
+// 2025-01-27: URL 쿼리 매개변수에서 필터 설정
+const applyFiltersFromQuery = () => {
+  const route = useRoute()
+  
+  // 할당 상태 필터 (assignment)
+  if (route.query.assignment) {
+    assignmentFilter.value = route.query.assignment as string
+  }
+  
+  // 용도 필터 (purpose)
+  if (route.query.purpose) {
+    // 용도 필터는 검색으로 처리
+    searchQuery.value = route.query.purpose as string
+  }
+  
+  // 장비 타입 필터 (device_type)
+  if (route.query.device_type) {
+    deviceTypeFilter.value = route.query.device_type as string
+  }
+  
+  // 기존 상태 필터 지원 (하위 호환)
+  if (route.query.status) {
+    assignmentFilter.value = route.query.status as string
+  }
+}
+
 // Load data on mount
 onMounted(() => {
   loadViewPreferences()
+  applyFiltersFromQuery()
   loadDevices()
 })
 </script>
@@ -1323,6 +1403,30 @@ onMounted(() => {
 .stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* 2025-01-27: 클릭 가능한 통계 카드 스타일 */
+.stat-card.clickable-stat {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-stat:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 70px rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.stat-card.clickable-stat:active {
+  transform: translateY(-2px);
+  transition: all 0.1s ease;
+}
+
+/* 폐기된 장비 카드 특별 스타일 */
+.disposed-card.clickable-stat:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 70px rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
 .stat-icon {
@@ -2047,6 +2151,33 @@ onMounted(() => {
 .disposed-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 32px rgba(239, 68, 68, 0.2);
+}
+
+/* 2025-01-27: 정렬 가능한 헤더 스타일 */
+.list-header-cell.sortable {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.list-header-cell.sortable:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  color: #667eea;
+}
+
+.sort-icon {
+  color: #667eea;
+  transition: transform 0.2s ease;
+}
+
+.list-header-cell.sortable:hover .sort-icon {
+  transform: scale(1.2);
 }
 
 /* 반응형 모달 */
