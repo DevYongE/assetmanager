@@ -88,10 +88,16 @@ router.get('/device/:identifier', authenticateToken, async (req, res) => {
       has_employee: !!device.employees
     });
     
+    // 2025-01-27: 미할당 장비(device.employees가 null)에 대해서도 QR 생성 허용
     // Allow QR generation for unassigned devices or devices assigned to user's employees
     if (device.employees && device.employees.admin_id !== req.user.id) {
       console.log('🔍 [QR DEBUG] Access denied - device belongs to different admin');
       return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    // 2025-01-27: 미할당 장비에 대한 추가 로그
+    if (!device.employees) {
+      console.log('🔍 [QR DEBUG] Generating QR for unassigned device - allowed');
     }
 
     // 2025-08-13: Enhanced QR code data with direct link support

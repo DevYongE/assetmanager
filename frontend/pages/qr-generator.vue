@@ -626,8 +626,8 @@
             <div class="device-preview-info">
               <h3 class="device-preview-name">{{ selectedDevice.manufacturer }} {{ selectedDevice.model_name }}</h3>
               <p class="device-preview-number">{{ selectedDevice.asset_number }}</p>
-              <p class="device-preview-employee" v-if="selectedDevice.employees">
-                담당자: {{ selectedDevice.employees.name }}
+              <p class="device-preview-employee">
+                담당자: {{ selectedDevice.employees?.name || '미할당' }}
               </p>
             </div>
           </div>
@@ -1266,7 +1266,7 @@ const executePrint = async () => {
               </div>
               <div class="device-number">${device.asset_number}</div>
               <div class="device-info">${device.manufacturer} ${device.model_name}</div>
-              <div class="employee-info">담당자: ${device.employees?.name || '미배정'}</div>
+              <div class="employee-info">담당자: ${device.employees?.name || '미할당'}</div>
             </div>
           `
         } catch (error) {
@@ -1626,7 +1626,7 @@ const printAllDevices = async () => {
               </div>
               <div class="device-number">${device.asset_number}</div>
               <div class="device-info">${device.manufacturer} ${device.model_name}</div>
-              <div class="employee-info">담당자: ${device.employees?.name || '미배정'}</div>
+              <div class="employee-info">담당자: ${device.employees?.name || '미할당'}</div>
             </div>
           `
         } catch (error) {

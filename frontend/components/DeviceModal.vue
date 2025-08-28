@@ -66,15 +66,15 @@
               </svg>
               {{ assetNumberPrefix }}
             </span>
-            <input 
+          <input 
               v-model="assetNumberSuffix" 
-              type="text" 
+            type="text" 
               placeholder="001"
               class="flex-1 px-4 py-3 text-base border-0 bg-transparent focus:outline-none focus:ring-0 rounded-r-lg placeholder-gray-400"
-              required
+            required
               @input="updateFullAssetNumber"
-            />
-          </div>
+          />
+        </div>
           <p class="mt-1 text-xs text-gray-500">
             <span class="inline-flex items-center">
               <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -676,12 +676,22 @@ const handleSubmit = async () => {
         const currentValue = (submitData as any)[field];
         const originalValue = props.device ? (props.device as any)[field] : undefined;
         
+        // 2025-01-27: employee_id 특별 처리 - null과 빈 문자열을 동일하게 처리
+        if (field === 'employee_id') {
+          const normalizedCurrent = currentValue === null || currentValue === undefined || currentValue === '' ? null : currentValue;
+          const normalizedOriginal = originalValue === null || originalValue === undefined || originalValue === '' ? null : originalValue;
+          
+          if (normalizedCurrent !== normalizedOriginal) {
+            changedFields[field] = normalizedCurrent;
+          }
+        } else {
         // null과 undefined를 빈 문자열로 통일하여 비교
         const normalizedCurrent = currentValue === null || currentValue === undefined ? '' : currentValue;
         const normalizedOriginal = originalValue === null || originalValue === undefined ? '' : originalValue;
         
         if (normalizedCurrent !== normalizedOriginal) {
           changedFields[field] = currentValue;
+          }
         }
       });
       
