@@ -1014,24 +1014,40 @@ const printDeviceQR = () => {
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                min-height: 400px;
+                min-height: 500px;
+                padding: 40px 20px;
               }
               .qr-code {
-                margin-bottom: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 25px;
+                width: 100%;
+              }
+              .qr-code img {
+                display: block;
+                margin: 0 auto;
               }
               .product-number {
                 border: 2px solid #333;
-                padding: 10px 20px;
+                padding: 15px 25px;
                 border-radius: 8px;
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: bold;
                 background: #f8f9fa;
                 color: #333;
+                text-align: center;
+                margin-bottom: 20px;
               }
               .device-info {
-                margin-top: 15px;
-                font-size: 14px;
+                text-align: center;
+                font-size: 15px;
                 color: #666;
+                line-height: 1.6;
+              }
+              .device-info p {
+                margin: 8px 0;
+                text-align: center;
               }
             </style>
           </head>
@@ -1044,8 +1060,8 @@ const printDeviceQR = () => {
                 ${selectedDevice.value?.asset_number}
               </div>
               <div class="device-info">
-                <p>${selectedDevice.value?.manufacturer} ${selectedDevice.value?.model_name}</p>
-                <p>담당자: ${selectedDevice.value?.employees?.name}</p>
+                <p><strong>${selectedDevice.value?.manufacturer} ${selectedDevice.value?.model_name}</strong></p>
+                <p>담당자: ${selectedDevice.value?.employees?.name || '미할당'}</p>
               </div>
             </div>
           </body>
@@ -1204,33 +1220,51 @@ const executePrint = async () => {
                 max-width: 100%;
               }
               .qr-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
                 text-align: center;
-                padding: 15px;
+                padding: 20px;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
                 page-break-inside: avoid;
+                min-height: 280px;
+                background: white;
               }
               .qr-code {
-                margin-bottom: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 15px;
+                width: 100%;
               }
               .qr-code img {
                 max-width: ${printQRSize.value === 'small' ? '150px' : printQRSize.value === 'large' ? '250px' : '200px'};
                 height: auto;
+                display: block;
+                margin: 0 auto;
               }
               .device-number {
                 font-weight: bold;
-                font-size: 14px;
-                margin-bottom: 5px;
+                font-size: 16px;
+                margin-bottom: 8px;
                 color: #333;
+                text-align: center;
+                width: 100%;
               }
               .device-info {
-                font-size: 12px;
+                font-size: 13px;
                 color: #666;
                 margin-bottom: 5px;
+                text-align: center;
+                width: 100%;
               }
               .employee-info {
-                font-size: 11px;
+                font-size: 12px;
                 color: #888;
+                text-align: center;
+                width: 100%;
               }
               @media print {
                 .qr-item {
@@ -1566,33 +1600,51 @@ const printAllDevices = async () => {
                 max-width: 100%;
               }
               .qr-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
                 text-align: center;
-                padding: 15px;
+                padding: 20px;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
                 page-break-inside: avoid;
+                min-height: 280px;
+                background: white;
               }
               .qr-code {
-                margin-bottom: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 15px;
+                width: 100%;
               }
               .qr-code img {
                 max-width: 150px;
                 height: auto;
+                display: block;
+                margin: 0 auto;
               }
               .device-number {
                 font-weight: bold;
-                font-size: 14px;
-                margin-bottom: 5px;
+                font-size: 16px;
+                margin-bottom: 8px;
                 color: #333;
+                text-align: center;
+                width: 100%;
               }
               .device-info {
-                font-size: 12px;
+                font-size: 13px;
                 color: #666;
                 margin-bottom: 5px;
+                text-align: center;
+                width: 100%;
               }
               .employee-info {
-                font-size: 11px;
+                font-size: 12px;
                 color: #888;
+                text-align: center;
+                width: 100%;
               }
               @media print {
                 .qr-item {
